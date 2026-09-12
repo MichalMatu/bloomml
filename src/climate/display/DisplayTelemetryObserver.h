@@ -46,6 +46,17 @@ public:
     return true;
   }
 
+  bool confirmRendered(std::uint64_t rendered_at_ms) noexcept {
+    if (!has_frame_ || !last_frame_.refreshRequired()) {
+      return false;
+    }
+    return runtime_.confirmRendered(last_frame_, rendered_at_ms);
+  }
+
+  bool hasPendingRefresh() const noexcept {
+    return runtime_.hasPendingRefresh();
+  }
+
   bool handleButton(DisplayButton button) noexcept {
     return runtime_.handleButton(button);
   }
