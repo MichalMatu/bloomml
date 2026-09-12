@@ -1,4 +1,6 @@
 #include "climate/display/DisplayPresenter.h"
+#include "climate/display/DisplaySurface.h"
+#include "climate/display/DisplayTextSimulator.h"
 #include "climate/output/LampSafety.h"
 
 #include <cassert>
@@ -149,6 +151,29 @@ void testNavigationMatchesFivePhysicalKeys() {
   assert(!navigation.handle(display::DisplayButton::Back));
 }
 
+void testTextSimulatorUsesTheSameSurfaceSeamAsHardwareAdapters() {
+  const auto snapshot = nominalSnapshot();
+  display::DisplayPageModel page{};
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Status, page));
+
+  display::DisplayTextSimulator simulator{};
+  assert(display::renderDisplayPage(page, simulator));
+  assert(simulator.size() > 0U);
+  assert(std::strstr(simulator.text(), "Growbox status") != nullptr);
+  assert(std::strstr(simulator.text(), "23.4 C") != nullptr);
+  assert(std::strstr(simulator.text(), "20% -> ON") != nullptr);
+  assert(simulator.text()[0] == ' ');
+  assert(simulator.text()[1] == ' ');
+
+  page.warning = true;
+  assert(display::renderDisplayPage(page, simulator));
+  assert(simulator.text()[0] == '!');
+  assert(simulator.text()[1] == ' ');
+
+  page.line_count = page.lines.size() + 1U;
+  assert(!display::renderDisplayPage(page, simulator));
+}
+
 } // namespace
 
 int main() {
@@ -157,5 +182,6 @@ int main() {
   testFreshnessPolicyIsExplicitPresenterConfig();
   testOutputsPageKeepsRequestedEffectiveAndPhysicalTruthSeparate();
   testNavigationMatchesFivePhysicalKeys();
+  testTextSimulatorUsesTheSameSurfaceSeamAsHardwareAdapters();
   return 0;
 }
