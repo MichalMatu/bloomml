@@ -39,6 +39,8 @@ cmake -S test/host -B build/host-tests -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 cmake --build build/host-tests --parallel "${HOST_BUILD_JOBS}"
 ctest --test-dir build/host-tests --output-on-failure
 
+bash "${ROOT}/scripts/test_display_host.sh"
+
 echo "==> Stage28D bounded-output regression tests"
 HOST_CXX="${CXX:-c++}"
 "$HOST_CXX" -std=c++17 -Wall -Wextra -Wpedantic \
