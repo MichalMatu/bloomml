@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### E-ink operator UI handoff — 2026-09-12
+
+- Inserted a bounded e-ink operator-visibility task before Controller behavior quality work.
+- Added `docs/EINK_UI_HANDOFF.md` with the autonomous implementation plan, architecture boundaries, unattended hardware-safety rules and required log/memory/panic qualification evidence.
+- Added `docs/EINK_UI_NEW_CHAT_PROMPT.md` as a ready copy/paste fresh-chat prompt for the overnight implementation.
+- The operator confirmed the growbox uses the same physical e-ink/button module and 100% compatible pin map as `MichalMatu/esp32s3_LiteGraph`; the implementation should reuse its proven Clay menu, button navigation, simulator, refresh policy and generic display infrastructure rather than redesigning them.
+- Planned growbox pages: home/glance, Environment, Outputs, System and Diagnostics, with correct intent/executed/transport truth semantics and observer-only UI ownership.
+- Unattended flash/soak is restricted to `/dev/cu.usbserial-1130` with physical outputs, RF loopback and the thermal test sequence disabled. Completion requires explicit inspection for panic/watchdog/reset issues and stable heap/PSRAM/fragmentation/stack headroom.
+- This entry documents the handoff only; it does **not** claim that the display implementation is complete yet.
+
 ### Final release-readiness hardening — 2026-09-12
 
 - Updated the Stage27C soak parser to preserve historical `soak_v=2` support while accepting current `soak_v=3` telemetry and its renamed storage fields.
@@ -14,7 +24,7 @@ All notable changes to this project are documented here.
 - Final code-bearing hardening identity: `e03763d019af405087a5fa9c6713a7165d2e623f`. Local verification passed 500 Python tests (12 hardware/visual skips), all 50 host C++ tests, five architecture/config ownership guards, host clang-tidy and three ESP-IDF builds.
 - Canonical GitHub verification passed CI #865 and Sandbox Pack #63 on the same code-bearing SHA.
 - Bounded current-board qualification `20260912-final-main-hardware-qualification-v1` passed on `/dev/cu.usbserial-1130`: strict 120 s `soak_v=3` reported zero violations, no reset/disconnect/SHA mismatch, and the first valid SCD41 sample cleared startup fail-closed state without a false `RecoveryHold`.
-- Closeout leaves product development ready to move to the roadmap's first priority: evidence-backed controller behavior quality using real telemetry/replay baselines before tuning production behavior.
+- Closeout originally left product development ready to move to Controller behavior quality; the e-ink operator-visibility task above was subsequently inserted before that tuning work.
 
 ### Structural cleanup closeout — 2026-09-12
 
@@ -25,7 +35,7 @@ All notable changes to this project are documented here.
 - Final code-bearing identity: `0a7097a30280ec0f7bb408799c07093761d63e88`.
 - Final software verification on that code line passed all runtime/config/service-console/app-mode/output-ownership guards, `50/50` host C++ tests, host clang-tidy, the CrowPanel real-input ESP-IDF build, GitHub CI #863 and Sandbox Pack #61.
 - Final read-only structure re-audit reported zero include cycles, zero climate `.cpp` files without build/reference wiring and no remaining structural cleanup with a clear benefit-to-churn justification.
-- The current code-bearing identity is ready to flash but is **not yet hardware-qualified**. Historical Physical H qualification remains attached only to `02208d23f403bca3540dbbd652eb55703a044833` until a new bounded physical run passes.
+- The structural-closeout code identity was not itself the later release-hardening hardware-qualified identity; current qualification status is tracked in `docs/CURRENT_STATUS.md`.
 
 ### Architecture and runtime quality cleanup — 2026-09-11
 
