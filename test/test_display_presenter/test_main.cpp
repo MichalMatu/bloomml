@@ -27,6 +27,9 @@ const display::DisplayLine* findLine(const display::DisplayPageModel& page, cons
 class FakeClaySink final {
 public:
   bool beginFrame(std::uint16_t width_px, std::uint16_t height_px, bool warning) noexcept {
+    if (frame_open) {
+      return false;
+    }
     ++begin_count;
     width = width_px;
     height = height_px;
@@ -40,6 +43,9 @@ public:
       return false;
     }
     ++text_count;
+    if (!draw_result) {
+      return false;
+    }
 
     if (std::strcmp(element.text, "!") == 0) {
       saw_warning = true;
@@ -62,13 +68,26 @@ public:
     if (!frame_open) {
       return false;
     }
+    ++end_count;
+    if (!end_result) {
+      return false;
+    }
     frame_open = false;
     ended = true;
     return true;
   }
 
+  void cancelFrame() noexcept {
+    ++cancel_count;
+    frame_open = false;
+  }
+
+  bool draw_result{true};
+  bool end_result{true};
   std::size_t begin_count{0U};
   std::size_t text_count{0U};
+  std::size_t end_count{0U};
+  std::size_t cancel_count{0U};
   std::uint16_t width{0U};
   std::uint16_t height{0U};
   std::uint16_t title_x{0U};
@@ -328,6 +347,7 @@ void testClayAdapterMapsRenderRolesAndFailsClosedBeforeFrame() {
   assert(!display::renderDisplayListToClay(invalid_list, geometry, theme, invalid_sink));
   assert(invalid_sink.begin_count == 0U);
   assert(invalid_sink.text_count == 0U);
+  assert(invalid_sink.cancel_count == 0U);
 
   auto invalid_theme = theme;
   invalid_theme.value.font_size_px = 0U;
@@ -335,6 +355,27 @@ void testClayAdapterMapsRenderRolesAndFailsClosedBeforeFrame() {
   assert(!display::renderDisplayListToClay(render_list, geometry, invalid_theme,
                                            invalid_theme_sink));
   assert(invalid_theme_sink.begin_count == 0U);
+  assert(invalid_theme_sink.cancel_count == 0U);
+
+  FakeClaySink draw_failure_sink{};
+  draw_failure_sink.draw_result = false;
+  assert(!display::renderDisplayListToClay(render_list, geometry, theme, draw_failure_sink));
+  assert(draw_failure_sink.begin_count == 1U);
+  assert(draw_failure_sink.cancel_count == 1U);
+  assert(!draw_failure_sink.frame_open);
+  draw_failure_sink.draw_result = true;
+  assert(display::renderDisplayListToClay(render_list, geometry, theme, draw_failure_sink));
+  assert(draw_failure_sink.begin_count == 2U);
+
+  FakeClaySink end_failure_sink{};
+  end_failure_sink.end_result = false;
+  assert(!display::renderDisplayListToClay(render_list, geometry, theme, end_failure_sink));
+  assert(end_failure_sink.end_count == 1U);
+  assert(end_failure_sink.cancel_count == 1U);
+  assert(!end_failure_sink.frame_open);
+  end_failure_sink.end_result = true;
+  assert(display::renderDisplayListToClay(render_list, geometry, theme, end_failure_sink));
+  assert(end_failure_sink.begin_count == 2U);
 }
 
 } // namespace
