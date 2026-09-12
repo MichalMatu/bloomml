@@ -97,6 +97,7 @@ elseif(GROWBOX_APP_MODE STREQUAL "climate-v6-real-inputs")
     ${COMPONENT_LIB}
     PRIVATE
       "climate/ClimateV6RealInputRuntime.cpp"
+      "climate/display/DisplayPresenter.cpp"
       "climate/runtime/core/RealInputRuntimeComposition.cpp"
       "climate/runtime/core/RealInputRuntimeCoordinator.cpp"
       "climate/runtime/core/RuntimeOutputTransport.cpp"
