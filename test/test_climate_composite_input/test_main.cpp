@@ -150,6 +150,7 @@ void testNominalAggregationUsesEachComponentOnce() {
   clock.unix_time_s = 12U * 3'600U;
   CompositeClimateSnapshotProvider provider(inside, outside, clock, schedule_config);
 
+  assert(!provider.hasLastSnapshot());
   ClimateInputSnapshot snapshot{};
   assert(provider.snapshot(42'000U, snapshot));
   assert(inside.calls == 1U);
@@ -173,6 +174,13 @@ void testNominalAggregationUsesEachComponentOnce() {
   assert(near(snapshot.schedule.light_level, 1.0F));
   assert(snapshot.capabilities.heater);
   assert(snapshot.sensor_timeout_ms == 30'000U);
+
+  assert(provider.hasLastSnapshot());
+  assert(provider.lastSnapshotMonotonicMs() == 42'000U);
+  assert(provider.lastClock().valid);
+  assert(provider.lastClock().unix_time_s == clock.unix_time_s);
+  assert(near(provider.lastSnapshot().measurements.air_temperature_c.value, 20.0F));
+  assert(near(provider.lastSnapshot().measurements.co2_ppm.value, 500.0F));
 }
 
 void testSensorComponentUnavailabilityDegradesToInvalidMeasurements() {
@@ -211,6 +219,7 @@ void testClockAndScheduleConfigAreRequiredContext() {
   ClimateInputSnapshot snapshot{};
   clock.available = false;
   assert(!provider.snapshot(3'000U, snapshot));
+  assert(!provider.hasLastSnapshot());
   assert(clock.calls == 1U);
   assert(schedule_config.calls == 0U);
   assert(inside.calls == 0U);
@@ -219,14 +228,41 @@ void testClockAndScheduleConfigAreRequiredContext() {
   clock.available = true;
   clock.valid = false;
   assert(!provider.snapshot(4'000U, snapshot));
+  assert(!provider.hasLastSnapshot());
   assert(schedule_config.calls == 0U);
 
   clock.valid = true;
   schedule_config.available = false;
   assert(!provider.snapshot(5'000U, snapshot));
+  assert(!provider.hasLastSnapshot());
   assert(schedule_config.calls == 1U);
   assert(inside.calls == 0U);
   assert(outside.calls == 0U);
+}
+
+void testFailedSampleDoesNotOverwriteLastSuccessfulObservation() {
+  FakeInsideSource inside;
+  FakeOutsideSource outside;
+  FakeClockSource clock;
+  FakeScheduleConfigSource schedule_config;
+  CompositeClimateSnapshotProvider provider(inside, outside, clock, schedule_config);
+
+  clock.unix_time_s = 12U * 3'600U;
+  ClimateInputSnapshot first{};
+  assert(provider.snapshot(7'000U, first));
+  assert(provider.hasLastSnapshot());
+  assert(provider.lastSnapshotMonotonicMs() == 7'000U);
+
+  const float saved_temperature = provider.lastSnapshot().measurements.air_temperature_c.value;
+  const std::uint64_t saved_clock = provider.lastClock().unix_time_s;
+  clock.unix_time_s = 18U * 3'600U;
+  clock.available = false;
+  ClimateInputSnapshot failed{};
+  assert(!provider.snapshot(8'000U, failed));
+  assert(provider.hasLastSnapshot());
+  assert(provider.lastSnapshotMonotonicMs() == 7'000U);
+  assert(provider.lastClock().unix_time_s == saved_clock);
+  assert(near(provider.lastSnapshot().measurements.air_temperature_c.value, saved_temperature));
 }
 
 void testCompositeProviderThroughClimateApplication() {
@@ -269,6 +305,8 @@ void testCompositeProviderThroughClimateApplication() {
   assert(no_clock_result.io_status == ClimateLoopIoStatus::InputUnavailable);
   assert(!no_clock_result.input_sampled);
   assert(off(no_clock.applied));
+  assert(provider.hasLastSnapshot());
+  assert(provider.lastSnapshotMonotonicMs() == 12'000U);
 
   clock.available = true;
   clock.unix_time_s = 2U * 3'600U;
@@ -279,6 +317,8 @@ void testCompositeProviderThroughClimateApplication() {
   assert(night.applied.heater > 0.0F);
   assert(near(night.rule.raw.co2_doser, 0.0F));
   assert(driver.calls == 5U * 6U);
+  assert(provider.lastSnapshotMonotonicMs() == 14'000U);
+  assert(provider.lastClock().unix_time_s == clock.unix_time_s);
 }
 
 } // namespace
@@ -287,6 +327,7 @@ int main() {
   testNominalAggregationUsesEachComponentOnce();
   testSensorComponentUnavailabilityDegradesToInvalidMeasurements();
   testClockAndScheduleConfigAreRequiredContext();
+  testFailedSampleDoesNotOverwriteLastSuccessfulObservation();
   testCompositeProviderThroughClimateApplication();
   return 0;
 }
