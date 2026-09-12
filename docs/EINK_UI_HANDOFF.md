@@ -5,7 +5,7 @@ Repository: `MichalMatu/growbox-ml-controller`
 Primary branch: `main`
 Control branch: `agent-control`
 Local Agent binding: `815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5`
-Chat bridge id: `chat-e23bf59b`
+Preparation chat bridge id (provenance only): `chat-e23bf59b`; a new window must use its own `LA_CHAT` identifier if the bridge provides one.
 Starting documentation HEAD: `5b985f40f60a8856a3efbdddf036e4b17d2447b1`
 Last code-bearing hardware-qualified baseline: `e03763d019af405087a5fa9c6713a7165d2e623f`
 
