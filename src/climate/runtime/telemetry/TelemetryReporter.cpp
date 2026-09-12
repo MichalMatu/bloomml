@@ -1,5 +1,6 @@
 #include "climate/runtime/telemetry/TelemetryReporter.h"
 
+#include "climate/display/DisplayTelemetryObserver.h"
 #include "climate/runtime/RuntimeBuildConfig.h"
 
 #include "climate/runtime/diagnostics/Stage28eLog.h"
@@ -26,9 +27,11 @@ TelemetryReporter::TelemetryReporter(native::BleClimateScanner& ble,
                                      native::Scd41InsideSource& scd41,
                                      native::Ds3231ClockSource& clock,
                                      storage::Stage27TelemetryLogger& storage_logger,
-                                     bool storage_logger_ready, std::int32_t reset_reason) noexcept
+                                     bool storage_logger_ready, std::int32_t reset_reason,
+                                     display::DisplayTelemetryObserver* display_observer) noexcept
     : ble_(ble), scd41_(scd41), clock_(clock), storage_logger_(storage_logger),
-      storage_logger_ready_(storage_logger_ready), reset_reason_(reset_reason) {}
+      display_observer_(display_observer), storage_logger_ready_(storage_logger_ready),
+      reset_reason_(reset_reason) {}
 
 void TelemetryReporter::record(
     std::uint64_t now_ms, const ::growbox::climate::ClimateLoopResult& loop_result,
@@ -150,6 +153,9 @@ void TelemetryReporter::record(
   snapshot.output = output_execution;
 
   const auto storage_status = storage_logger_.status();
+  if (display_observer_ != nullptr) {
+    static_cast<void>(display_observer_->observe(snapshot, storage_status));
+  }
   logRecord(snapshot, storage_status);
   if (storage_logger_ready_) {
     static_cast<void>(storage_logger_.enqueue(snapshot));
