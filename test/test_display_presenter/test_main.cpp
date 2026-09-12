@@ -1,4 +1,5 @@
 #include "climate/display/DisplayPresenter.h"
+#include "climate/display/DisplayRenderList.h"
 #include "climate/display/DisplaySurface.h"
 #include "climate/display/DisplayTextSimulator.h"
 #include "climate/output/LampSafety.h"
@@ -174,6 +175,52 @@ void testTextSimulatorUsesTheSameSurfaceSeamAsHardwareAdapters() {
   assert(!display::renderDisplayPage(page, simulator));
 }
 
+void testRenderListSurfaceMapsPresenterDataToFixedGeometry() {
+  const auto snapshot = nominalSnapshot();
+  display::DisplayPageModel page{};
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Status, page));
+
+  display::DisplayRenderGeometry geometry{};
+  display::DisplayRenderList render_list{};
+  display::DisplayRenderListSurface surface{geometry, render_list};
+  assert(display::renderDisplayPage(page, surface));
+  assert(render_list.command_count == 21U);
+  assert(!render_list.warning);
+
+  const auto& title = render_list.commands[0];
+  assert(title.role == display::DisplayTextRole::Title);
+  assert(title.x_px == 8U);
+  assert(title.y_px == 14U);
+  assert(std::strcmp(title.text.data(), "Growbox status") == 0);
+
+  const auto& first_label = render_list.commands[1];
+  const auto& first_value = render_list.commands[2];
+  assert(first_label.role == display::DisplayTextRole::Label);
+  assert(first_label.x_px == 8U);
+  assert(first_label.y_px == 28U);
+  assert(std::strcmp(first_label.text.data(), "Temp") == 0);
+  assert(first_value.role == display::DisplayTextRole::Value);
+  assert(first_value.x_px == 92U);
+  assert(first_value.y_px == 28U);
+  assert(std::strcmp(first_value.text.data(), "23.4 C") == 0);
+
+  page.warning = true;
+  assert(display::renderDisplayPage(page, surface));
+  assert(render_list.command_count == 22U);
+  assert(render_list.warning);
+  assert(render_list.commands[0].role == display::DisplayTextRole::WarningMarker);
+  assert(std::strcmp(render_list.commands[0].text.data(), "!") == 0);
+  assert(render_list.commands[1].role == display::DisplayTextRole::Title);
+  assert(render_list.commands[1].x_px == 22U);
+
+  display::DisplayRenderGeometry invalid_geometry{};
+  invalid_geometry.value_x_px = invalid_geometry.left_margin_px;
+  display::DisplayRenderList invalid_list{};
+  display::DisplayRenderListSurface invalid_surface{invalid_geometry, invalid_list};
+  assert(!display::renderDisplayPage(page, invalid_surface));
+  assert(invalid_list.command_count == 0U);
+}
+
 } // namespace
 
 int main() {
@@ -183,5 +230,6 @@ int main() {
   testOutputsPageKeepsRequestedEffectiveAndPhysicalTruthSeparate();
   testNavigationMatchesFivePhysicalKeys();
   testTextSimulatorUsesTheSameSurfaceSeamAsHardwareAdapters();
+  testRenderListSurfaceMapsPresenterDataToFixedGeometry();
   return 0;
 }
