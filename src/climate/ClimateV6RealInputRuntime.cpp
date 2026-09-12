@@ -126,7 +126,8 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
 
   static display::DisplayTelemetryObserver display_observer(
       {stage28d::kExhaustFanEndpoint, stage28d::kScheduledLightEndpoint,
-       stage28d::kHumidifierEndpoint});
+       stage28d::kHumidifierEndpoint},
+      runtime_config::kFirmwareGitSha);
   runtime::TelemetryReporter telemetry_reporter(ble, scd41, clock, storage_logger,
                                                 storage_logger_ready,
                                                 static_cast<std::int32_t>(reset_reason),
