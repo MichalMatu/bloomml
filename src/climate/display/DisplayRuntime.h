@@ -72,6 +72,33 @@ inline bool displayPageModelsEqual(const DisplayPageModel& left,
   return true;
 }
 
+inline bool displayRenderListsEqual(const DisplayRenderList& left,
+                                    const DisplayRenderList& right) noexcept {
+  if (left.warning != right.warning || left.command_count != right.command_count) {
+    return false;
+  }
+
+  for (std::size_t index = 0U; index < left.command_count; ++index) {
+    const auto& left_command = left.commands[index];
+    const auto& right_command = right.commands[index];
+    if (left_command.x_px != right_command.x_px || left_command.y_px != right_command.y_px ||
+        left_command.max_width_px != right_command.max_width_px ||
+        left_command.role != right_command.role ||
+        std::strcmp(left_command.text.data(), right_command.text.data()) != 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+inline bool displayRuntimeFramesEqual(const DisplayRuntimeFrame& left,
+                                      const DisplayRuntimeFrame& right) noexcept {
+  return left.page == right.page && left.refresh_kind == right.refresh_kind &&
+         left.refresh_reason == right.refresh_reason &&
+         displayPageModelsEqual(left.page_model, right.page_model) &&
+         displayRenderListsEqual(left.render_list, right.render_list);
+}
+
 inline bool elapsedAtLeast(std::uint64_t now_ms, std::uint64_t since_ms,
                            std::uint64_t interval_ms) noexcept {
   if (interval_ms == 0U || now_ms < since_ms) {
@@ -82,9 +109,10 @@ inline bool elapsedAtLeast(std::uint64_t now_ms, std::uint64_t since_ms,
 
 } // namespace detail
 
-// Host-testable lifecycle for the read-only operator display. It consumes only
-// DisplaySnapshot facts and produces presenter/render-list output plus a refresh
-// recommendation. No control/output state is mutated here.
+// Host-testable lifecycle for the read-only operator display. update() only plans
+// a refresh. Successful hardware rendering must be acknowledged with
+// confirmRendered() before cadence/request state advances. No control/output state
+// is mutated here.
 class DisplayRuntimeController final {
 public:
   explicit DisplayRuntimeController(const DisplayRuntimeConfig& config = {}) noexcept
@@ -94,11 +122,16 @@ public:
     return navigation_.page();
   }
 
+  bool hasPendingRefresh() const noexcept {
+    return pending_refresh_valid_;
+  }
+
   bool handleButton(DisplayButton button) noexcept {
     const bool changed = navigation_.handle(button);
     if (changed) {
       refresh_requested_ = true;
       navigation_refresh_requested_ = true;
+      pending_refresh_valid_ = false;
     }
     return changed;
   }
@@ -106,6 +139,7 @@ public:
   void requestRefresh(bool full_refresh = false) noexcept {
     refresh_requested_ = true;
     full_refresh_requested_ = full_refresh_requested_ || full_refresh;
+    pending_refresh_valid_ = false;
   }
 
   bool update(const DisplaySnapshot& snapshot, std::uint64_t now_ms,
@@ -114,11 +148,13 @@ public:
     output.page = navigation_.page();
 
     if (!buildDisplayPage(snapshot, output.page, config_.presenter, output.page_model)) {
+      pending_refresh_valid_ = false;
       return false;
     }
 
     DisplayRenderListSurface surface{config_.geometry, output.render_list};
     if (!renderDisplayPage(output.page_model, surface)) {
+      pending_refresh_valid_ = false;
       return false;
     }
 
@@ -150,37 +186,51 @@ public:
     }
 
     if (reason == DisplayRefreshReason::None) {
+      pending_refresh_valid_ = false;
       return true;
     }
 
     output.refresh_reason = reason;
-    output.refresh_kind = selectRefreshKind(force_full);
+    output.refresh_kind = plannedRefreshKind(force_full);
+    pending_frame_ = output;
+    pending_refresh_valid_ = true;
+    return true;
+  }
 
-    last_page_ = output.page_model;
-    last_refresh_ms_ = now_ms;
+  bool confirmRendered(const DisplayRuntimeFrame& frame, std::uint64_t rendered_at_ms) noexcept {
+    if (!pending_refresh_valid_ || !frame.refreshRequired() ||
+        !detail::displayRuntimeFramesEqual(frame, pending_frame_)) {
+      return false;
+    }
+
+    last_page_ = pending_frame_.page_model;
+    last_refresh_ms_ = rendered_at_ms;
     has_last_frame_ = true;
+
+    if (pending_frame_.refresh_kind == DisplayRefreshKind::Full) {
+      partial_refreshes_since_full_ = 0U;
+    } else if (pending_frame_.refresh_kind == DisplayRefreshKind::Partial &&
+               partial_refreshes_since_full_ < UINT16_MAX) {
+      ++partial_refreshes_since_full_;
+    }
+
     refresh_requested_ = false;
     full_refresh_requested_ = false;
     navigation_refresh_requested_ = false;
+    pending_refresh_valid_ = false;
     return true;
   }
 
 private:
-  DisplayRefreshKind selectRefreshKind(bool force_full) noexcept {
+  DisplayRefreshKind plannedRefreshKind(bool force_full) const noexcept {
     if (force_full) {
-      partial_refreshes_since_full_ = 0U;
       return DisplayRefreshKind::Full;
     }
 
     const std::uint16_t cadence = config_.refresh.full_refresh_every_partial;
     if (cadence > 0U &&
         static_cast<std::uint32_t>(partial_refreshes_since_full_) + 1U >= cadence) {
-      partial_refreshes_since_full_ = 0U;
       return DisplayRefreshKind::Full;
-    }
-
-    if (partial_refreshes_since_full_ < UINT16_MAX) {
-      ++partial_refreshes_since_full_;
     }
     return DisplayRefreshKind::Partial;
   }
@@ -188,12 +238,14 @@ private:
   DisplayRuntimeConfig config_{};
   DisplayNavigation navigation_{};
   DisplayPageModel last_page_{};
+  DisplayRuntimeFrame pending_frame_{};
   std::uint64_t last_refresh_ms_{0U};
   std::uint16_t partial_refreshes_since_full_{0U};
   bool has_last_frame_{false};
   bool refresh_requested_{false};
   bool full_refresh_requested_{false};
   bool navigation_refresh_requested_{false};
+  bool pending_refresh_valid_{false};
 };
 
 } // namespace growbox::app::climate_io::display
