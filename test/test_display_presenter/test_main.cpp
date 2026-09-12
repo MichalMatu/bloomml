@@ -1,11 +1,13 @@
+#include "climate/display/DisplayPresenter.h"
 #include "climate/output/LampSafety.h"
-#include "climate/output/OutputBindings.h"
-#include "display/DisplayPresenter.h"
 
 #include <cassert>
 #include <cstring>
 
-using namespace growbox::app;
+namespace display = growbox::app::climate_io::display;
+namespace output = growbox::app::output;
+namespace stage28d = growbox::app::climate_io::stage28d;
+namespace storage = growbox::app::climate_io::storage;
 
 namespace {
 
@@ -20,45 +22,46 @@ const display::DisplayLine* findLine(const display::DisplayPageModel& page, cons
 
 display::DisplaySnapshot nominalSnapshot() {
   display::DisplaySnapshot snapshot{};
-  snapshot.captured_monotonic_ms = 123'000U;
-  snapshot.climate_available = true;
-  snapshot.climate.measurements.air_temperature_c = {23.4F, true, 1'000U};
-  snapshot.climate.measurements.relative_humidity_pct = {61.2F, true, 1'000U};
-  snapshot.climate.measurements.co2_ppm = {712.0F, true, 2'000U};
-  snapshot.climate.sensor_timeout_ms = 30'000U;
-  snapshot.clock = {true, 1'767'225'600U};
-  snapshot.outputs_available = true;
-  snapshot.outputs.mode = output::SupervisorMode::Automatic;
-  snapshot.outputs.transport_active = true;
-  snapshot.outputs.automation_requested = true;
-  snapshot.outputs.safety_reason_code =
-      static_cast<std::uint32_t>(climate_io::stage28d::LampSafetyReason::Safe);
-  snapshot.outputs.endpoint_count = 3U;
+  snapshot.uptime_ms = 123'000U;
+  snapshot.climate_sampled = true;
+  snapshot.scd_available = true;
+  snapshot.temperature_c = {true, 23.4F, 1'000U};
+  snapshot.relative_humidity_pct = {true, 61.2F, 1'000U};
+  snapshot.co2_ppm = {true, 712.0F, 2'000U};
+  snapshot.rtc_available = true;
+  snapshot.rtc_trusted = true;
+  snapshot.unix_time_s = 1'767'225'600U;
+  snapshot.ble_scanning = true;
 
-  auto& fan = snapshot.outputs.endpoints[0];
-  fan.endpoint = climate_io::stage28d::kExhaustFanEndpoint;
-  fan.selected = true;
-  fan.selected_level = 1.0F;
-  fan.resolved = true;
-  fan.resolved_state = output::BinaryOutputState::On;
+  snapshot.lifecycle_mode = output::SupervisorMode::Automatic;
+  snapshot.transport_active = true;
+  snapshot.lifecycle_active = true;
+  snapshot.automation_requested = true;
+  snapshot.safety_reason_code = static_cast<std::uint32_t>(stage28d::LampSafetyReason::Safe);
 
-  auto& lamp = snapshot.outputs.endpoints[1];
-  lamp.endpoint = climate_io::stage28d::kScheduledLightEndpoint;
-  lamp.selected = true;
-  lamp.selected_level = 1.0F;
-  lamp.resolved = true;
-  lamp.resolved_state = output::BinaryOutputState::On;
+  snapshot.lamp.requested_known = true;
+  snapshot.lamp.requested_level = 1.0F;
+  snapshot.lamp.effective_known = true;
+  snapshot.lamp.effective_state = output::BinaryOutputState::On;
+  snapshot.lamp.physical_state = output::PhysicalOutputState::On;
+  snapshot.lamp.physical_independent = true;
 
-  auto& humidifier = snapshot.outputs.endpoints[2];
-  humidifier.endpoint = climate_io::stage28d::kHumidifierEndpoint;
-  humidifier.selected = true;
-  humidifier.selected_level = 0.0F;
-  humidifier.resolved = true;
-  humidifier.resolved_state = output::BinaryOutputState::Off;
+  snapshot.exhaust_fan.requested_known = true;
+  snapshot.exhaust_fan.requested_level = 0.2F;
+  snapshot.exhaust_fan.effective_known = true;
+  snapshot.exhaust_fan.effective_state = output::BinaryOutputState::On;
+  snapshot.exhaust_fan.physical_state = output::PhysicalOutputState::On;
 
-  snapshot.storage_enabled = true;
-  snapshot.storage_ready = true;
-  snapshot.firmware_sha = "0123456789abcdef";
+  snapshot.humidifier.requested_known = true;
+  snapshot.humidifier.requested_level = 0.0F;
+  snapshot.humidifier.effective_known = true;
+  snapshot.humidifier.effective_state = output::BinaryOutputState::Off;
+  snapshot.humidifier.physical_state = output::PhysicalOutputState::Off;
+
+  snapshot.storage.active_backend = storage::Stage27StorageBackendKind::Sd;
+  snapshot.storage.sd_mounted = true;
+  snapshot.storage.records_written = 42U;
+  snapshot.storage.last_write_ms = 120'000U;
   return snapshot;
 }
 
@@ -76,32 +79,54 @@ void testStatusPageContainsOperationalState() {
   assert(std::strcmp(findLine(page, "SCD41")->value.data(), "OK 2s") == 0);
   assert(std::strcmp(findLine(page, "Time")->value.data(), "01:00") == 0);
   assert(std::strcmp(findLine(page, "Mode")->value.data(), "AUTO") == 0);
-  assert(std::strcmp(findLine(page, "Lamp")->value.data(), "ON -> ON") == 0);
-  assert(std::strcmp(findLine(page, "Fan")->value.data(), "ON -> ON") == 0);
-  assert(std::strcmp(findLine(page, "Humid")->value.data(), "OFF -> OFF") == 0);
+  assert(std::strcmp(findLine(page, "Lamp")->value.data(), "100% -> ON") == 0);
+  assert(std::strcmp(findLine(page, "Fan")->value.data(), "20% -> ON") == 0);
+  assert(std::strcmp(findLine(page, "Humid")->value.data(), "0% -> OFF") == 0);
   assert(std::strcmp(findLine(page, "Safety")->value.data(), "OK") == 0);
 }
 
-void testWarningsAreDerivedFromAuthoritativeSnapshot() {
+void testWarningsAreDerivedFromProjectedRuntimeTruth() {
   auto snapshot = nominalSnapshot();
-  snapshot.climate.measurements.co2_ppm.age_ms = 45'000U;
-  snapshot.storage_ready = false;
-  snapshot.outputs.safety_latched = true;
-  snapshot.outputs.safety_reason_code =
-      static_cast<std::uint32_t>(climate_io::stage28d::LampSafetyReason::OverTemperature);
-  snapshot.outputs.endpoints[1].resolved_state = output::BinaryOutputState::Off;
-  snapshot.outputs.endpoints[1].safety_override = true;
+  snapshot.co2_ppm.age_ms = 45'000U;
+  snapshot.storage.sd_mounted = false;
+  snapshot.safety_latched = true;
+  snapshot.safety_reason_code =
+      static_cast<std::uint32_t>(stage28d::LampSafetyReason::OverTemperature);
+  snapshot.lamp.effective_state = output::BinaryOutputState::Off;
+  snapshot.lamp.safety_override = true;
 
   display::DisplayPageModel page{};
   assert(display::buildDisplayPage(snapshot, display::DisplayPage::Status, page));
   assert(page.warning);
   assert(std::strcmp(findLine(page, "SCD41")->value.data(), "STALE 45s") == 0);
-  assert(std::strcmp(findLine(page, "Lamp")->value.data(), "ON -> OFF !") == 0);
+  assert(std::strcmp(findLine(page, "Lamp")->value.data(), "100% -> OFF !S") == 0);
   assert(std::strcmp(findLine(page, "Safety")->value.data(), "LATCH OVER TEMP") == 0);
 
   assert(display::buildDisplayPage(snapshot, display::DisplayPage::Diagnostics, page));
-  assert(std::strcmp(findLine(page, "Storage")->value.data(), "FAULT") == 0);
-  assert(std::strcmp(findLine(page, "Firmware")->value.data(), "0123456789ab") == 0);
+  assert(std::strcmp(findLine(page, "Storage")->value.data(), "SD FAULT") == 0);
+}
+
+void testFreshnessPolicyIsExplicitPresenterConfig() {
+  auto snapshot = nominalSnapshot();
+  snapshot.co2_ppm.age_ms = 45'000U;
+
+  display::DisplayPresenterConfig config{};
+  config.sensor_stale_after_ms = 60'000U;
+  display::DisplayPageModel page{};
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Status, config, page));
+  assert(!page.warning);
+  assert(std::strcmp(findLine(page, "SCD41")->value.data(), "OK 45s") == 0);
+}
+
+void testOutputsPageKeepsRequestedEffectiveAndPhysicalTruthSeparate() {
+  const auto snapshot = nominalSnapshot();
+  display::DisplayPageModel page{};
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Outputs, page));
+  assert(page.line_count == 10U);
+  assert(std::strcmp(findLine(page, "Fan")->value.data(), "20% -> ON") == 0);
+  assert(std::strcmp(findLine(page, "Lamp phys")->value.data(), "ON FB") == 0);
+  assert(std::strcmp(findLine(page, "Fan phys")->value.data(), "ON") == 0);
+  assert(std::strcmp(findLine(page, "Humid phys")->value.data(), "OFF") == 0);
 }
 
 void testNavigationMatchesFivePhysicalKeys() {
@@ -128,7 +153,9 @@ void testNavigationMatchesFivePhysicalKeys() {
 
 int main() {
   testStatusPageContainsOperationalState();
-  testWarningsAreDerivedFromAuthoritativeSnapshot();
+  testWarningsAreDerivedFromProjectedRuntimeTruth();
+  testFreshnessPolicyIsExplicitPresenterConfig();
+  testOutputsPageKeepsRequestedEffectiveAndPhysicalTruthSeparate();
   testNavigationMatchesFivePhysicalKeys();
   return 0;
 }
