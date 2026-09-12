@@ -13,6 +13,15 @@ namespace telemetry = growbox::app::climate_io::telemetry;
 
 namespace {
 
+const display::DisplayLine* findLine(const display::DisplayPageModel& page, const char* label) {
+  for (std::size_t index = 0U; index < page.line_count; ++index) {
+    if (std::strcmp(page.lines[index].label.data(), label) == 0) {
+      return &page.lines[index];
+    }
+  }
+  return nullptr;
+}
+
 telemetry::Stage27TelemetrySnapshot nominalTelemetry(std::uint64_t uptime_ms) {
   telemetry::Stage27TelemetrySnapshot snapshot{};
   snapshot.uptime_ms = uptime_ms;
@@ -121,6 +130,30 @@ void testObserverProjectsAuthoritativeTelemetryIntoDisplayRuntime() {
   assert(std::strcmp(observer.lastFrame().page_model.title.data(), "Outputs") == 0);
 }
 
+void testObserverCarriesShortFirmwareShaIntoDiagnostics() {
+  display::DisplayTelemetryObserver observer{endpointRoles(), "0123456789abcdef"};
+  auto telemetry_snapshot = nominalTelemetry(123'000U);
+  const auto storage_status = nominalStorage();
+
+  assert(observer.observe(telemetry_snapshot, storage_status));
+  assert(std::strcmp(observer.lastSnapshot().firmware_sha.data(), "0123456789") == 0);
+
+  assert(observer.handleButton(display::DisplayButton::Next));
+  telemetry_snapshot.uptime_ms = 123'001U;
+  assert(observer.observe(telemetry_snapshot, storage_status));
+  assert(observer.handleButton(display::DisplayButton::Next));
+  telemetry_snapshot.uptime_ms = 123'002U;
+  assert(observer.observe(telemetry_snapshot, storage_status));
+
+  const auto& diagnostics = observer.lastFrame().page_model;
+  assert(observer.lastFrame().page == display::DisplayPage::Diagnostics);
+  assert(std::strcmp(diagnostics.title.data(), "Diagnostics") == 0);
+  assert(diagnostics.line_count == 10U);
+  const auto* firmware_line = findLine(diagnostics, "FW");
+  assert(firmware_line != nullptr);
+  assert(std::strcmp(firmware_line->value.data(), "0123456789") == 0);
+}
+
 void testObserverFailsClosedOnInvalidEndpointRoles() {
   const display::DisplayEndpointRoles invalid_roles{
       stage28d::kScheduledLightEndpoint, stage28d::kScheduledLightEndpoint,
@@ -140,6 +173,7 @@ void testObserverFailsClosedOnInvalidEndpointRoles() {
 
 int main() {
   testObserverProjectsAuthoritativeTelemetryIntoDisplayRuntime();
+  testObserverCarriesShortFirmwareShaIntoDiagnostics();
   testObserverFailsClosedOnInvalidEndpointRoles();
   return 0;
 }
