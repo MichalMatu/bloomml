@@ -3,7 +3,9 @@
 Copy the block below into a new ChatGPT window to start the implementation.
 
 ```text
-[LA_AGENT=815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5] [LA_REPO=growbox-ml-controller] [LA_REPOSITORY=MichalMatu/growbox-ml-controller] [LA_CHAT=chat-e23bf59b]
+[LA_AGENT=815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5] [LA_REPO=growbox-ml-controller] [LA_REPOSITORY=MichalMatu/growbox-ml-controller]
+
+If the new Local Agent Chat Bridge window provides its own LA_CHAT identifier, use that identifier. Do not reuse a chat id from an older conversation.
 
 Work only on MichalMatu/growbox-ml-controller. Keep this repository/binding immutable for the whole task. Never infer, substitute, queue, cancel or execute another repository through Local Agent. Every Local Agent task JSON you create MUST contain exactly:
 "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5"
