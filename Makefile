@@ -145,6 +145,7 @@ test-host:
 	cmake -S test/host -B $(HOST_BUILD_DIR)
 	cmake --build $(HOST_BUILD_DIR) --parallel
 	ctest --test-dir $(HOST_BUILD_DIR) --output-on-failure
+	bash scripts/test_display_host.sh
 
 test-panel: ensure-venv
 	$(PY) -m pytest tests/test_panel.py tests/test_panel_e2e.py tests/test_panel_fixtures.py -q
