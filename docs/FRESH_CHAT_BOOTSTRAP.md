@@ -17,16 +17,21 @@ Read:
 3. `docs/ARCHITECTURE.md`
 4. `docs/PROJECT_ROADMAP.md`
 5. `docs/CONTINUATION_PLAN.md`
+6. `docs/EINK_UI_HANDOFF.md` while the e-ink task is active
 
 Then fetch fresh `main` HEAD and `agent-control:.agent/status/daemon.json` before any write or Local Agent task.
+
+For a new window dedicated to the display implementation, use the ready copy/paste prompt in `docs/EINK_UI_NEW_CHAT_PROMPT.md`.
 
 Historical Stage27/Stage28 handoffs are evidence only unless a task specifically needs them.
 
 ## Current phase
 
-Architecture cleanup and release-readiness hardening are complete. The active phase is normal product development, beginning with the roadmap's Controller behavior quality workstream.
+Architecture cleanup and release-readiness hardening are complete. Before the previously selected Controller behavior quality workstream begins, one bounded operator-visibility task has been inserted: **port the proven Clay/e-ink/button/simulator stack from `MichalMatu/esp32s3_LiteGraph` to the growbox controller and expose current environment/controller/system state on the board display**.
 
-Latest code-bearing bounded hardware-qualified identity: `e03763d019af405087a5fa9c6713a7165d2e623f`. It passed local software gates, GitHub CI #865, Sandbox Pack #63 and `20260912-final-main-hardware-qualification-v1`.
+The operator explicitly confirmed that the physical e-ink/button module and its pin map are 100% compatible with the LiteGraph module. The implementation handoff is `docs/EINK_UI_HANDOFF.md`.
+
+Latest code-bearing bounded hardware-qualified identity before this display task: `e03763d019af405087a5fa9c6713a7165d2e623f`. It passed local software gates, GitHub CI #865, Sandbox Pack #63 and `20260912-final-main-hardware-qualification-v1`.
 
 Do not confuse the current bounded safe real-input/fake-locked qualification with the historical full Physical H run, which remains attached to exact executable `02208d23f403bca3540dbbd652eb55703a044833`. Documentation-only descendants do not replace either executable identity.
 
@@ -34,7 +39,7 @@ Do not confuse the current bounded safe real-input/fake-locked qualification wit
 
 - sandbox/container: analysis, replay, simulation, statistics;
 - direct GitHub: bounded repository edits;
-- Local Agent: Mac-local builds/toolchains, local network, serial/USB/flash and devices.
+- Local Agent: Mac-local builds/toolchains, local network, simulator execution when local assets/toolchains are needed, serial/USB/flash and devices.
 
 Never invoke local Codex from Local Agent.
 
@@ -50,6 +55,8 @@ Every Local Agent task uses:
 
 Check the active Local Agent task before editing the same branch.
 
+For the unattended e-ink task, work autonomously through normal engineering decisions, tests and fixes. Pause only for a real safety blocker, repository identity conflict, unavailable required hardware or an ambiguity that cannot be resolved from repository/reference evidence.
+
 ## Standing invariants
 
 - deterministic Rule controller remains authoritative in production;
@@ -58,7 +65,8 @@ Check the active Local Agent task before editing the same branch.
 - unavailable transport must not fabricate execution truth;
 - thermal safety remains authoritative;
 - one-way RF completion is not physical acknowledgement;
-- raw RF remains restricted to explicit `MaintenanceLocked` handling.
+- raw RF remains restricted to explicit `MaintenanceLocked` handling;
+- the e-ink UI is observer-side and must not become an output or control owner.
 
 ## Fixed physical boundaries
 
@@ -66,3 +74,5 @@ Check the active Local Agent task before editing the same branch.
 - Growbox serial: `/dev/cu.usbserial-1130`
 - Never touch `/dev/cu.usbserial-10`
 - Do not use `/dev/cu.usbserial-1120` without separate authorization
+
+For unattended display qualification keep physical outputs, RF loopback and the thermal-test sequence disabled while real sensors/RTC/SD/BLE remain available for real screen data.
