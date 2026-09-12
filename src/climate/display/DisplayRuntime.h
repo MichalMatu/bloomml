@@ -122,6 +122,10 @@ public:
     return navigation_.page();
   }
 
+  const DisplayRenderGeometry& geometry() const noexcept {
+    return config_.geometry;
+  }
+
   bool hasPendingRefresh() const noexcept {
     return pending_refresh_valid_;
   }
