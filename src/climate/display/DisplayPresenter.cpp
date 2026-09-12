@@ -308,7 +308,7 @@ void buildDiagnosticsPage(const DisplaySnapshot& snapshot, DisplayPageModel& pag
                                                   1000U));
   }
   (void)appendLine(page, "Last write", value);
-  (void)appendLine(page, "BLE", snapshot.ble_scanning ? "SCANNING" : "IDLE");
+  (void)appendLine(page, "FW", snapshot.firmware_sha[0] != '\0' ? snapshot.firmware_sha.data() : "--");
   (void)appendLine(page, "SCD41", snapshot.scd_available ? "AVAILABLE" : "MISSING");
 
   std::snprintf(value, sizeof(value), "%llus",
