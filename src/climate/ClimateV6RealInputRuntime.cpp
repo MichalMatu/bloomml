@@ -2,10 +2,12 @@
 
 #include "climate/application/ClimateApplication.h"
 #include "climate/application/ClimateCompositeInput.h"
+#include "climate/display/DisplayTelemetryObserver.h"
 #include "climate/input/ble/BleClimateScanner.h"
 #include "climate/input/i2c/NativeI2cBus.h"
 #include "climate/input/rtc/Ds3231ClockSource.h"
 #include "climate/input/sensors/Scd41InsideSource.h"
+#include "climate/output/OutputBindings.h"
 #include "climate/runtime/RuntimeAdapters.h"
 #include "climate/runtime/RuntimeBuildConfig.h"
 #include "climate/runtime/console/Stage28ServiceConsole.h"
@@ -121,9 +123,14 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
   const esp_reset_reason_t reset_reason =
       static_cast<esp_reset_reason_t>(boot_identity.reset_reason);
   runtime::configureStage28eLogging(boot_identity);
+
+  static display::DisplayTelemetryObserver display_observer(
+      {stage28d::kExhaustFanEndpoint, stage28d::kScheduledLightEndpoint,
+       stage28d::kHumidifierEndpoint});
   runtime::TelemetryReporter telemetry_reporter(ble, scd41, clock, storage_logger,
                                                 storage_logger_ready,
-                                                static_cast<std::int32_t>(reset_reason));
+                                                static_cast<std::int32_t>(reset_reason),
+                                                &display_observer);
 
   ESP_LOGI(kTag,
            "Stage27 real-input runtime: i2c=%d scd41=%d ds3231=%d ble=%d sd=%d "
