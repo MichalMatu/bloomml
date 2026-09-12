@@ -1,3 +1,4 @@
+#include "climate/output/LampSafety.h"
 #include "climate/output/OutputBindings.h"
 #include "display/DisplayPresenter.h"
 
