@@ -1,3 +1,4 @@
+#include "climate/display/ClayDisplayAdapter.h"
 #include "climate/display/DisplayPresenter.h"
 #include "climate/display/DisplayRenderList.h"
 #include "climate/display/DisplaySurface.h"
@@ -22,6 +23,67 @@ const display::DisplayLine* findLine(const display::DisplayPageModel& page, cons
   }
   return nullptr;
 }
+
+class FakeClaySink final {
+public:
+  bool beginFrame(std::uint16_t width_px, std::uint16_t height_px, bool warning) noexcept {
+    ++begin_count;
+    width = width_px;
+    height = height_px;
+    frame_warning = warning;
+    frame_open = true;
+    return true;
+  }
+
+  bool drawText(const display::ClayDisplayTextElement& element) noexcept {
+    if (!frame_open || element.text == nullptr) {
+      return false;
+    }
+    ++text_count;
+
+    if (std::strcmp(element.text, "!") == 0) {
+      saw_warning = true;
+      warning_style = element.style;
+    } else if (std::strcmp(element.text, "Growbox status") == 0) {
+      saw_title = true;
+      title_style = element.style;
+      title_x = element.x_px;
+    } else if (std::strcmp(element.text, "Temp") == 0) {
+      saw_label = true;
+      label_style = element.style;
+    } else if (std::strcmp(element.text, "23.4 C") == 0) {
+      saw_value = true;
+      value_style = element.style;
+    }
+    return true;
+  }
+
+  bool endFrame() noexcept {
+    if (!frame_open) {
+      return false;
+    }
+    frame_open = false;
+    ended = true;
+    return true;
+  }
+
+  std::size_t begin_count{0U};
+  std::size_t text_count{0U};
+  std::uint16_t width{0U};
+  std::uint16_t height{0U};
+  std::uint16_t title_x{0U};
+  bool frame_warning{false};
+  bool frame_open{false};
+  bool ended{false};
+  bool saw_warning{false};
+  bool saw_title{false};
+  bool saw_label{false};
+  bool saw_value{false};
+  display::ClayDisplayTextStyle warning_style{};
+  display::ClayDisplayTextStyle title_style{};
+  display::ClayDisplayTextStyle label_style{};
+  display::ClayDisplayTextStyle value_style{};
+};
 
 display::DisplaySnapshot nominalSnapshot() {
   display::DisplaySnapshot snapshot{};
@@ -221,6 +283,60 @@ void testRenderListSurfaceMapsPresenterDataToFixedGeometry() {
   assert(invalid_list.command_count == 0U);
 }
 
+void testClayAdapterMapsRenderRolesAndFailsClosedBeforeFrame() {
+  const auto snapshot = nominalSnapshot();
+  display::DisplayPageModel page{};
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Status, page));
+  page.warning = true;
+
+  display::DisplayRenderGeometry geometry{};
+  display::DisplayRenderList render_list{};
+  display::DisplayRenderListSurface surface{geometry, render_list};
+  assert(display::renderDisplayPage(page, surface));
+
+  display::ClayDisplayTheme theme{};
+  theme.title = {1U, 16U, true};
+  theme.warning = {2U, 16U, true};
+  theme.label = {3U, 10U, false};
+  theme.value = {4U, 10U, false};
+
+  FakeClaySink sink{};
+  assert(display::renderDisplayListToClay(render_list, geometry, theme, sink));
+  assert(sink.begin_count == 1U);
+  assert(sink.text_count == render_list.command_count);
+  assert(sink.width == geometry.width_px);
+  assert(sink.height == geometry.height_px);
+  assert(sink.frame_warning);
+  assert(sink.ended);
+  assert(sink.saw_warning);
+  assert(sink.saw_title);
+  assert(sink.saw_label);
+  assert(sink.saw_value);
+  assert(sink.warning_style.font_id == 2U);
+  assert(sink.warning_style.font_size_px == 16U);
+  assert(sink.warning_style.emphasized);
+  assert(sink.title_style.font_id == 1U);
+  assert(sink.title_style.emphasized);
+  assert(sink.label_style.font_id == 3U);
+  assert(!sink.label_style.emphasized);
+  assert(sink.value_style.font_id == 4U);
+  assert(sink.title_x == 22U);
+
+  auto invalid_list = render_list;
+  invalid_list.commands[0].max_width_px = geometry.width_px;
+  FakeClaySink invalid_sink{};
+  assert(!display::renderDisplayListToClay(invalid_list, geometry, theme, invalid_sink));
+  assert(invalid_sink.begin_count == 0U);
+  assert(invalid_sink.text_count == 0U);
+
+  auto invalid_theme = theme;
+  invalid_theme.value.font_size_px = 0U;
+  FakeClaySink invalid_theme_sink{};
+  assert(!display::renderDisplayListToClay(render_list, geometry, invalid_theme,
+                                           invalid_theme_sink));
+  assert(invalid_theme_sink.begin_count == 0U);
+}
+
 } // namespace
 
 int main() {
@@ -231,5 +347,6 @@ int main() {
   testNavigationMatchesFivePhysicalKeys();
   testTextSimulatorUsesTheSameSurfaceSeamAsHardwareAdapters();
   testRenderListSurfaceMapsPresenterDataToFixedGeometry();
+  testClayAdapterMapsRenderRolesAndFailsClosedBeforeFrame();
   return 0;
 }
