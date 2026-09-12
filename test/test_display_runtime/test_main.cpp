@@ -55,7 +55,7 @@ display::DisplaySnapshot nominalSnapshot() {
   return snapshot;
 }
 
-void testInitialFullRefreshAndRoutineCoalescing() {
+void testInitialRefreshRetriesUntilRenderedAndRoutineChangesCoalesce() {
   display::DisplayRuntimeConfig config{};
   config.refresh.minimum_refresh_interval_ms = 5'000U;
   config.refresh.full_refresh_every_partial = 10U;
@@ -68,17 +68,28 @@ void testInitialFullRefreshAndRoutineCoalescing() {
   assert(frame.refresh_reason == display::DisplayRefreshReason::Initial);
   assert(frame.page == display::DisplayPage::Status);
   assert(frame.render_list.command_count == 21U);
+  assert(runtime.hasPendingRefresh());
 
-  assert(runtime.update(snapshot, 1'000U, frame));
-  assert(!frame.refreshRequired());
+  display::DisplayRuntimeFrame retry{};
+  assert(runtime.update(snapshot, 1'000U, retry));
+  assert(retry.refresh_kind == display::DisplayRefreshKind::Full);
+  assert(retry.refresh_reason == display::DisplayRefreshReason::Initial);
+  assert(runtime.hasPendingRefresh());
+  assert(runtime.confirmRendered(retry, 1'000U));
+  assert(!runtime.hasPendingRefresh());
+  assert(!runtime.confirmRendered(retry, 1'001U));
 
-  snapshot.temperature_c.value = 24.0F;
   assert(runtime.update(snapshot, 1'001U, frame));
   assert(!frame.refreshRequired());
 
-  assert(runtime.update(snapshot, 5'000U, frame));
+  snapshot.temperature_c.value = 24.0F;
+  assert(runtime.update(snapshot, 1'002U, frame));
+  assert(!frame.refreshRequired());
+
+  assert(runtime.update(snapshot, 6'000U, frame));
   assert(frame.refresh_kind == display::DisplayRefreshKind::Partial);
   assert(frame.refresh_reason == display::DisplayRefreshReason::ContentChanged);
+  assert(runtime.confirmRendered(frame, 6'000U));
 }
 
 void testNavigationRefreshBypassesRoutineInterval() {
@@ -90,6 +101,8 @@ void testNavigationRefreshBypassesRoutineInterval() {
 
   assert(runtime.update(snapshot, 10U, frame));
   assert(frame.refresh_kind == display::DisplayRefreshKind::Full);
+  assert(runtime.confirmRendered(frame, 10U));
+
   assert(runtime.handleButton(display::DisplayButton::Next));
   assert(runtime.page() == display::DisplayPage::Outputs);
   assert(runtime.update(snapshot, 11U, frame));
@@ -97,6 +110,7 @@ void testNavigationRefreshBypassesRoutineInterval() {
   assert(frame.refresh_reason == display::DisplayRefreshReason::Navigation);
   assert(frame.page == display::DisplayPage::Outputs);
   assert(std::strcmp(frame.page_model.title.data(), "Outputs") == 0);
+  assert(runtime.confirmRendered(frame, 11U));
 }
 
 void testWarningTransitionForcesImmediateFullRefresh() {
@@ -107,6 +121,8 @@ void testWarningTransitionForcesImmediateFullRefresh() {
   display::DisplayRuntimeFrame frame{};
 
   assert(runtime.update(snapshot, 100U, frame));
+  assert(runtime.confirmRendered(frame, 100U));
+
   snapshot.safety_latched = true;
   snapshot.safety_reason_code =
       static_cast<std::uint32_t>(stage28d::LampSafetyReason::OverTemperature);
@@ -118,9 +134,10 @@ void testWarningTransitionForcesImmediateFullRefresh() {
   assert(frame.refresh_reason == display::DisplayRefreshReason::WarningChanged);
   assert(frame.page_model.warning);
   assert(frame.render_list.warning);
+  assert(runtime.confirmRendered(frame, 101U));
 }
 
-void testExplicitRefreshAndFullRefreshCadence() {
+void testFullRefreshCadenceAdvancesOnlyAfterRenderedFrames() {
   display::DisplayRuntimeConfig config{};
   config.refresh.minimum_refresh_interval_ms = 0U;
   config.refresh.full_refresh_every_partial = 2U;
@@ -130,21 +147,55 @@ void testExplicitRefreshAndFullRefreshCadence() {
 
   assert(runtime.update(snapshot, 0U, frame));
   assert(frame.refresh_kind == display::DisplayRefreshKind::Full);
+  assert(runtime.confirmRendered(frame, 0U));
 
   snapshot.temperature_c.value = 23.5F;
   assert(runtime.update(snapshot, 1U, frame));
   assert(frame.refresh_kind == display::DisplayRefreshKind::Partial);
   assert(frame.refresh_reason == display::DisplayRefreshReason::ContentChanged);
 
-  snapshot.temperature_c.value = 23.6F;
-  assert(runtime.update(snapshot, 2U, frame));
-  assert(frame.refresh_kind == display::DisplayRefreshKind::Full);
-  assert(frame.refresh_reason == display::DisplayRefreshReason::ContentChanged);
+  display::DisplayRuntimeFrame retry{};
+  assert(runtime.update(snapshot, 2U, retry));
+  assert(retry.refresh_kind == display::DisplayRefreshKind::Partial);
+  assert(retry.refresh_reason == display::DisplayRefreshReason::ContentChanged);
+  assert(runtime.confirmRendered(retry, 2U));
 
-  runtime.requestRefresh(true);
+  snapshot.temperature_c.value = 23.6F;
   assert(runtime.update(snapshot, 3U, frame));
   assert(frame.refresh_kind == display::DisplayRefreshKind::Full);
+  assert(frame.refresh_reason == display::DisplayRefreshReason::ContentChanged);
+  assert(runtime.confirmRendered(frame, 3U));
+
+  runtime.requestRefresh(true);
+  assert(runtime.update(snapshot, 4U, frame));
+  assert(frame.refresh_kind == display::DisplayRefreshKind::Full);
   assert(frame.refresh_reason == display::DisplayRefreshReason::Requested);
+  assert(runtime.confirmRendered(frame, 4U));
+}
+
+void testStalePlannedFrameCannotConsumeNewNavigationRequest() {
+  display::DisplayRuntimeConfig config{};
+  config.refresh.minimum_refresh_interval_ms = 60'000U;
+  display::DisplayRuntimeController runtime{config};
+  const auto snapshot = nominalSnapshot();
+  display::DisplayRuntimeFrame frame{};
+
+  assert(runtime.update(snapshot, 0U, frame));
+  assert(runtime.confirmRendered(frame, 0U));
+
+  runtime.requestRefresh();
+  assert(runtime.update(snapshot, 1U, frame));
+  assert(frame.refresh_reason == display::DisplayRefreshReason::Requested);
+  const auto stale_frame = frame;
+
+  assert(runtime.handleButton(display::DisplayButton::Next));
+  assert(!runtime.hasPendingRefresh());
+  assert(!runtime.confirmRendered(stale_frame, 2U));
+
+  assert(runtime.update(snapshot, 2U, frame));
+  assert(frame.refresh_reason == display::DisplayRefreshReason::Navigation);
+  assert(frame.page == display::DisplayPage::Outputs);
+  assert(runtime.confirmRendered(frame, 2U));
 }
 
 void testInvalidGeometryFailsClosedWithoutRefresh() {
@@ -157,15 +208,18 @@ void testInvalidGeometryFailsClosedWithoutRefresh() {
   assert(!runtime.update(snapshot, 0U, frame));
   assert(!frame.refreshRequired());
   assert(frame.render_list.command_count == 0U);
+  assert(!runtime.hasPendingRefresh());
+  assert(!runtime.confirmRendered(frame, 0U));
 }
 
 } // namespace
 
 int main() {
-  testInitialFullRefreshAndRoutineCoalescing();
+  testInitialRefreshRetriesUntilRenderedAndRoutineChangesCoalesce();
   testNavigationRefreshBypassesRoutineInterval();
   testWarningTransitionForcesImmediateFullRefresh();
-  testExplicitRefreshAndFullRefreshCadence();
+  testFullRefreshCadenceAdvancesOnlyAfterRenderedFrames();
+  testStalePlannedFrameCannotConsumeNewNavigationRequest();
   testInvalidGeometryFailsClosedWithoutRefresh();
   return 0;
 }
