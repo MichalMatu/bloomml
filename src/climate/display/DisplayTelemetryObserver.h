@@ -81,6 +81,10 @@ public:
     return last_frame_;
   }
 
+  const DisplayRenderGeometry& geometry() const noexcept {
+    return runtime_.geometry();
+  }
+
   DisplayPage page() const noexcept {
     return runtime_.page();
   }
