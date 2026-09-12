@@ -1,3 +1,4 @@
+#include "climate/display/DisplayClayCoordinator.h"
 #include "climate/display/DisplayTelemetryObserver.h"
 #include "climate/output/LampSafety.h"
 #include "climate/output/OutputBindings.h"
@@ -21,6 +22,49 @@ const display::DisplayLine* findLine(const display::DisplayPageModel& page, cons
   }
   return nullptr;
 }
+
+class FakeClayBackend final {
+public:
+  bool beginFrame(std::uint16_t width_px, std::uint16_t height_px, bool warning,
+                  display::DisplayRefreshKind refresh_kind) noexcept {
+    ++begin_count;
+    width = width_px;
+    height = height_px;
+    frame_warning = warning;
+    last_refresh_kind = refresh_kind;
+    frame_open = begin_result;
+    return begin_result;
+  }
+
+  bool drawText(const display::ClayDisplayTextElement& element) noexcept {
+    if (!frame_open || element.text == nullptr) {
+      return false;
+    }
+    ++draw_count;
+    return draw_result;
+  }
+
+  bool endFrame() noexcept {
+    if (!frame_open) {
+      return false;
+    }
+    ++end_count;
+    frame_open = false;
+    return end_result;
+  }
+
+  bool begin_result{true};
+  bool draw_result{true};
+  bool end_result{true};
+  bool frame_open{false};
+  bool frame_warning{false};
+  std::uint16_t width{0U};
+  std::uint16_t height{0U};
+  std::size_t begin_count{0U};
+  std::size_t draw_count{0U};
+  std::size_t end_count{0U};
+  display::DisplayRefreshKind last_refresh_kind{display::DisplayRefreshKind::None};
+};
 
 telemetry::Stage27TelemetrySnapshot nominalTelemetry(std::uint64_t uptime_ms) {
   telemetry::Stage27TelemetrySnapshot snapshot{};
@@ -168,6 +212,42 @@ void testObserverCarriesShortFirmwareShaIntoDiagnostics() {
   assert(observer.confirmRendered(123'002U));
 }
 
+void testClayCoordinatorAcknowledgesOnlySuccessfulBackendRender() {
+  display::DisplayTelemetryObserver observer{endpointRoles()};
+  auto telemetry_snapshot = nominalTelemetry(200'000U);
+  const auto storage_status = nominalStorage();
+  assert(observer.observe(telemetry_snapshot, storage_status));
+  assert(observer.hasPendingRefresh());
+
+  display::ClayDisplayTheme theme{};
+  FakeClayBackend backend{};
+  backend.end_result = false;
+
+  assert(!display::renderPendingDisplayToClay(observer, theme, backend, 200'010U));
+  assert(observer.hasPendingRefresh());
+  assert(backend.begin_count == 1U);
+  assert(backend.end_count == 1U);
+  assert(backend.draw_count == observer.lastFrame().render_list.command_count);
+  assert(backend.width == observer.geometry().width_px);
+  assert(backend.height == observer.geometry().height_px);
+  assert(backend.last_refresh_kind == display::DisplayRefreshKind::Full);
+
+  backend.end_result = true;
+  assert(display::renderPendingDisplayToClay(observer, theme, backend, 200'020U));
+  assert(!observer.hasPendingRefresh());
+  assert(backend.begin_count == 2U);
+  assert(backend.end_count == 2U);
+  assert(backend.last_refresh_kind == display::DisplayRefreshKind::Full);
+  assert(!display::renderPendingDisplayToClay(observer, theme, backend, 200'021U));
+  assert(backend.begin_count == 2U);
+
+  assert(observer.handleButton(display::DisplayButton::Next));
+  telemetry_snapshot.uptime_ms = 200'100U;
+  assert(observer.observe(telemetry_snapshot, storage_status));
+  assert(display::renderPendingDisplayToClay(observer, theme, backend, 200'100U));
+  assert(backend.last_refresh_kind == display::DisplayRefreshKind::Partial);
+}
+
 void testObserverFailsClosedOnInvalidEndpointRoles() {
   const display::DisplayEndpointRoles invalid_roles{
       stage28d::kScheduledLightEndpoint, stage28d::kScheduledLightEndpoint,
@@ -189,6 +269,7 @@ void testObserverFailsClosedOnInvalidEndpointRoles() {
 int main() {
   testObserverProjectsAuthoritativeTelemetryIntoDisplayRuntime();
   testObserverCarriesShortFirmwareShaIntoDiagnostics();
+  testClayCoordinatorAcknowledgesOnlySuccessfulBackendRender();
   testObserverFailsClosedOnInvalidEndpointRoles();
   return 0;
 }
