@@ -4,6 +4,7 @@
 #include "climate/storage/Stage27StorageTypes.h"
 #include "climate/telemetry/Stage27Telemetry.h"
 
+#include <array>
 #include <cstdint>
 
 namespace growbox::app::climate_io::display {
@@ -63,7 +64,10 @@ struct DisplayEndpointRoles {
 };
 
 struct DisplaySnapshot {
+  static constexpr std::size_t kFirmwareShaChars = 10U;
+
   std::uint64_t uptime_ms{0U};
+  std::array<char, kFirmwareShaChars + 1U> firmware_sha{};
 
   bool climate_sampled{false};
   bool scd_available{false};
