@@ -34,6 +34,11 @@ bool CompositeClimateSnapshotProvider::snapshot(std::uint64_t monotonic_ms,
   output.schedule = schedule_config.schedule;
   output.capabilities = schedule_config.capabilities;
   output.sensor_timeout_ms = schedule_config.sensor_timeout_ms;
+
+  last_snapshot_ = output;
+  last_clock_ = clock;
+  last_snapshot_monotonic_ms_ = monotonic_ms;
+  has_last_snapshot_ = true;
   return true;
 }
 
