@@ -26,7 +26,7 @@ display::DisplaySnapshot nominalSnapshot() {
   snapshot.climate.measurements.relative_humidity_pct = {61.2F, true, 1'000U};
   snapshot.climate.measurements.co2_ppm = {712.0F, true, 2'000U};
   snapshot.climate.sensor_timeout_ms = 30'000U;
-  snapshot.clock = {true, 0U};
+  snapshot.clock = {true, 1'767'225'600U};
   snapshot.outputs_available = true;
   snapshot.outputs.mode = output::SupervisorMode::Automatic;
   snapshot.outputs.transport_active = true;
