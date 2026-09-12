@@ -27,6 +27,9 @@ class FakeClayBackend final {
 public:
   bool beginFrame(std::uint16_t width_px, std::uint16_t height_px, bool warning,
                   display::DisplayRefreshKind refresh_kind) noexcept {
+    if (frame_open) {
+      return false;
+    }
     ++begin_count;
     width = width_px;
     height = height_px;
@@ -49,8 +52,16 @@ public:
       return false;
     }
     ++end_count;
+    if (!end_result) {
+      return false;
+    }
     frame_open = false;
-    return end_result;
+    return true;
+  }
+
+  void cancelFrame() noexcept {
+    ++cancel_count;
+    frame_open = false;
   }
 
   bool begin_result{true};
@@ -63,6 +74,7 @@ public:
   std::size_t begin_count{0U};
   std::size_t draw_count{0U};
   std::size_t end_count{0U};
+  std::size_t cancel_count{0U};
   display::DisplayRefreshKind last_refresh_kind{display::DisplayRefreshKind::None};
 };
 
@@ -221,13 +233,25 @@ void testClayCoordinatorAcknowledgesOnlySuccessfulBackendRender() {
 
   display::ClayDisplayTheme theme{};
   FakeClayBackend backend{};
-  backend.end_result = false;
+  backend.draw_result = false;
 
-  assert(!display::renderPendingDisplayToClay(observer, theme, backend, 200'010U));
+  assert(!display::renderPendingDisplayToClay(observer, theme, backend, 200'005U));
   assert(observer.hasPendingRefresh());
   assert(backend.begin_count == 1U);
+  assert(backend.draw_count == 1U);
+  assert(backend.end_count == 0U);
+  assert(backend.cancel_count == 1U);
+  assert(!backend.frame_open);
+  assert(backend.last_refresh_kind == display::DisplayRefreshKind::Full);
+
+  backend.draw_result = true;
+  backend.end_result = false;
+  assert(!display::renderPendingDisplayToClay(observer, theme, backend, 200'010U));
+  assert(observer.hasPendingRefresh());
+  assert(backend.begin_count == 2U);
   assert(backend.end_count == 1U);
-  assert(backend.draw_count == observer.lastFrame().render_list.command_count);
+  assert(backend.cancel_count == 2U);
+  assert(!backend.frame_open);
   assert(backend.width == observer.geometry().width_px);
   assert(backend.height == observer.geometry().height_px);
   assert(backend.last_refresh_kind == display::DisplayRefreshKind::Full);
@@ -235,11 +259,12 @@ void testClayCoordinatorAcknowledgesOnlySuccessfulBackendRender() {
   backend.end_result = true;
   assert(display::renderPendingDisplayToClay(observer, theme, backend, 200'020U));
   assert(!observer.hasPendingRefresh());
-  assert(backend.begin_count == 2U);
+  assert(backend.begin_count == 3U);
   assert(backend.end_count == 2U);
+  assert(backend.cancel_count == 2U);
   assert(backend.last_refresh_kind == display::DisplayRefreshKind::Full);
   assert(!display::renderPendingDisplayToClay(observer, theme, backend, 200'021U));
-  assert(backend.begin_count == 2U);
+  assert(backend.begin_count == 3U);
 
   assert(observer.handleButton(display::DisplayButton::Next));
   telemetry_snapshot.uptime_ms = 200'100U;
