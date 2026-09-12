@@ -25,6 +25,10 @@ public:
     return backend_.endFrame();
   }
 
+  void cancelFrame() noexcept {
+    backend_.cancelFrame();
+  }
+
 private:
   Backend& backend_;
   DisplayRefreshKind refresh_kind_{DisplayRefreshKind::None};
@@ -34,8 +38,8 @@ private:
 
 // Transactional bridge from a pending display frame to a Clay-facing backend.
 // The backend receives the planned e-ink refresh kind and the observer is
-// acknowledged only after begin/draw/end all succeed. A failed render therefore
-// leaves the pending frame available for a later retry.
+// acknowledged only after begin/draw/end all succeed. Failed in-progress frames
+// are explicitly cancelled and remain pending for a later retry.
 template <typename Backend>
 bool renderPendingDisplayToClay(DisplayTelemetryObserver& observer, const ClayDisplayTheme& theme,
                                 Backend& backend, std::uint64_t rendered_at_ms) noexcept {
@@ -43,7 +47,7 @@ bool renderPendingDisplayToClay(DisplayTelemetryObserver& observer, const ClayDi
     return false;
   }
 
-  const DisplayRuntimeFrame frame = observer.lastFrame();
+  const DisplayRuntimeFrame& frame = observer.lastFrame();
   if (!frame.refreshRequired()) {
     return false;
   }
