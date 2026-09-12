@@ -11,6 +11,10 @@
 
 #include <cstdint>
 
+namespace growbox::app::climate_io::display {
+class DisplayTelemetryObserver;
+} // namespace growbox::app::climate_io::display
+
 namespace growbox::app::climate_io::runtime {
 
 class TelemetryReporter final {
@@ -18,7 +22,8 @@ public:
   TelemetryReporter(native::BleClimateScanner& ble, native::Scd41InsideSource& scd41,
                     native::Ds3231ClockSource& clock,
                     storage::Stage27TelemetryLogger& storage_logger, bool storage_logger_ready,
-                    std::int32_t reset_reason) noexcept;
+                    std::int32_t reset_reason,
+                    display::DisplayTelemetryObserver* display_observer = nullptr) noexcept;
 
   void record(std::uint64_t now_ms, const ::growbox::climate::ClimateLoopResult& loop_result,
               const ::growbox::climate::ClimateRuntimeDecision& decision,
@@ -33,6 +38,7 @@ private:
   native::Scd41InsideSource& scd41_;
   native::Ds3231ClockSource& clock_;
   storage::Stage27TelemetryLogger& storage_logger_;
+  display::DisplayTelemetryObserver* display_observer_{nullptr};
   bool storage_logger_ready_{false};
   std::int32_t reset_reason_{0};
   std::uint32_t heartbeat_sequence_{0U};
