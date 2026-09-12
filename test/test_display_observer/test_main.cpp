@@ -97,6 +97,7 @@ void testObserverProjectsAuthoritativeTelemetryIntoDisplayRuntime() {
   assert(observer.observe(telemetry_snapshot, storage_status));
   assert(observer.hasSnapshot());
   assert(observer.hasFrame());
+  assert(observer.hasPendingRefresh());
   assert(observer.projectionErrorCount() == 0U);
   assert(observer.runtimeErrorCount() == 0U);
 
@@ -115,6 +116,14 @@ void testObserverProjectsAuthoritativeTelemetryIntoDisplayRuntime() {
   assert(std::strcmp(initial_frame.page_model.title.data(), "Growbox status") == 0);
   assert(initial_frame.render_list.command_count == 21U);
 
+  telemetry_snapshot.uptime_ms = 123'500U;
+  assert(observer.observe(telemetry_snapshot, storage_status));
+  assert(observer.lastFrame().refresh_kind == display::DisplayRefreshKind::Full);
+  assert(observer.lastFrame().refresh_reason == display::DisplayRefreshReason::Initial);
+  assert(observer.confirmRendered(123'500U));
+  assert(!observer.hasPendingRefresh());
+  assert(!observer.confirmRendered(123'501U));
+
   telemetry_snapshot.uptime_ms = 124'000U;
   telemetry_snapshot.scd_temperature_c = 24.0F;
   assert(observer.observe(telemetry_snapshot, storage_status));
@@ -128,6 +137,7 @@ void testObserverProjectsAuthoritativeTelemetryIntoDisplayRuntime() {
   assert(observer.lastFrame().refresh_reason == display::DisplayRefreshReason::Navigation);
   assert(observer.lastFrame().page == display::DisplayPage::Outputs);
   assert(std::strcmp(observer.lastFrame().page_model.title.data(), "Outputs") == 0);
+  assert(observer.confirmRendered(124'001U));
 }
 
 void testObserverCarriesShortFirmwareShaIntoDiagnostics() {
@@ -137,10 +147,13 @@ void testObserverCarriesShortFirmwareShaIntoDiagnostics() {
 
   assert(observer.observe(telemetry_snapshot, storage_status));
   assert(std::strcmp(observer.lastSnapshot().firmware_sha.data(), "0123456789") == 0);
+  assert(observer.confirmRendered(123'000U));
 
   assert(observer.handleButton(display::DisplayButton::Next));
   telemetry_snapshot.uptime_ms = 123'001U;
   assert(observer.observe(telemetry_snapshot, storage_status));
+  assert(observer.confirmRendered(123'001U));
+
   assert(observer.handleButton(display::DisplayButton::Next));
   telemetry_snapshot.uptime_ms = 123'002U;
   assert(observer.observe(telemetry_snapshot, storage_status));
@@ -152,6 +165,7 @@ void testObserverCarriesShortFirmwareShaIntoDiagnostics() {
   const auto* firmware_line = findLine(diagnostics, "FW");
   assert(firmware_line != nullptr);
   assert(std::strcmp(firmware_line->value.data(), "0123456789") == 0);
+  assert(observer.confirmRendered(123'002U));
 }
 
 void testObserverFailsClosedOnInvalidEndpointRoles() {
@@ -165,6 +179,7 @@ void testObserverFailsClosedOnInvalidEndpointRoles() {
   assert(!observer.observe(telemetry_snapshot, storage_status));
   assert(!observer.hasSnapshot());
   assert(!observer.hasFrame());
+  assert(!observer.hasPendingRefresh());
   assert(observer.projectionErrorCount() == 1U);
   assert(observer.runtimeErrorCount() == 0U);
 }
