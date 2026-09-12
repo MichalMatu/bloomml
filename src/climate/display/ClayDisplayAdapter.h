@@ -67,8 +67,11 @@ inline bool clayCommandFits(const DisplayTextCommand& command,
 //   bool beginFrame(width_px, height_px, warning)
 //   bool drawText(const ClayDisplayTextElement&)
 //   bool endFrame()
-// This layer owns validation and role-to-style mapping while keeping the
-// authoritative presenter/render-list path independent from Clay and hardware.
+//   void cancelFrame()
+// cancelFrame() must abandon any incomplete software frame so a later retry can
+// start cleanly. This layer owns validation and role-to-style mapping while
+// keeping the authoritative presenter/render-list path independent from Clay and
+// hardware.
 template <typename ClaySink>
 bool renderDisplayListToClay(const DisplayRenderList& render_list,
                              const DisplayRenderGeometry& geometry,
@@ -98,11 +101,16 @@ bool renderDisplayListToClay(const DisplayRenderList& render_list,
         command.text.data(),
     };
     if (!sink.drawText(element)) {
+      sink.cancelFrame();
       return false;
     }
   }
 
-  return sink.endFrame();
+  if (!sink.endFrame()) {
+    sink.cancelFrame();
+    return false;
+  }
+  return true;
 }
 
 } // namespace growbox::app::climate_io::display
