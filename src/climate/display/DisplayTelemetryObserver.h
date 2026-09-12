@@ -3,6 +3,8 @@
 #include "climate/display/DisplayRuntime.h"
 #include "climate/display/DisplaySnapshot.h"
 
+#include <array>
+#include <cstdio>
 #include <cstdint>
 
 namespace growbox::app::climate_io::display {
@@ -15,6 +17,13 @@ public:
                            const DisplayRuntimeConfig& config = {}) noexcept
       : roles_(roles), runtime_(config) {}
 
+  DisplayTelemetryObserver(const DisplayEndpointRoles& roles, const char* firmware_sha,
+                           const DisplayRuntimeConfig& config = {}) noexcept
+      : roles_(roles), runtime_(config) {
+    std::snprintf(firmware_sha_.data(), firmware_sha_.size(), "%.10s",
+                  firmware_sha != nullptr ? firmware_sha : "");
+  }
+
   bool observe(const telemetry::Stage27TelemetrySnapshot& telemetry_snapshot,
                const storage::Stage27StorageStatus& storage_status) noexcept {
     DisplaySnapshot projected{};
@@ -22,6 +31,7 @@ public:
       ++projection_error_count_;
       return false;
     }
+    projected.firmware_sha = firmware_sha_;
 
     DisplayRuntimeFrame frame{};
     if (!runtime_.update(projected, telemetry_snapshot.uptime_ms, frame)) {
@@ -74,6 +84,7 @@ public:
 
 private:
   DisplayEndpointRoles roles_{};
+  std::array<char, DisplaySnapshot::kFirmwareShaChars + 1U> firmware_sha_{};
   DisplayRuntimeController runtime_{};
   DisplaySnapshot last_snapshot_{};
   DisplayRuntimeFrame last_frame_{};
