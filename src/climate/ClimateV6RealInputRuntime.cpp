@@ -2,6 +2,7 @@
 
 #include "climate/application/ClimateApplication.h"
 #include "climate/application/ClimateCompositeInput.h"
+#include "climate/display/CrowPanelDisplayService.h"
 #include "climate/display/DisplayTelemetryObserver.h"
 #include "climate/input/ble/BleClimateScanner.h"
 #include "climate/input/i2c/NativeI2cBus.h"
@@ -124,25 +125,48 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
       static_cast<esp_reset_reason_t>(boot_identity.reset_reason);
   runtime::configureStage28eLogging(boot_identity);
 
-  static display::DisplayTelemetryObserver display_observer(
-      {stage28d::kExhaustFanEndpoint, stage28d::kScheduledLightEndpoint,
-       stage28d::kHumidifierEndpoint},
-      runtime_config::kFirmwareGitSha);
+  display::DisplayTelemetryObserver* display_observer = nullptr;
+  display::CrowPanelDisplayService* display_service = nullptr;
+  bool display_ready = false;
+  if constexpr (runtime_config::kEinkDisplayEnabled) {
+    static display::DisplayTelemetryObserver enabled_display_observer(
+        {stage28d::kExhaustFanEndpoint, stage28d::kScheduledLightEndpoint,
+         stage28d::kHumidifierEndpoint},
+        runtime_config::kFirmwareGitSha);
+    static display::CrowPanelSsd1680DisplayBackend display_backend(
+        display::CrowPanelSsd1680Config{
+            {runtime_config::kEinkSclkGpio, runtime_config::kEinkMosiGpio,
+             runtime_config::kEinkCsGpio, runtime_config::kEinkDcGpio,
+             runtime_config::kEinkRstGpio, runtime_config::kEinkBusyGpio,
+             runtime_config::kEinkPowerGpio},
+            display::Ssd1680Rotation::Clockwise90,
+        });
+    static display::CrowPanelDisplayService enabled_display_service(enabled_display_observer,
+                                                                    display_backend);
+    display_ready = enabled_display_service.begin();
+    if (display_ready) {
+      display_observer = &enabled_display_observer;
+      display_service = &enabled_display_service;
+    } else {
+      ESP_LOGE(kTag, "E-ink display worker failed to start; display remains disabled");
+    }
+  }
+
   runtime::TelemetryReporter telemetry_reporter(ble, scd41, clock, storage_logger,
                                                 storage_logger_ready,
                                                 static_cast<std::int32_t>(reset_reason),
-                                                &display_observer);
+                                                display_observer);
 
   ESP_LOGI(kTag,
            "Stage27 real-input runtime: i2c=%d scd41=%d ds3231=%d ble=%d sd=%d "
            "flash_fallback=%d storage_logger=%d rf433_loopback=%d rf433_tx_gpio=%d "
-           "rf433_rx_gpio=%d service_console=%d real_outputs_requested=%d real_outputs_ready=%d "
-           "thermal_test=%d outputs=%s",
+           "rf433_rx_gpio=%d service_console=%d eink_requested=%d eink_ready=%d "
+           "real_outputs_requested=%d real_outputs_ready=%d thermal_test=%d outputs=%s",
            i2c_ready, scd41_ready, rtc_ready, ble_ready, storage_config.sd_enabled,
            storage_config.flash_fallback_enabled, storage_logger_ready, rf_ready,
            runtime_config::kRf433TxGpio, runtime_config::kRf433RxGpio, service_console_ready,
-           runtime_config::kRealOutputsEnabled, execution_status.output_ready,
-           runtime_config::kThermalTestSequenceEnabled,
+           runtime_config::kEinkDisplayEnabled, display_ready, runtime_config::kRealOutputsEnabled,
+           execution_status.output_ready, runtime_config::kThermalTestSequenceEnabled,
            execution_status.output_ready ? "real-bounded" : "fake-locked");
   GROWBOX_STAGE28E_LOG_INFO(runtime::DiagnosticLogModule::Sys,
                             "boot firmware_sha=%s reset_reason=%d started_us=%llu outputs=%s",
@@ -165,6 +189,9 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
   while (true) {
     const std::uint64_t loop_started_us = static_cast<std::uint64_t>(esp_timer_get_time());
     coordinator.tick(loop_started_us);
+    if (display_service != nullptr) {
+      display_service->tick(loop_started_us / 1000U);
+    }
     vTaskDelay(pdMS_TO_TICKS(kTickIntervalMs));
   }
 }
