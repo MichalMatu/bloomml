@@ -80,18 +80,22 @@ void CrowPanelDisplayService::taskLoop() noexcept {
 
     const bool success = renderDisplayFrameToClay(work_item.frame, geometry_, theme_, backend_);
     if (success) {
-      const std::uint32_t previous = render_successes_.fetch_add(1U, std::memory_order_relaxed);
-      if (previous == 0U) {
-        ESP_LOGI(kTag, "First physical refresh completed generation=%llu kind=%u",
-                 static_cast<unsigned long long>(work_item.generation),
-                 static_cast<unsigned>(work_item.frame.refresh_kind));
-      }
+      const std::uint32_t successes =
+          render_successes_.fetch_add(1U, std::memory_order_relaxed) + 1U;
+      ESP_LOGI(kTag,
+               "Physical refresh completed generation=%llu kind=%u reason=%u successes=%lu",
+               static_cast<unsigned long long>(work_item.generation),
+               static_cast<unsigned>(work_item.frame.refresh_kind),
+               static_cast<unsigned>(work_item.frame.refresh_reason),
+               static_cast<unsigned long>(successes));
     } else {
       const std::uint32_t failures =
           render_failures_.fetch_add(1U, std::memory_order_relaxed) + 1U;
-      ESP_LOGE(kTag, "Physical refresh failed generation=%llu kind=%u failures=%lu",
+      ESP_LOGE(kTag,
+               "Physical refresh failed generation=%llu kind=%u reason=%u failures=%lu",
                static_cast<unsigned long long>(work_item.generation),
                static_cast<unsigned>(work_item.frame.refresh_kind),
+               static_cast<unsigned>(work_item.frame.refresh_reason),
                static_cast<unsigned long>(failures));
     }
 
