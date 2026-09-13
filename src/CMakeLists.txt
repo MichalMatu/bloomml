@@ -101,6 +101,7 @@ elseif(GROWBOX_APP_MODE STREQUAL "climate-v6-real-inputs")
       "climate/display/DisplayMonochromeRaster.cpp"
       "climate/display/Ssd1680FrameMapper.cpp"
       "climate/display/CrowPanelSsd1680DisplayBackend.cpp"
+      "climate/display/CrowPanelDisplayService.cpp"
       "climate/runtime/core/RealInputRuntimeComposition.cpp"
       "climate/runtime/core/RealInputRuntimeCoordinator.cpp"
       "climate/runtime/core/RuntimeOutputTransport.cpp"
