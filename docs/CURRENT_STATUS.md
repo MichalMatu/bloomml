@@ -1,116 +1,161 @@
 # Current controller status
 
-Updated: 2026-09-12
+Updated: 2026-09-13
 Repository: `MichalMatu/growbox-ml-controller`
 Primary development branch: `main`
+Active implementation branch: `feature/eink-clay-status`
 Control branch: `agent-control`
-Publishing branch: `gh-pages`
 Fresh-chat entrypoint: `docs/FRESH_CHAT_BOOTSTRAP.md`
 Product roadmap: `docs/PROJECT_ROADMAP.md`
-Active implementation handoff: `docs/EINK_UI_HANDOFF.md`
-Ready new-chat prompt: `docs/EINK_UI_NEW_CHAT_PROMPT.md`
+E-ink implementation handoff: `docs/EINK_UI_HANDOFF.md`
+SCD41 continuation handoff: `docs/EINK_SCD41_CONTINUATION_HANDOFF_20260913.md`
+SCD41 continuation prompt: `docs/EINK_SCD41_NEW_CHAT_PROMPT_20260913.md`
 
 ## Current phase
 
-The architecture/quality refactor, structural cleanup and final release-readiness hardening are complete. Before the previously selected Controller behavior quality task starts, one bounded operator-visibility task is now active: **port the proven Clay/e-ink/button/simulator stack from `MichalMatu/esp32s3_LiteGraph` and show real growbox state directly on the board display**.
+The operator-facing CrowPanel e-ink milestone is physically working and should not be reimplemented. The active blocker is now **SCD41 measurement regression/debugging**. After that blocker is closed, continue the Clay/menu/button/simulator port from the proven LiteGraph reference.
 
-The operator has explicitly confirmed that the growbox uses the same physical display/button module and that the pin map is 100% compatible with the LiteGraph implementation. The active execution plan, unattended work policy, verification matrix and hardware safety rules are in `docs/EINK_UI_HANDOFF.md`.
+## Current exact firmware/branch state
 
-The display must remain observer-side. It may present sensor/controller/output/safety/system/diagnostics state, but it must not become a second control owner, bypass `OutputSupervisor`, weaken safety or fabricate physical actuator acknowledgement.
+Working branch HEAD at the time of the SCD41 handoff:
 
-Final release-readiness hardening before this display task is closed on code-bearing executable `e03763d019af405087a5fa9c6713a7165d2e623f`. That exact identity passed repository guards, host/Python tests, clang-tidy, ESP-IDF builds, canonical GitHub checks and bounded hardware task `20260912-final-main-hardware-qualification-v1`. The strict 120 s `soak_v=3` run completed with zero violations, and the first valid SCD41 sample released startup fail-closed state immediately (`safety_latched=0`, `safety_reason=0`) instead of entering the historical false recovery hold.
+`01db8228e6d822b5c64359abd8bf2d85341b5919`
 
-## Structural cleanup closeout
+This candidate was built and flashed to the authorized CrowPanel board with physical outputs disabled. The board boots and the e-ink physically refreshes.
 
-The 2026-09-12 cleanup removed retired or unused climate code, tightened source layout and reduced header coupling without changing production behavior:
+Authorized serial device:
 
-- removed retired `BleOutsideSource`, `Stage27SdDataLogger` and obsolete `Stage27Telemetry.cpp` implementation;
-- removed unused `ClimateObservabilityMetrics` and its standalone test target;
-- moved `LampSafety` and `OutputBindings` under `src/climate/output/`;
-- reduced `RealInputRuntimeCoordinator.h` to two direct includes by moving concrete dependencies to the implementation file;
-- preserved namespaces, runtime ownership and output/safety behavior.
+`/dev/cu.usbserial-1130`
 
-The final structure re-audit on `0a7097a30280ec0f7bb408799c07093761d63e88` found:
-
-- 82 climate headers and 135 internal include edges;
-- zero include cycles;
-- zero climate `.cpp` files without build/reference wiring;
-- zero `TODO` / `FIXME` / `HACK` / `XXX` markers in the audited climate/core scope;
-- no further structural refactor with a clear benefit-to-churn justification.
-
-## Architecture state
-
-The production real-input path is split into clear boundaries:
-
-- `ClimateV6RealInputRuntime` — thin bootstrap/composition entry;
-- `RealInputRuntimeComposition` — dependency ownership and lifetime wiring;
-- `RealInputRuntimeCoordinator` — one-cycle orchestration;
-- `RuntimeOutputTransport` — explicit physical-transport truth boundary;
-- `RuntimeOutputTelemetryLog` — output telemetry formatting/logging;
-- domain service-console handlers behind a thin router/transport layer.
-
-`OutputSupervisor` remains the only normal production owner allowed to execute configured physical outputs.
-
-The runtime configuration source of truth is CMake/profile based and exported to C++ through the generated typed `RuntimeBuildConfig.h` interface. Production V6 builds do not rely on duplicated fallback defaults.
-
-The production controller is compile-time fenced to deterministic `Rule` authority. ML remains shadow/research-only unless a separate research build explicitly opts into another mode.
-
-When physical transport is unavailable (`fake-locked`), the runtime reports `NotAttempted/Unavailable`; it must never fabricate executed or physical output truth.
-
-For the active display task, UI code should consume a bounded read-only snapshot/presenter seam rather than reaching through runtime ownership boundaries. Slow e-ink work must not block the controller hot path.
-
-## Frozen safety/output invariants
-
-- deterministic rule control remains authoritative;
-- ML remains shadow/research-only for production;
-- lamp thermal trip remains `>= 28 C`;
-- lamp recovery remains `<= 26 C` continuously for 10 minutes;
-- safety remains active while normal automation is disabled;
-- one-way RF completion is transport evidence, not physical acknowledgement;
-- raw RF remains restricted to explicit `MaintenanceLocked` handling;
-- configured physical output execution remains owned by `OutputSupervisor`;
-- e-ink UI remains observer-side/read-only with respect to controller/output ownership.
-
-## Hardware qualification status
-
-Historical full Physical H remains valid evidence only for its exact executable identity:
-
-`02208d23f403bca3540dbbd652eb55703a044833`
-
-Terminal historical evidence: `20260910-output-supervisor-physical-h-v3`.
-
-`0a7097a30280ec0f7bb408799c07093761d63e88` is the structural-cleanup baseline. Final code-bearing hardening identity `e03763d019af405087a5fa9c6713a7165d2e623f` is hardware-qualified: Local Agent task `20260912-final-main-hardware-qualification-v1` finished PASS on `/dev/cu.usbserial-1130`, with real inputs and physical outputs/RF loopback/thermal-test sequence disabled. GitHub CI #865 and Sandbox Pack #63 also passed on the same code-bearing SHA. A later documentation-only descendant does not change firmware source and does not replace the exact executable qualification identity above.
-
-The e-ink implementation must finish with a new bounded exact-SHA board qualification because it changes the firmware image and adds display/input runtime work. During unattended qualification physical outputs remain disabled. Required evidence includes boot/soak logs plus explicit observation of heap/PSRAM/fragmentation/stack headroom and panic/watchdog/reset signals; see `docs/EINK_UI_HANDOFF.md`.
-
-Qualified Growbox serial device: `/dev/cu.usbserial-1130`.
-
-Never touch `/dev/cu.usbserial-10`.
+Never use `/dev/cu.usbserial-10`.
 
 Do not use `/dev/cu.usbserial-1120` without separate authorization.
 
+## E-ink status
+
+The CrowPanel 2.9-inch DIE01129S001 display is operational.
+
+Profile:
+
+- ESP32-S3-WROOM-1-N8R8 / 8 MB PSRAM;
+- 128x296 e-paper;
+- SSD1680Z transport;
+- SCLK 12, MOSI 11, CS 45, DC 46, RST 47, BUSY 48;
+- display power GPIO 7;
+- shared I2C SDA 21 / SCL 38.
+
+Completed display work:
+
+- 180-degree rotation;
+- removed the large `Growbox Status` header and reclaimed its layout area;
+- observer/read-only display ownership;
+- asynchronous display worker kept outside the controller hot path;
+- SSD1680 partial refresh path remains `0xFC`;
+- physical refresh evidence includes `Partial + ContentChanged` (`kind=1 reason=4`).
+
+Display validation reached all five display host suites and a full Stage27C CrowPanel build. The exact candidate was flashed with real physical outputs disabled.
+
+## Active SCD41 blocker
+
+The display currently shows no environment values and a warning `!` because the display snapshot treats the SCD41 sample as the validity source for temperature/RH/CO2.
+
+Stable UART evidence after more than 130 seconds:
+
+```text
+scd_available=1
+scd_sample=0
+scd_read_errors=0
+scd_invalid=0
+scd_samples=0
+
+tp_sample=1
+aomi_sample=1
+rtc_available=1
+rtc_trusted=1
+SD mounted/logging healthy
+```
+
+The SCD41 is therefore considered available, but no successful measurement has been recorded. This is the current debugging target.
+
+History review did not identify an obvious functional SCD41 driver regression:
+
+- `Scd41InsideSource.cpp` functional implementation predates the e-ink work;
+- `3ab26a98b` on 2026-09-12 grouped/moved SCD41 input components rather than changing the measurement algorithm;
+- `TelemetryReporter::record()` still calls `scd41_.sample()` on every telemetry report;
+- I2C remains SDA 21 / SCL 38.
+
+Do not hide the SCD41 fault before understanding it. Once the root cause is known, the display may be improved to show the best available authoritative non-SCD inputs without fabricating CO2 or masking a real sensor fault.
+
+## Required next debugging steps
+
+1. Run the existing service-console `sensors` command on the already flashed board.
+2. Capture complete boot evidence for I2C probe, SCD41 `begin()`, periodic-measurement start and early telemetry.
+3. If samples stay zero, log only the raw return codes/ready state for `scd4x_start_periodic_measurement`, `scd4x_get_data_ready_status` and `scd4x_read_measurement` when reached.
+4. Compare with a known-good pre-regression executable or minimal SCD41-only diagnostic on the same board when useful.
+5. Identify the exact root/regression commit before making a behavioral change.
+6. Add the smallest fix plus regression test.
+7. Build/flash/verify on `/dev/cu.usbserial-1130` with all physical-output fences disabled.
+
+## Next UI stage after SCD41
+
+Reference project supplied by the operator:
+
+`/Users/michal/Documents/PlatformIO/Projects/esp32s3_LiteGraph`
+
+Reuse proven components rather than recreating them:
+
+- Clay menu/model/layout/navigation;
+- Clay view/controller/page structure;
+- physical button debounce/navigation;
+- glance/status/time modules where useful;
+- ActionConfirmationDialog where useful;
+- refresh policy / Clay view-mode manager;
+- Clay menu/display simulator and event model;
+- host-side Clay tests.
+
+The current chat is hard-bound to `growbox-ml-controller`; LiteGraph must not be inspected or executed from a Local Agent task created under this binding. Use a separately authorized repo context or explicitly transferred source files/snippets for that analysis.
+
+## Frozen safety/output invariants
+
+- deterministic Rule control remains authoritative;
+- ML remains shadow/research-only;
+- OutputSupervisor is the normal physical-output execution owner;
+- UI never executes RF433 directly;
+- UI never mutates safety state;
+- UI never fabricates physical actuator acknowledgement;
+- physical outputs remain disabled during unattended qualification;
+- display work must not block the 1-second control loop.
+
+Unattended safety fence values:
+
+```text
+GROWBOX_RF433_LOOPBACK_ENABLED=0
+GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED=0
+GROWBOX_STAGE28_THERMAL_TEST_SEQUENCE_ENABLED=0
+```
+
+## Do not redo completed work
+
+Do not reopen the CrowPanel pin map, SSD1680 backend, display initialization, async worker, 180-degree rotation, title removal or proven partial-refresh command unless new evidence directly requires it.
+
 ## Repository workflow
 
-The repository is cleaned to the expected long-lived branches:
-
-- `main` — normal source and documentation work;
-- `agent-control` — Local Agent control plane;
-- `gh-pages` — publishing branch.
-
-Local Agent tasks must use:
+Every Local Agent task created by the bound chat must contain exactly:
 
 ```json
 {
   "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
-  "work_branch": "main",
+  "work_branch": "feature/eink-clay-status",
   "resources": []
 }
 ```
 
-Use direct GitHub for bounded source/config/docs changes. Use Local Agent when Mac-local builds/toolchains, local simulator assets, local network, serial/USB/flash or physical devices are materially required. Never invoke local Codex from Local Agent.
+Use direct GitHub for small bounded source/config/docs changes. Use Local Agent for Mac-local builds/toolchains, simulator execution, serial/USB/flash and physical-board observation. Never launch local Codex from a Local Agent task.
 
-## Immediate next work
+## Roadmap order
 
-Implement the **e-ink operator UI** from `docs/EINK_UI_HANDOFF.md` and use `docs/EINK_UI_NEW_CHAT_PROMPT.md` to start the dedicated autonomous implementation chat. Reuse the LiteGraph Clay menu/button/simulator/refresh infrastructure, expose real growbox environment/output/safety/system/diagnostics state, verify software and memory cost, flash the exact candidate to `/dev/cu.usbserial-1130` with physical outputs disabled, and inspect logs/memory/panic behavior before declaring completion.
-
-Only after that task is fully closed and documented should work resume on **Controller behavior quality**: build a replay/telemetry baseline from real growbox data and identify one measurable tuning improvement in temperature/humidity interaction, absolute-humidity ventilation, targets, deadbands, hysteresis or dwell. Define baseline metrics and acceptance criteria before changing production behavior. Avoid another broad architecture rewrite unless concrete evidence exposes a new responsibility or ownership problem.
+1. Diagnose and fix the SCD41 blocker.
+2. Verify real sensor values reach the display and correct the display snapshot validity policy.
+3. Port the proven Clay/menu/button/simulator stack from LiteGraph using an appropriately authorized source context.
+4. Re-run full display/runtime/memory/hardware qualification and update the exact final SHA in the handoff.
+5. Only after the e-ink task is fully closed, resume Controller behavior quality work.
