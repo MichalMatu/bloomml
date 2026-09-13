@@ -36,6 +36,21 @@ private:
 
 } // namespace detail
 
+// Render one immutable planned frame without touching observer/runtime state. This
+// is the worker-safe half of the transaction: the owner thread remains
+// responsible for acknowledging successful hardware completion.
+template <typename Backend>
+bool renderDisplayFrameToClay(const DisplayRuntimeFrame& frame,
+                              const DisplayRenderGeometry& geometry,
+                              const ClayDisplayTheme& theme, Backend& backend) noexcept {
+  if (!frame.refreshRequired()) {
+    return false;
+  }
+
+  detail::RefreshAwareClaySink<Backend> sink{backend, frame.refresh_kind};
+  return renderDisplayListToClay(frame.render_list, geometry, theme, sink);
+}
+
 // Transactional bridge from a pending display frame to a Clay-facing backend.
 // The backend receives the planned e-ink refresh kind and the observer is
 // acknowledged only after begin/draw/end all succeed. Failed in-progress frames
@@ -48,12 +63,7 @@ bool renderPendingDisplayToClay(DisplayTelemetryObserver& observer, const ClayDi
   }
 
   const DisplayRuntimeFrame& frame = observer.lastFrame();
-  if (!frame.refreshRequired()) {
-    return false;
-  }
-
-  detail::RefreshAwareClaySink<Backend> sink{backend, frame.refresh_kind};
-  if (!renderDisplayListToClay(frame.render_list, observer.geometry(), theme, sink)) {
+  if (!renderDisplayFrameToClay(frame, observer.geometry(), theme, backend)) {
     return false;
   }
 
