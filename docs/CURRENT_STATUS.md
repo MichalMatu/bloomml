@@ -69,7 +69,7 @@ scd_invalid=0
 scd_samples=0
 
 tp_sample=1
-aomi_sample=1
+xiaomi_sample=1
 rtc_available=1
 rtc_trusted=1
 SD mounted/logging healthy
