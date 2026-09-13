@@ -20,7 +20,7 @@ idf_component_register(
     "climate/output/persistence/OutputPersistenceSchema.cpp"
     "climate/output/persistence/OutputPersistenceCoordinator.cpp"
     "climate/output/persistence/OutputPersistenceStore.cpp"
-    "climate/output/OutputNvsBackend.cpp"
+    "climate/output/persistence/OutputNvsBackend.cpp"
     "climate/output/lifecycle/OutputSupervisorLifecycle.cpp"
     "climate/output/lifecycle/OutputLifecycleExecutor.cpp"
     "climate/output/control/OutputAutomationControl.cpp"
