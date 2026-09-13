@@ -56,9 +56,15 @@ struct DisplayRuntimeFrame final {
 
 namespace detail {
 
+inline bool displayWarningsEqual(const DisplayPageModel& left,
+                                 const DisplayPageModel& right) noexcept {
+  return left.warning == right.warning && left.warning_mask == right.warning_mask &&
+         left.safety_warning_reason_code == right.safety_warning_reason_code;
+}
+
 inline bool displayPageModelsEqual(const DisplayPageModel& left,
                                    const DisplayPageModel& right) noexcept {
-  if (left.warning != right.warning || left.line_count != right.line_count ||
+  if (!displayWarningsEqual(left, right) || left.line_count != right.line_count ||
       std::strcmp(left.title.data(), right.title.data()) != 0) {
     return false;
   }
@@ -163,7 +169,8 @@ public:
     }
 
     const bool initial = !has_last_frame_;
-    const bool warning_changed = has_last_frame_ && output.page_model.warning != last_page_.warning;
+    const bool warning_changed =
+        has_last_frame_ && !detail::displayWarningsEqual(output.page_model, last_page_);
     const bool content_changed = initial || !detail::displayPageModelsEqual(output.page_model, last_page_);
     const bool interval_elapsed =
         initial || detail::elapsedAtLeast(now_ms, last_refresh_ms_,
