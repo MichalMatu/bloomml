@@ -46,11 +46,15 @@ public:
     return true;
   }
 
+  bool confirmRendered(const DisplayRuntimeFrame& frame, std::uint64_t rendered_at_ms) noexcept {
+    return runtime_.confirmRendered(frame, rendered_at_ms);
+  }
+
   bool confirmRendered(std::uint64_t rendered_at_ms) noexcept {
     if (!has_frame_ || !last_frame_.refreshRequired()) {
       return false;
     }
-    return runtime_.confirmRendered(last_frame_, rendered_at_ms);
+    return confirmRendered(last_frame_, rendered_at_ms);
   }
 
   bool hasPendingRefresh() const noexcept {
