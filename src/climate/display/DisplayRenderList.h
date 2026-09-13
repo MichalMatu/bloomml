@@ -23,6 +23,7 @@ struct DisplayRenderGeometry final {
   std::uint16_t first_row_y_px{28U};
   std::uint16_t row_height_px{9U};
   std::uint16_t value_x_px{92U};
+  bool show_title{false};
 };
 
 struct DisplayTextCommand final {
@@ -55,24 +56,38 @@ public:
     }
 
     output_.warning = warning;
-    if (warning && !appendText(geometry_.left_margin_px, geometry_.title_y_px, 12U,
-                               DisplayTextRole::WarningMarker, "!")) {
-      return false;
-    }
+    if (geometry_.show_title) {
+      if (warning && !appendText(geometry_.left_margin_px, geometry_.title_y_px, 12U,
+                                 DisplayTextRole::WarningMarker, "!")) {
+        return false;
+      }
 
-    const std::uint16_t title_x = static_cast<std::uint16_t>(
-        geometry_.left_margin_px + (warning ? 14U : 0U));
-    if (title_x >= geometry_.width_px - geometry_.right_margin_px) {
-      output_ = {};
-      return false;
-    }
+      const std::uint16_t title_x = static_cast<std::uint16_t>(
+          geometry_.left_margin_px + (warning ? 14U : 0U));
+      if (title_x >= geometry_.width_px - geometry_.right_margin_px) {
+        output_ = {};
+        return false;
+      }
 
-    if (!appendText(title_x, geometry_.title_y_px,
-                    static_cast<std::uint16_t>(geometry_.width_px - geometry_.right_margin_px -
-                                               title_x),
-                    DisplayTextRole::Title, title)) {
-      output_ = {};
-      return false;
+      if (!appendText(title_x, geometry_.title_y_px,
+                      static_cast<std::uint16_t>(geometry_.width_px - geometry_.right_margin_px -
+                                                 title_x),
+                      DisplayTextRole::Title, title)) {
+        output_ = {};
+        return false;
+      }
+    } else if (warning) {
+      constexpr std::uint16_t kWarningWidthPx = 12U;
+      const std::uint16_t warning_x = static_cast<std::uint16_t>(
+          geometry_.width_px - geometry_.right_margin_px - kWarningWidthPx);
+      const std::uint16_t warning_y = geometry_.title_y_px > 10U
+                                          ? static_cast<std::uint16_t>(geometry_.title_y_px - 10U)
+                                          : 0U;
+      if (!appendText(warning_x, warning_y, kWarningWidthPx,
+                      DisplayTextRole::WarningMarker, "!")) {
+        output_ = {};
+        return false;
+      }
     }
 
     page_open_ = true;
@@ -84,7 +99,9 @@ public:
       return false;
     }
 
-    const std::uint32_t y = static_cast<std::uint32_t>(geometry_.first_row_y_px) +
+    const std::uint16_t row_origin_y =
+        geometry_.show_title ? geometry_.first_row_y_px : geometry_.title_y_px;
+    const std::uint32_t y = static_cast<std::uint32_t>(row_origin_y) +
                             static_cast<std::uint32_t>(index) * geometry_.row_height_px;
     if (y >= geometry_.height_px) {
       return false;
@@ -115,10 +132,11 @@ public:
 
 private:
   bool geometryValid() const noexcept {
+    const std::uint16_t row_origin_y =
+        geometry_.show_title ? geometry_.first_row_y_px : geometry_.title_y_px;
     return geometry_.width_px > geometry_.left_margin_px + geometry_.right_margin_px &&
-           geometry_.height_px > geometry_.title_y_px &&
-           geometry_.height_px > geometry_.first_row_y_px && geometry_.row_height_px > 0U &&
-           geometry_.value_x_px > geometry_.left_margin_px &&
+           geometry_.height_px > geometry_.title_y_px && geometry_.height_px > row_origin_y &&
+           geometry_.row_height_px > 0U && geometry_.value_x_px > geometry_.left_margin_px &&
            geometry_.value_x_px < geometry_.width_px - geometry_.right_margin_px;
   }
 
