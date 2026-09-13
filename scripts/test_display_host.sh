@@ -24,3 +24,4 @@ run_suite() {
 run_suite "display-presenter" "test/test_display_presenter"
 run_suite "display-runtime" "test/test_display_runtime"
 run_suite "display-observer" "test/test_display_observer"
+run_suite "display-raster" "test/test_display_raster"
