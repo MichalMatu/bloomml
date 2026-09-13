@@ -139,7 +139,7 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
              runtime_config::kEinkCsGpio, runtime_config::kEinkDcGpio,
              runtime_config::kEinkRstGpio, runtime_config::kEinkBusyGpio,
              runtime_config::kEinkPowerGpio},
-            display::Ssd1680Rotation::Clockwise90,
+            display::Ssd1680Rotation::CounterClockwise90,
         });
     static display::CrowPanelDisplayService enabled_display_service(enabled_display_observer,
                                                                     display_backend);
