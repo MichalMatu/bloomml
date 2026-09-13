@@ -20,7 +20,7 @@ idf_component_register(
     "climate/output/persistence/OutputPersistenceSchema.cpp"
     "climate/output/persistence/OutputPersistenceCoordinator.cpp"
     "climate/output/persistence/OutputPersistenceStore.cpp"
-    "climate/output/persistence/OutputNvsBackend.cpp"
+    "climate/output/OutputNvsBackend.cpp"
     "climate/output/lifecycle/OutputSupervisorLifecycle.cpp"
     "climate/output/lifecycle/OutputLifecycleExecutor.cpp"
     "climate/output/control/OutputAutomationControl.cpp"
@@ -98,6 +98,9 @@ elseif(GROWBOX_APP_MODE STREQUAL "climate-v6-real-inputs")
     PRIVATE
       "climate/ClimateV6RealInputRuntime.cpp"
       "climate/display/DisplayPresenter.cpp"
+      "climate/display/DisplayMonochromeRaster.cpp"
+      "climate/display/Ssd1680FrameMapper.cpp"
+      "climate/display/CrowPanelSsd1680DisplayBackend.cpp"
       "climate/runtime/core/RealInputRuntimeComposition.cpp"
       "climate/runtime/core/RealInputRuntimeCoordinator.cpp"
       "climate/runtime/core/RuntimeOutputTransport.cpp"
