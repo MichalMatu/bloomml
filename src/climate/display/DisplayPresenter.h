@@ -11,6 +11,14 @@ namespace growbox::app::climate_io::display {
 enum class DisplayPage : std::uint8_t { Status = 0U, Outputs, Diagnostics };
 enum class DisplayButton : std::uint8_t { Home = 0U, Back, Previous, Next, Ok };
 
+enum class DisplayWarning : std::uint8_t {
+  Sensor = 1U << 0U,
+  Clock = 1U << 1U,
+  Storage = 1U << 2U,
+  Safety = 1U << 3U,
+  SupervisorFault = 1U << 4U,
+};
+
 class DisplayNavigation final {
 public:
   DisplayPage page() const noexcept {
@@ -34,6 +42,8 @@ struct DisplayPageModel final {
   std::array<char, 20> title{};
   std::array<DisplayLine, kMaxLines> lines{};
   std::size_t line_count{0U};
+  std::uint8_t warning_mask{0U};
+  std::uint32_t safety_warning_reason_code{0U};
   bool warning{false};
 };
 
