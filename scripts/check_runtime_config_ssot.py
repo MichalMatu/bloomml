@@ -102,6 +102,8 @@ if "esp32s3-devkitc1-n16r8" in idf_gate_text:
 
 # The CrowPanel launcher may select profiles and forward explicit user overrides,
 # but board pin values belong only to config/boards/*.cmake.
+if "GROWBOX_EINK_DISPLAY_ENABLED" not in crowpanel_text:
+    fail("CrowPanel launcher does not forward the optional e-ink enable override")
 for forbidden in (
     "GROWBOX_I2C_SDA_GPIO=21",
     "GROWBOX_I2C_SCL_GPIO=38",
