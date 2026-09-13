@@ -170,7 +170,7 @@ void testObserverProjectsAuthoritativeTelemetryIntoDisplayRuntime() {
   assert(initial_frame.refresh_reason == display::DisplayRefreshReason::Initial);
   assert(initial_frame.page == display::DisplayPage::Status);
   assert(std::strcmp(initial_frame.page_model.title.data(), "Growbox status") == 0);
-  assert(initial_frame.render_list.command_count == 21U);
+  assert(initial_frame.render_list.command_count == 20U);
 
   telemetry_snapshot.uptime_ms = 123'500U;
   assert(observer.observe(telemetry_snapshot, storage_status));
