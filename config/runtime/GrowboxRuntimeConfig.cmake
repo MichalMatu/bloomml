@@ -14,6 +14,12 @@ function(growbox_require_bool name)
   endif()
 endfunction()
 
+function(growbox_require_assigned_gpio name reason)
+  if(NOT "${${name}}" MATCHES "^[0-9]+$")
+    message(FATAL_ERROR "${name} must be an assigned non-negative GPIO (${reason}), got '${${name}}'")
+  endif()
+endfunction()
+
 function(growbox_require_distinct_gpio left_name right_name reason)
   if("${${left_name}}" STREQUAL "${${right_name}}")
     message(FATAL_ERROR
@@ -62,6 +68,12 @@ growbox_cache_default(GROWBOX_RF433_LOOPBACK_ENABLED STRING "0"
                       "Enable Stage28 RF433 loopback transport")
 growbox_cache_default(GROWBOX_RF433_REMOTE_CAPTURE_ENABLED STRING "0"
                       "Enable Stage28C passive remote capture diagnostics")
+growbox_cache_default(GROWBOX_EINK_DISPLAY_ENABLED STRING "0"
+                      "Enable read-only e-ink status display integration")
+growbox_cache_default(GROWBOX_EINK_CS_GPIO STRING "-1" "E-ink display chip-select GPIO")
+growbox_cache_default(GROWBOX_EINK_DC_GPIO STRING "-1" "E-ink display data/command GPIO")
+growbox_cache_default(GROWBOX_EINK_RST_GPIO STRING "-1" "E-ink display reset GPIO")
+growbox_cache_default(GROWBOX_EINK_BUSY_GPIO STRING "-1" "E-ink display busy GPIO")
 growbox_cache_default(GROWBOX_STAGE28_SERVICE_CONSOLE_ENABLED STRING "1"
                       "Enable Stage28 primary-serial service console")
 growbox_cache_default(GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED STRING "0"
@@ -98,6 +110,7 @@ foreach(_growbox_bool_var IN ITEMS
     GROWBOX_SD_CMD0_PRECONDITION
     GROWBOX_RF433_LOOPBACK_ENABLED
     GROWBOX_RF433_REMOTE_CAPTURE_ENABLED
+    GROWBOX_EINK_DISPLAY_ENABLED
     GROWBOX_STAGE28_SERVICE_CONSOLE_ENABLED
     GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED
     GROWBOX_STAGE28_THERMAL_TEST_SEQUENCE_ENABLED
@@ -112,6 +125,10 @@ endif()
 if(GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED AND NOT GROWBOX_RF433_LOOPBACK_ENABLED)
   message(FATAL_ERROR
     "GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED requires GROWBOX_RF433_LOOPBACK_ENABLED=1")
+endif()
+if(GROWBOX_EINK_DISPLAY_ENABLED AND NOT GROWBOX_APP_CLIMATE_V6_REAL_INPUTS)
+  message(FATAL_ERROR
+    "GROWBOX_EINK_DISPLAY_ENABLED requires GROWBOX_APP_MODE=climate-v6-real-inputs")
 endif()
 
 # Pins that are simultaneously active in the real-input runtime must never alias.
@@ -143,6 +160,44 @@ if(GROWBOX_APP_CLIMATE_V6_REAL_INPUTS)
         foreach(_growbox_rf_pin IN ITEMS GROWBOX_RF433_TX_GPIO GROWBOX_RF433_RX_GPIO)
           growbox_require_distinct_gpio(${_growbox_sd_pin} ${_growbox_rf_pin}
                                         "SD and RF433 enabled together")
+        endforeach()
+      endif()
+    endforeach()
+  endif()
+
+  if(GROWBOX_EINK_DISPLAY_ENABLED)
+    set(_growbox_eink_pins
+        GROWBOX_EINK_CS_GPIO GROWBOX_EINK_DC_GPIO GROWBOX_EINK_RST_GPIO GROWBOX_EINK_BUSY_GPIO)
+    foreach(_growbox_eink_pin IN LISTS _growbox_eink_pins)
+      growbox_require_assigned_gpio(${_growbox_eink_pin} "e-ink display enabled")
+      foreach(_growbox_i2c_pin IN ITEMS GROWBOX_I2C_SDA_GPIO GROWBOX_I2C_SCL_GPIO)
+        growbox_require_distinct_gpio(${_growbox_eink_pin} ${_growbox_i2c_pin}
+                                      "e-ink display and I2C enabled together")
+      endforeach()
+      if(GROWBOX_RF433_LOOPBACK_ENABLED)
+        foreach(_growbox_rf_pin IN ITEMS GROWBOX_RF433_TX_GPIO GROWBOX_RF433_RX_GPIO)
+          growbox_require_distinct_gpio(${_growbox_eink_pin} ${_growbox_rf_pin}
+                                        "e-ink display and RF433 enabled together")
+        endforeach()
+      endif()
+      if(GROWBOX_STAGE27_SD_ENABLED)
+        foreach(_growbox_sd_pin IN LISTS _growbox_sd_pins)
+          growbox_require_distinct_gpio(${_growbox_eink_pin} ${_growbox_sd_pin}
+                                        "e-ink display control and SD enabled together")
+        endforeach()
+      endif()
+    endforeach()
+
+    list(LENGTH _growbox_eink_pins _growbox_eink_pin_count)
+    math(EXPR _growbox_eink_last_index "${_growbox_eink_pin_count} - 1")
+    foreach(_growbox_eink_left_index RANGE 0 ${_growbox_eink_last_index})
+      math(EXPR _growbox_eink_right_start "${_growbox_eink_left_index} + 1")
+      if(_growbox_eink_right_start LESS _growbox_eink_pin_count)
+        foreach(_growbox_eink_right_index RANGE ${_growbox_eink_right_start} ${_growbox_eink_last_index})
+          list(GET _growbox_eink_pins ${_growbox_eink_left_index} _growbox_eink_left_pin)
+          list(GET _growbox_eink_pins ${_growbox_eink_right_index} _growbox_eink_right_pin)
+          growbox_require_distinct_gpio(${_growbox_eink_left_pin} ${_growbox_eink_right_pin}
+                                        "e-ink display control pins")
         endforeach()
       endif()
     endforeach()
