@@ -113,7 +113,7 @@ void testNavigationRefreshBypassesRoutineInterval() {
   assert(runtime.confirmRendered(frame, 11U));
 }
 
-void testWarningTransitionForcesImmediateFullRefresh() {
+void testWarningIdentityChangesForceImmediateFullRefresh() {
   display::DisplayRuntimeConfig config{};
   config.refresh.minimum_refresh_interval_ms = 60'000U;
   display::DisplayRuntimeController runtime{config};
@@ -133,8 +133,38 @@ void testWarningTransitionForcesImmediateFullRefresh() {
   assert(frame.refresh_kind == display::DisplayRefreshKind::Full);
   assert(frame.refresh_reason == display::DisplayRefreshReason::WarningChanged);
   assert(frame.page_model.warning);
+  assert(frame.page_model.warning_mask ==
+         static_cast<std::uint8_t>(display::DisplayWarning::Safety));
+  assert(frame.page_model.safety_warning_reason_code == snapshot.safety_reason_code);
   assert(frame.render_list.warning);
   assert(runtime.confirmRendered(frame, 101U));
+
+  snapshot.safety_reason_code =
+      static_cast<std::uint32_t>(stage28d::LampSafetyReason::InvalidConfig);
+  assert(runtime.update(snapshot, 102U, frame));
+  assert(frame.refresh_kind == display::DisplayRefreshKind::Full);
+  assert(frame.refresh_reason == display::DisplayRefreshReason::WarningChanged);
+  assert(frame.page_model.warning_mask ==
+         static_cast<std::uint8_t>(display::DisplayWarning::Safety));
+  assert(frame.page_model.safety_warning_reason_code == snapshot.safety_reason_code);
+  assert(runtime.confirmRendered(frame, 102U));
+
+  snapshot.safety_latched = false;
+  snapshot.safety_reason_code = static_cast<std::uint32_t>(stage28d::LampSafetyReason::Safe);
+  snapshot.lamp.safety_override = false;
+  snapshot.rtc_trusted = false;
+  assert(runtime.update(snapshot, 103U, frame));
+  assert(frame.refresh_kind == display::DisplayRefreshKind::Full);
+  assert(frame.refresh_reason == display::DisplayRefreshReason::WarningChanged);
+  assert(frame.page_model.warning);
+  assert(frame.page_model.warning_mask ==
+         static_cast<std::uint8_t>(display::DisplayWarning::Clock));
+  assert(frame.page_model.safety_warning_reason_code == 0U);
+  assert(runtime.confirmRendered(frame, 103U));
+
+  snapshot.temperature_c.value = 24.0F;
+  assert(runtime.update(snapshot, 104U, frame));
+  assert(!frame.refreshRequired());
 }
 
 void testFullRefreshCadenceAdvancesOnlyAfterRenderedFrames() {
@@ -217,7 +247,7 @@ void testInvalidGeometryFailsClosedWithoutRefresh() {
 int main() {
   testInitialRefreshRetriesUntilRenderedAndRoutineChangesCoalesce();
   testNavigationRefreshBypassesRoutineInterval();
-  testWarningTransitionForcesImmediateFullRefresh();
+  testWarningIdentityChangesForceImmediateFullRefresh();
   testFullRefreshCadenceAdvancesOnlyAfterRenderedFrames();
   testStalePlannedFrameCannotConsumeNewNavigationRequest();
   testInvalidGeometryFailsClosedWithoutRefresh();
