@@ -70,10 +70,13 @@ growbox_cache_default(GROWBOX_RF433_REMOTE_CAPTURE_ENABLED STRING "0"
                       "Enable Stage28C passive remote capture diagnostics")
 growbox_cache_default(GROWBOX_EINK_DISPLAY_ENABLED STRING "0"
                       "Enable read-only e-ink status display integration")
+growbox_cache_default(GROWBOX_EINK_SCLK_GPIO STRING "-1" "E-ink display SPI clock GPIO")
+growbox_cache_default(GROWBOX_EINK_MOSI_GPIO STRING "-1" "E-ink display SPI MOSI GPIO")
 growbox_cache_default(GROWBOX_EINK_CS_GPIO STRING "-1" "E-ink display chip-select GPIO")
 growbox_cache_default(GROWBOX_EINK_DC_GPIO STRING "-1" "E-ink display data/command GPIO")
 growbox_cache_default(GROWBOX_EINK_RST_GPIO STRING "-1" "E-ink display reset GPIO")
 growbox_cache_default(GROWBOX_EINK_BUSY_GPIO STRING "-1" "E-ink display busy GPIO")
+growbox_cache_default(GROWBOX_EINK_POWER_GPIO STRING "-1" "E-ink display power-enable GPIO")
 growbox_cache_default(GROWBOX_STAGE28_SERVICE_CONSOLE_ENABLED STRING "1"
                       "Enable Stage28 primary-serial service console")
 growbox_cache_default(GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED STRING "0"
@@ -167,7 +170,8 @@ if(GROWBOX_APP_CLIMATE_V6_REAL_INPUTS)
 
   if(GROWBOX_EINK_DISPLAY_ENABLED)
     set(_growbox_eink_pins
-        GROWBOX_EINK_CS_GPIO GROWBOX_EINK_DC_GPIO GROWBOX_EINK_RST_GPIO GROWBOX_EINK_BUSY_GPIO)
+        GROWBOX_EINK_SCLK_GPIO GROWBOX_EINK_MOSI_GPIO GROWBOX_EINK_CS_GPIO GROWBOX_EINK_DC_GPIO
+        GROWBOX_EINK_RST_GPIO GROWBOX_EINK_BUSY_GPIO GROWBOX_EINK_POWER_GPIO)
     foreach(_growbox_eink_pin IN LISTS _growbox_eink_pins)
       growbox_require_assigned_gpio(${_growbox_eink_pin} "e-ink display enabled")
       foreach(_growbox_i2c_pin IN ITEMS GROWBOX_I2C_SDA_GPIO GROWBOX_I2C_SCL_GPIO)
@@ -183,7 +187,7 @@ if(GROWBOX_APP_CLIMATE_V6_REAL_INPUTS)
       if(GROWBOX_STAGE27_SD_ENABLED)
         foreach(_growbox_sd_pin IN LISTS _growbox_sd_pins)
           growbox_require_distinct_gpio(${_growbox_eink_pin} ${_growbox_sd_pin}
-                                        "e-ink display control and SD enabled together")
+                                        "e-ink display and SD enabled together")
         endforeach()
       endif()
     endforeach()
@@ -197,7 +201,7 @@ if(GROWBOX_APP_CLIMATE_V6_REAL_INPUTS)
           list(GET _growbox_eink_pins ${_growbox_eink_left_index} _growbox_eink_left_pin)
           list(GET _growbox_eink_pins ${_growbox_eink_right_index} _growbox_eink_right_pin)
           growbox_require_distinct_gpio(${_growbox_eink_left_pin} ${_growbox_eink_right_pin}
-                                        "e-ink display control pins")
+                                        "e-ink display pins")
         endforeach()
       endif()
     endforeach()
