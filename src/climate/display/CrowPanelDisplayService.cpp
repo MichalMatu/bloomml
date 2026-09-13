@@ -2,9 +2,15 @@
 
 #include "climate/display/DisplayClayCoordinator.h"
 
+#include <esp_log.h>
 #include <esp_timer.h>
 
 namespace growbox::app::climate_io::display {
+namespace {
+
+constexpr char kTag[] = "eink_display";
+
+} // namespace
 
 bool CrowPanelDisplayService::begin() noexcept {
   if (started_) {
@@ -19,6 +25,7 @@ bool CrowPanelDisplayService::begin() noexcept {
   if (render_queue_ == nullptr || completion_queue_ == nullptr) {
     render_queue_ = nullptr;
     completion_queue_ = nullptr;
+    ESP_LOGE(kTag, "Failed to create static display queues");
     return false;
   }
 
@@ -29,10 +36,13 @@ bool CrowPanelDisplayService::begin() noexcept {
     render_queue_ = nullptr;
     completion_queue_ = nullptr;
     task_ = nullptr;
+    ESP_LOGE(kTag, "Failed to create display worker task");
     return false;
   }
 
   started_ = true;
+  ESP_LOGI(kTag, "Display worker started stack_bytes=%u",
+           static_cast<unsigned>(taskStackBytes()));
   return true;
 }
 
@@ -70,9 +80,19 @@ void CrowPanelDisplayService::taskLoop() noexcept {
 
     const bool success = renderDisplayFrameToClay(work_item.frame, geometry_, theme_, backend_);
     if (success) {
-      render_successes_.fetch_add(1U, std::memory_order_relaxed);
+      const std::uint32_t previous = render_successes_.fetch_add(1U, std::memory_order_relaxed);
+      if (previous == 0U) {
+        ESP_LOGI(kTag, "First physical refresh completed generation=%llu kind=%u",
+                 static_cast<unsigned long long>(work_item.generation),
+                 static_cast<unsigned>(work_item.frame.refresh_kind));
+      }
     } else {
-      render_failures_.fetch_add(1U, std::memory_order_relaxed);
+      const std::uint32_t failures =
+          render_failures_.fetch_add(1U, std::memory_order_relaxed) + 1U;
+      ESP_LOGE(kTag, "Physical refresh failed generation=%llu kind=%u failures=%lu",
+               static_cast<unsigned long long>(work_item.generation),
+               static_cast<unsigned>(work_item.frame.refresh_kind),
+               static_cast<unsigned long>(failures));
     }
 
     DisplayRenderCompletion completion{};
@@ -88,12 +108,16 @@ void CrowPanelDisplayService::drainCompletions(std::uint64_t now_ms) noexcept {
   while (xQueueReceive(completion_queue_, &completion, 0U) == pdTRUE) {
     if (!transaction_.matches(completion)) {
       stale_completions_.fetch_add(1U, std::memory_order_relaxed);
+      ESP_LOGW(kTag, "Ignoring stale completion generation=%llu",
+               static_cast<unsigned long long>(completion.generation));
       continue;
     }
 
     if (completion.success &&
         !observer_.confirmRendered(transaction_.inFlightFrame(), completion.rendered_at_ms)) {
       confirm_failures_.fetch_add(1U, std::memory_order_relaxed);
+      ESP_LOGE(kTag, "Display render confirmation failed generation=%llu",
+               static_cast<unsigned long long>(completion.generation));
     }
     if (!completion.success) {
       next_submit_ms_ = now_ms + retry_backoff_ms_;
@@ -114,7 +138,10 @@ void CrowPanelDisplayService::submitPending(std::uint64_t now_ms) noexcept {
   }
   if (xQueueSend(render_queue_, &work_item, 0U) != pdTRUE) {
     transaction_.abort();
-    submit_failures_.fetch_add(1U, std::memory_order_relaxed);
+    const std::uint32_t failures =
+        submit_failures_.fetch_add(1U, std::memory_order_relaxed) + 1U;
+    ESP_LOGW(kTag, "Display queue submit failed failures=%lu",
+             static_cast<unsigned long>(failures));
     return;
   }
   submitted_.fetch_add(1U, std::memory_order_relaxed);
