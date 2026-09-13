@@ -7,6 +7,7 @@ add_executable(
   display_raster_tests
   "${CMAKE_CURRENT_LIST_DIR}/test_main.cpp"
   "${PROJECT_ROOT}/src/climate/display/DisplayMonochromeRaster.cpp"
+  "${PROJECT_ROOT}/src/climate/display/Ssd1680FrameMapper.cpp"
 )
 
 target_include_directories(display_raster_tests PRIVATE "${PROJECT_ROOT}/src")
