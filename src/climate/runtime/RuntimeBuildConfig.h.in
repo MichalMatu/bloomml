@@ -24,10 +24,13 @@ inline constexpr int kRf433TxGpio = @GROWBOX_RF433_TX_GPIO@;
 inline constexpr int kRf433RxGpio = @GROWBOX_RF433_RX_GPIO@;
 
 inline constexpr bool kEinkDisplayEnabled = @GROWBOX_EINK_DISPLAY_ENABLED@ != 0;
+inline constexpr int kEinkSclkGpio = @GROWBOX_EINK_SCLK_GPIO@;
+inline constexpr int kEinkMosiGpio = @GROWBOX_EINK_MOSI_GPIO@;
 inline constexpr int kEinkCsGpio = @GROWBOX_EINK_CS_GPIO@;
 inline constexpr int kEinkDcGpio = @GROWBOX_EINK_DC_GPIO@;
 inline constexpr int kEinkRstGpio = @GROWBOX_EINK_RST_GPIO@;
 inline constexpr int kEinkBusyGpio = @GROWBOX_EINK_BUSY_GPIO@;
+inline constexpr int kEinkPowerGpio = @GROWBOX_EINK_POWER_GPIO@;
 
 inline constexpr bool kServiceConsoleEnabled = @GROWBOX_STAGE28_SERVICE_CONSOLE_ENABLED@ != 0;
 inline constexpr bool kRealOutputsEnabled = @GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED@ != 0;
