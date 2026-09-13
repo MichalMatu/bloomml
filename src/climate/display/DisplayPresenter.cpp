@@ -107,6 +107,15 @@ bool sensorWarning(const DisplaySnapshot& snapshot, std::uint64_t stale_after_ms
          snapshot.co2_ppm.age_ms > stale_after_ms;
 }
 
+constexpr std::uint8_t warningBit(DisplayWarning warning) noexcept {
+  return static_cast<std::uint8_t>(warning);
+}
+
+void addWarning(DisplayPageModel& page, DisplayWarning warning) noexcept {
+  page.warning_mask = static_cast<std::uint8_t>(page.warning_mask | warningBit(warning));
+  page.warning = true;
+}
+
 void formatSensorFreshness(const DisplaySnapshot& snapshot, std::uint64_t stale_after_ms,
                            char* buffer, std::size_t buffer_size) noexcept {
   if (!snapshot.scd_available) {
@@ -351,10 +360,22 @@ bool DisplayNavigation::handle(DisplayButton button) noexcept {
 bool buildDisplayPage(const DisplaySnapshot& snapshot, DisplayPage selected_page,
                       const DisplayPresenterConfig& config, DisplayPageModel& page) noexcept {
   page = {};
-  page.warning = sensorWarning(snapshot, config.sensor_stale_after_ms) || !snapshot.rtc_available ||
-                 !snapshot.rtc_trusted || !storageMounted(snapshot.storage) ||
-                 snapshot.safety_latched ||
-                 snapshot.lifecycle_mode == output_ns::SupervisorMode::FaultLocked;
+  if (sensorWarning(snapshot, config.sensor_stale_after_ms)) {
+    addWarning(page, DisplayWarning::Sensor);
+  }
+  if (!snapshot.rtc_available || !snapshot.rtc_trusted) {
+    addWarning(page, DisplayWarning::Clock);
+  }
+  if (!storageMounted(snapshot.storage)) {
+    addWarning(page, DisplayWarning::Storage);
+  }
+  if (snapshot.safety_latched) {
+    addWarning(page, DisplayWarning::Safety);
+    page.safety_warning_reason_code = snapshot.safety_reason_code;
+  }
+  if (snapshot.lifecycle_mode == output_ns::SupervisorMode::FaultLocked) {
+    addWarning(page, DisplayWarning::SupervisorFault);
+  }
 
   switch (selected_page) {
   case DisplayPage::Status:
