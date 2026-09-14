@@ -1,0 +1,11 @@
+source_repository=MichalMatu/esp32s3_LiteGraph
+source_commit=5b8c758c365547ddeaab65bbe9f849bdd071695d
+cmake_blob=8adf1b7abd695855cb1a1fc2d74cbfab40ba7b94
+fixture_blob=308e8e85fd2a0cc79ceafa5900a7d653dc2ecbcd
+clay_impl_blob=1668aac889c14cdb7787d51ab527d694b920e421
+renderer_core_tests_blob=ae1f184ba951d7e21e98875caa25d3d70296dfd9
+renderer_menu_tests_blob=c8b2624afbb00325a9a5ef5aca8a6998f46a458d
+layout_controller_tests_blob=f6f7aaf7e25d52d503c3981a7f54252c5f8da1e3
+renderer_entry_tests_blob=a767bc1a93f1b0e0f95f1747763a9070bf74d6cc
+
+These tests are intentionally pinned rather than compiled from vendor. When the growbox C++20 Clay component is introduced, copy/adapt the generic renderer, clipping, navigation and golden-layout assertions into normal growbox host-test targets.

@@ -2,68 +2,47 @@
 
 Pinned source: `MichalMatu/esp32s3_LiteGraph@5b8c758c365547ddeaab65bbe9f849bdd071695d`.
 
-## Included in this snapshot
+## Copied reference code
 
-- `lib/framework/epd2_9/clay_ui/controller/ClayScrollState.h`
-- `lib/framework/epd2_9/clay_ui/controller/ClayScrollState.cpp`
-- `lib/framework/epd2_9/clay_ui/render/ClipStack.h`
-- `lib/framework/epd2_9/clay_ui/render/ClayRenderer.h`
-- `lib/framework/epd2_9/clay_ui/render/ClayRenderer.cpp`
-- `lib/framework/epd2_9/clay_ui/support/ClayTheme.h`
-- `lib/framework/epd2_9/clay_ui/support/ClayTheme.cpp`
-- `lib/framework/epd2_9/clay_ui/support/ClayLayoutPrimitives.h`
-- `lib/framework/epd2_9/clay_ui/support/ClayTextUtils.h`
-- `lib/framework/epd2_9/clay_ui/support/ClayTextUtils.cpp`
-- `lib/framework/epd2_9/drivers/input/InputDriver.h`
-- `lib/framework/epd2_9/drivers/input/InputDriver.cpp`
-
-## Import when the corresponding port begins
-
-### Real Clay component
-
-- `lib/thirdparty/clay/README.md`
-- `lib/thirdparty/clay/include/clay/clay.h`
-- `lib/thirdparty/clay/src/ClayCore.cpp`
-
-Clay header at the pinned source identifies itself as version 0.14 and requires C++20.
-
-### Dirty-region / PSRAM reference
-
-- `lib/framework/epd2_9/clay_ui/render/ClayRenderEngine.h`
-- `lib/framework/epd2_9/clay_ui/render/ClayRenderEngine.cpp`
-- `lib/framework/epd2_9/core/Memory.h`
-
-Port the dirty-region algorithm into the existing growbox SSD1680 transaction model; do not replace the native backend.
-
-### Navigation/menu
-
-- `lib/framework/epd2_9/clay_ui/controller/ClayLayoutController.h`
-- `lib/framework/epd2_9/clay_ui/controller/ClayLayoutController.cpp`
+- `lib/framework/epd2_9/clay_ui/controller/ClayScrollState.*`
+- `lib/framework/epd2_9/clay_ui/controller/ClayLayoutController.*`
 - `lib/framework/epd2_9/clay_ui/controller/ClayLayoutInputHandlers.cpp`
+- `lib/framework/epd2_9/clay_ui/ClayViewState.h`
+- `lib/framework/epd2_9/clay_ui/render/ClipStack.h`
+- `lib/framework/epd2_9/clay_ui/render/ClayRenderer.*`
+- `lib/framework/epd2_9/clay_ui/render/ClayRenderEngine.*`
+- `lib/framework/epd2_9/clay_ui/support/ClayTheme.*`
+- `lib/framework/epd2_9/clay_ui/support/ClayLayoutPrimitives.h`
+- `lib/framework/epd2_9/clay_ui/support/ClayTextUtils.*`
 - `lib/framework/epd2_9/clay_ui/modules/menu/model/MenuModel.*`
 - `lib/framework/epd2_9/clay_ui/modules/menu/layout/MenuLayout.*`
 - `lib/framework/epd2_9/clay_ui/modules/menu/layout/MenuListLayout.*`
-- `lib/framework/epd2_9/clay_ui/modules/common/ActionConfirmationDialog.*`
+- `lib/framework/epd2_9/clay_ui/modules/menu/preview/MenuPreviewLayout.*`
+- `lib/framework/epd2_9/drivers/input/InputDriver.*`
+- `lib/thirdparty/clay/README.md`
+- `lib/thirdparty/clay/src/ClayCore.cpp`
+- reusable SDL `GfxFontRenderer.*` and `GfxFontData.cpp`
 
-Use the mechanics, not LiteGraph-specific menu entries/presenters.
+## Immutable source pins
 
-### Simulator
+### Clay 0.14
 
-- `tools/clay_sim/sdl/SdlMain.cpp`
-- `tools/clay_sim/sdl/clay_renderer_gfx.cpp`
-- `tools/clay_sim/sdl/GfxFontRenderer.*`
-- the font assets used by that target
+`source/lib/thirdparty/clay/CLAY_0_14_SOURCE.lock` pins the exact 269888-byte single header, blob `58006d208f7e58d646578b42524068f44445a4dc`. Copy it verbatim only when creating the isolated C++20 component.
 
-Target growbox geometry remains 296x128. The simulator should become a host-only target and must not enter ESP-IDF firmware dependencies.
+### SDL simulator
+
+`source/tools/clay_sim/SIMULATOR_SOURCE.lock` pins `SdlMain.cpp`, `clay_renderer_gfx.cpp` and renderer/font blobs. The harness is useful, but its sample screens are LiteGraph-specific. Rebuild the growbox simulator around Environment / Outputs / System / Diagnostics while retaining 296x128 geometry and headless golden checks.
 
 ### Host tests
 
-- `test/host/clay_ui/CMakeLists.txt`
-- `test/host/clay_ui/clay_impl.cpp`
-- `test/host/clay_ui/ClayRendererTestFixture.h`
-- `test/host/clay_ui/clay_renderer_core_tests.cpp`
-- `test/host/clay_ui/clay_renderer_menu_tests.cpp`
-- `test/host/clay_ui/test_clay_layout_controller.cpp`
-- `test/host/clay_ui/test_clip_stack.cpp`
+`source/test/host/clay_ui/HOST_TEST_SOURCE.lock` pins the relevant CMake, fixture, renderer/menu/controller tests. Adapt them into growbox test targets instead of making vendor itself executable.
 
-Adapt tests to growbox namespaces/models instead of copying application-specific assertions.
+## Adaptation rules
+
+- keep the current native SSD1680 backend and async worker;
+- move only the dirty-region calculation into growbox refresh planning;
+- allocate the Clay arena in PSRAM only after call-tree/resource review;
+- rewrite physical buttons with ESP-IDF GPIO and a host-testable debounce/long-press state machine;
+- keep current growbox `DisplaySnapshot`/presenter truth boundary;
+- no LiteGraph WiFi/Nodeflow presenters in production growbox;
+- vendor remains excluded from all builds.

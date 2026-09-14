@@ -1,0 +1,13 @@
+source_repository=MichalMatu/esp32s3_LiteGraph
+source_commit=5b8c758c365547ddeaab65bbe9f849bdd071695d
+geometry=296x128
+sdl_main_path=tools/clay_sim/sdl/SdlMain.cpp
+sdl_main_blob=39c030adce7621d7bbdb77651813f106633039c0
+sdl_main_size=35699
+renderer_path=tools/clay_sim/sdl/clay_renderer_gfx.cpp
+renderer_blob=f2b73ebae45a0da8be3f9c38a9f920c28ded33ee
+font_renderer_cpp_blob=9952f06fd00466c32d5fae3879c69c40ba7e63e0
+font_renderer_h_blob=6bca5f69def0f493fbb87b6aac5f50247768a8af
+font_data_blob=7ebab2b7b82fac5f3cd622438a84f7d7170290f6
+
+SdlMain.cpp is intentionally pinned instead of copied because most of it hard-codes LiteGraph WiFi/settings/glance sample screens. Port the SDL harness and golden-check mechanics, not those application views. The reusable bitmap-font renderer is copied beside this lock.

@@ -1,33 +1,30 @@
 # LiteGraph EPD/Clay port vendor snapshot
 
-This directory is a curated, read-only source snapshot from `MichalMatu/esp32s3_LiteGraph` for the next growbox display/menu/button/simulator stage.
+Curated read-only reference material from `MichalMatu/esp32s3_LiteGraph` for the growbox display/menu/button/simulator stage.
 
-Source repository: `MichalMatu/esp32s3_LiteGraph`
 Source commit: `5b8c758c365547ddeaab65bbe9f849bdd071695d`
-Destination baseline when imported: `growbox-ml-controller` `39b5c023ea1b426e96b072652fcc2744af523aa6`
+Growbox baseline when the snapshot started: `39b5c023ea1b426e96b072652fcc2744af523aa6`
 
 ## Contract
 
-- Nothing below `vendor/litegraph_epd_port/` is part of the growbox firmware build.
-- Treat the files as port/reference material, not as a second display implementation.
-- Keep the existing native ESP-IDF SSD1680 backend, fixed 296x128 framebuffer, asynchronous display worker and observer-only ownership.
-- Port reusable Clay/layout/input ideas into normal growbox components in bounded steps with host tests.
-- Do not import GxEPD2, LiteGraph Nodeflow/Wi-Fi presenters or Arduino hardware ownership into production growbox code.
-- The LiteGraph Clay package is C++20; growbox production code is currently C++17. A future real Clay integration should use an isolated C++20 component and keep Clay types behind that boundary.
+Nothing below this directory is part of the growbox firmware build. Keep the native ESP-IDF SSD1680 backend, 296x128 framebuffer, asynchronous display worker and observer-only ownership. Port reusable mechanics into normal growbox components in bounded steps with host tests. Do not import GxEPD2, Nodeflow/WiFi application ownership or Arduino hardware ownership.
 
-## Included now
+## Captured reference areas
 
-The first snapshot contains the small/high-value pieces that are useful for direct adaptation:
+- Clay scroll state, clipping, monochrome renderer and layout/text/theme helpers;
+- full LiteGraph navigation/controller mechanics and menu layout/model reference;
+- button/input event model and Arduino reference driver;
+- ClayRenderEngine reference including 128 KiB minimum PSRAM arena and current/previous dirty-region union algorithm;
+- reusable SDL bitmap-font renderer pieces plus an immutable pin to the 296x128 SDL harness/golden-check source;
+- immutable pins to the generic host Clay test suite;
+- immutable pin for bundled Clay 0.14.
 
-- scroll state;
-- clipping and monochrome Clay renderer abstraction;
-- shared Clay theme/layout primitives/text helpers;
-- the button/input event model and current Arduino reference implementation.
+## Clay 0.14 boundary
 
-Original paths are retained below `source/` so dependencies and provenance stay obvious.
+The bundled Clay header reports version 0.14 and requires C++20. Growbox production remains C++17. The intended integration is therefore an isolated C++20 component whose public boundary does not expose `Clay_*` types.
 
-## Deliberately not copied yet
+The 269888-byte `clay.h` is pinned in `source/lib/thirdparty/clay/CLAY_0_14_SOURCE.lock`. The GitHub connector cannot reuse blob objects across repositories, so the header is not duplicated here; copy it verbatim from the pinned LiteGraph commit when the real C++20 component is created.
 
-Larger or tightly coupled files are listed in `SOURCE_MANIFEST.md` and should be imported only when their port starts. In particular this includes bundled Clay 0.14, the SDL simulator, full view/controller/presenter graph, host Clay tests and the full `ClayRenderEngine` dirty-region/PSRAM implementation.
+## Port rule
 
-This keeps the initial vendor snapshot useful without silently adding a second framework or build dependency.
+Vendor code is evidence/reference, not production code. Adapt algorithms and tests to growbox models; do not add `vendor/litegraph_epd_port` to `EXTRA_COMPONENT_DIRS`, `idf_component_register`, or host build include paths.
