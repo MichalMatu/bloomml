@@ -66,5 +66,4 @@ All outputs normalized to **[0, 1]**; safety may force 0.
 
 ## Not in v4 ML vector (by design)
 
-PPFD, leaf T, EC/pH, flood sensor, exhaust air sensors, weather station — see product roadmap in
-[IO_MAP.md](../IO_MAP.md) / [plan.md](../plan.md).
+PPFD, leaf T, EC/pH, flood sensor, exhaust air sensors and weather-station inputs are outside this contract. See [IO_MAP.md](../IO_MAP.md) for the compact I/O map and [PROJECT_ROADMAP.md](../PROJECT_ROADMAP.md) for current product priorities.
