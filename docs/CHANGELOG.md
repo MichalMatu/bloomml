@@ -4,16 +4,18 @@ Only milestones that still help understand the current codebase are kept here. D
 
 ## Unreleased
 
-### SCD41 startup recovery qualification — 2026-09-14
+### SCD41/e-ink closeout — 2026-09-14
 
-- Hardened `Scd41InsideSource::begin()` with the Sensirion-aligned SCD41 clean-start sequence `wake_up -> stop_periodic_measurement -> reinit -> start_periodic_measurement`.
-- Code-bearing recovery candidate: `a92074b74b055c58c0949c7c38f4896638ebf227`.
-- The earlier missing-board incident was a loose USB cable, not a firmware boot loop; `/dev/cu.usbserial-10` remained untouched during diagnosis.
-- Exact candidate passed a 90-second hardware qualification with e-ink enabled: 8 SCD41 samples, 5 successful physical display refreshes, zero SCD41 read/invalid errors, zero panic/brownout and no unexpected reboot.
-- Exact candidate then passed 5/5 bounded MCU-only reset cycles with SCD41 sampling and e-ink refresh healthy after every reset.
-- GitHub CI for the code candidate completed successfully across web, host and ESP-IDF jobs.
-- Added a source-policy regression test that preserves the clean-start command order and availability semantics.
-- Historical zero-sample behavior is treated as an intermittent retained-device-state/startup issue; the qualification strongly supports the mitigation but does not claim recurrence is impossible.
+- Final code-bearing closeout commit: `c720c0a1d6d6d9c80daeb04b2dc69efa53d2c8a4`.
+- Preserved the Sensirion-aligned SCD41 clean-start sequence `wake_up -> stop_periodic_measurement -> reinit -> start_periodic_measurement`.
+- Reproduced the intermittent SCD41 condition on one later boot: one valid sample followed by more than 70 seconds without a new sample, while read/invalid counters stayed zero and e-ink continued refreshing. A subsequent boot of the same SHA sampled normally.
+- Added a bounded runtime liveness mitigation: after 30 seconds without a new SCD41 measurement, perform the clean-start sequence at most once per MCU boot. No ESP restart and no infinite retry loop are introduced.
+- Added/extended source-policy regression coverage for the clean-start order, availability semantics and one-shot delayed recovery.
+- Restored the e-ink main quick-glance page to show temperature, RH, CO2, SCD41 freshness, time, mode, lamp, fan, humidifier and safety while retaining the four-page Environment / Outputs / System / Diagnostics model.
+- Canonical CI now runs the five display host suites; final CI #1023 passed web, host and ESP-IDF jobs for the closeout line.
+- The exact `c720...` firmware built successfully locally with e-ink enabled. A fresh physical flash/monitor gate could not run because `/dev/cu.usbserial-1130` was not enumerated; the task stopped before touching hardware.
+- Historical hardware evidence remains valid for the clean-start/e-ink line: `a92074b...` passed a 90-second run with 8 SCD41 samples and 5 e-ink refreshes plus 5/5 bounded MCU-reset cycles.
+- The earlier missing-board incident was a loose USB cable, not a firmware boot loop; `/dev/cu.usbserial-10` remained untouched throughout diagnosis.
 
 ### Repository consolidation — 2026-09-14
 
@@ -24,8 +26,8 @@ Only milestones that still help understand the current codebase are kept here. D
 - Hardware audit helpers now require an explicit serial port instead of guessing a device, and serial-capture help no longer names a forbidden port.
 - Added `HISTORY.md` as the compact milestone/evidence index.
 - Reduced `README.md`, `AGENTS.md`, `CURRENT_STATUS.md`, `PROJECT_ROADMAP.md`, `IO_MAP.md`, hardware bring-up docs and frontend docs to current responsibilities.
-- Long-lived branch policy is now `main` + `agent-control` + `gh-pages`; temporary e-ink/chat branches are retired after their tip SHAs are recorded.
-- Cleanup intentionally does not change controller behavior. The active technical blocker at cleanup time was SCD41 sampling; that blocker was subsequently qualified as recovered by the entry above.
+- Long-lived branch policy is `main` + `agent-control` + `gh-pages`; temporary implementation branches are not part of the canonical development line.
+- Cleanup intentionally does not change controller behavior.
 
 ### CrowPanel e-ink integration / SCD41 handoff — 2026-09-13
 

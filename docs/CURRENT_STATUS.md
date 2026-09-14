@@ -8,17 +8,17 @@ Publishing branch: `gh-pages`
 
 ## Current phase
 
-Repository cleanup and the CrowPanel SCD41/e-ink recovery investigation are complete enough to resume normal development.
+The CrowPanel e-ink/SCD41 recovery work is closed for normal development purposes. The final code-bearing closeout commit is:
 
-The previous active SCD41 blocker is no longer reproduced on the qualified candidate. The current code-bearing recovery candidate is:
+`c720c0a1d6d6d9c80daeb04b2dc69efa53d2c8a4`
 
-`a92074b74b055c58c0949c7c38f4896638ebf227`
-
-It adds the Sensirion-aligned SCD41 clean-start sequence:
+It keeps the Sensirion-aligned SCD41 clean-start sequence:
 
 `wake_up -> stop_periodic_measurement -> reinit -> start_periodic_measurement`
 
-Do not claim the historical intermittent fault is mathematically impossible to recur; it was intermittent. The candidate has, however, passed bounded hardware qualification including repeated MCU-only resets with the sensor left powered.
+and adds one bounded runtime liveness recovery. If no new SCD41 measurement appears for 30 seconds, firmware performs that same recovery sequence at most once per MCU boot. It does not restart the ESP32 and it does not retry indefinitely.
+
+The historical SCD41 failure remains classified as intermittent retained-device/startup state. It has been reproduced on one boot and absent on another boot of the same firmware/hardware, so do not claim the physical root cause is mathematically eliminated. The production behavior is now bounded and self-recovering once per boot instead of silently remaining stale forever.
 
 ## Hardware qualification evidence
 
@@ -30,22 +30,9 @@ Do not use `/dev/cu.usbserial-1120` without separate authorization.
 
 The apparent missing-board incident on 2026-09-14 was traced to a loose USB cable. Once corrected, `/dev/cu.usbserial-1130` enumerated normally. The protected `/dev/cu.usbserial-10` device was not opened or reset during diagnosis.
 
-### Pre-fix baseline observation
+### Proven clean-start/e-ink baseline
 
-The previously flashed display baseline `01db8228e6d822b5c64359abd8bf2d85341b5919` was passively observed for 45 seconds after the cable was corrected:
-
-- one normal POWERON boot;
-- zero panic/brownout events;
-- SCD41 produced a valid sample in that boot;
-- e-ink refreshed successfully.
-
-This confirms the historical failure was intermittent rather than a deterministic source regression.
-
-### `a92074b...` qualification
-
-With physical outputs fenced off, exact SHA `a92074b74b055c58c0949c7c38f4896638ebf227` was built/flashed to `/dev/cu.usbserial-1130` and observed with the CrowPanel e-ink path enabled.
-
-90-second qualification result:
+Exact SHA `a92074b74b055c58c0949c7c38f4896638ebf227` passed a 90-second hardware qualification with physical outputs fenced off and e-ink enabled:
 
 - `eink_requested=1`, `eink_ready=1`;
 - 5 successful physical e-ink refreshes;
@@ -56,19 +43,29 @@ With physical outputs fenced off, exact SHA `a92074b74b055c58c0949c7c38f4896638e
 - zero brownout events;
 - no unexpected reboot.
 
-A bounded 5-cycle MCU-reset stress test then passed 5/5 cycles. Every cycle reached a valid SCD41 sample, had e-ink enabled/ready, completed a physical refresh, matched firmware SHA `a92074b...`, and recorded no panic or brownout.
+A bounded 5-cycle MCU-reset stress test then passed 5/5 cycles. Every cycle reached a valid SCD41 sample, had e-ink enabled/ready, completed a physical refresh, and recorded no panic or brownout.
 
-Local Agent evidence tasks:
+### Intermittent failure reproduction
 
-- `20260914-scd41-ab-after-cable-fix-v1`
-- `20260914-scd41-eink-enabled-qual-v1`
-- `20260914-scd41-mcu-reset-stress-v1`
+On later exact SHA `f53979923ad47dd9422f5457e8b54596c7fdf093`, one boot produced a valid first SCD41 measurement and then stalled with `scd_samples=1` while sample age grew past 70 seconds. `scd_read_errors` and `scd_invalid` stayed zero, e-ink continued refreshing and there was no panic/brownout. A subsequent boot of the same SHA sampled normally (`1 -> 2 -> ... -> 7`).
 
-The canonical GitHub CI run for the code candidate also completed successfully across `web-tests`, `host-tests`, and `esp-idf-build`.
+That A/B evidence is why `c720c0a1...` adds the one-shot 30-second liveness recovery.
+
+### Final `c720c0a1...` qualification state
+
+For `c720c0a1d6d6d9c80daeb04b2dc69efa53d2c8a4`:
+
+- relevant pre-commit gates passed;
+- SCD41 policy/regression tests passed;
+- all five display host suites passed;
+- full CrowPanel ESP-IDF build with e-ink enabled passed;
+- GitHub CI #1023 passed `web-tests`, `host-tests` and `esp-idf-build`.
+
+A fresh physical flash/monitor gate was attempted, but `/dev/cu.usbserial-1130` was not enumerated at that moment, so the task stopped before flash and touched no device. Therefore the exact `c720...` binary does not yet have a fresh hardware run. This is a hardware-availability limitation, not a failed firmware qualification.
 
 ## E-ink status
 
-The CrowPanel 2.9-inch DIE01129S001 e-paper display is operational.
+The CrowPanel 2.9-inch DIE01129S001 e-paper display path is operational and observer-only.
 
 Hardware/profile facts:
 
@@ -78,14 +75,24 @@ Hardware/profile facts:
 - display power GPIO 7;
 - shared I2C SDA 21 / SCL 38.
 
-Completed and physically observed:
+The operator model remains four pages:
+
+1. Environment / main quick-glance page;
+2. Outputs;
+3. System;
+4. Diagnostics.
+
+The first page again renders the full quick-glance set instead of hiding useful information: temperature, RH, CO2, SCD41 freshness, time, controller mode, lamp, fan, humidifier and safety. The other pages remain expansions rather than replacements.
+
+Completed and tested:
 
 - display initialization and refresh;
 - 180-degree rotation;
-- compact status layout;
+- Clay/presenter/render-list seam;
 - observer-only display ownership;
 - asynchronous display worker outside the controller hot path;
 - partial refresh path;
+- display host suites are part of canonical CI;
 - real runtime values coexist with SCD41 sampling.
 
 Do not reopen the panel pin map, SSD1680 backend, rotation, async architecture or the discarded display-brownout hypothesis unless new evidence directly requires it.
@@ -111,19 +118,19 @@ GROWBOX_STAGE28_THERMAL_TEST_SEQUENCE_ENABLED=0
 
 ## Repository policy after cleanup
 
-Long-lived branches are only:
+Long-lived branches are intended to be only:
 
 - `main` — source and documentation;
 - `agent-control` — Local Agent control plane;
 - `gh-pages` — published web output.
 
-Temporary implementation branches should be deleted after their work is incorporated and verified.
+Temporary implementation branches should be deleted after their work is incorporated and verified. Three temporary closeout safety refs created during this session contain no unique work and should be removed administratively: `tmp/close-display-scd41`, `tmp/close-display-scd41-backup`, and `tmp/close-display-scd41-safety`.
 
 Detailed historical phase handoffs/plans are intentionally kept in Git history instead of live `docs/`. Compact milestone evidence is in `docs/HISTORY.md` and `docs/CHANGELOG.md`.
 
 ## Next work
 
-1. Keep the SCD41 recovery regression test and exact hardware evidence intact.
-2. Continue the bounded Clay/menu/button/simulator port from the proven LiteGraph implementation using an appropriately bound source context.
-3. Complete display/runtime/memory/hardware qualification where still missing.
-4. Resume controller behavior-quality tuning from `docs/PROJECT_ROADMAP.md` only after the remaining display/UI work is stable.
+1. Treat `c720c0a1...` as the closed code baseline for the e-ink/SCD41 recovery work.
+2. Continue the next planned display/menu/button/simulator stage without reopening completed backend work unless new evidence requires it.
+3. When `/dev/cu.usbserial-1130` is available again, a bounded physical confirmation of the exact or descendant firmware can validate the one-shot recovery on hardware; this is not a prerequisite for continuing unrelated development.
+4. Keep the SCD41 clean-start and one-shot recovery regression tests intact.
