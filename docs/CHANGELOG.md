@@ -1,78 +1,46 @@
 # Changelog
 
-All notable changes to this project are documented here.
+Only milestones that still help understand the current codebase are kept here. Detailed phase-by-phase notes remain available in Git history; exact operational identities are summarized in [HISTORY.md](HISTORY.md).
 
 ## Unreleased
 
-### E-ink operator UI handoff — 2026-09-12
+### Repository consolidation — 2026-09-14
 
-- Inserted a bounded e-ink operator-visibility task before Controller behavior quality work.
-- Added `docs/EINK_UI_HANDOFF.md` with the autonomous implementation plan, architecture boundaries, unattended hardware-safety rules and required log/memory/panic qualification evidence.
-- Added `docs/EINK_UI_NEW_CHAT_PROMPT.md` as a ready copy/paste fresh-chat prompt for the overnight implementation.
-- The operator confirmed the growbox uses the same physical e-ink/button module and 100% compatible pin map as `MichalMatu/esp32s3_LiteGraph`; the implementation should reuse its proven Clay menu, button navigation, simulator, refresh policy and generic display infrastructure rather than redesigning them.
-- Planned growbox pages: home/glance, Environment, Outputs, System and Diagnostics, with correct intent/executed/transport truth semantics and observer-only UI ownership.
-- Unattended flash/soak is restricted to `/dev/cu.usbserial-1130` with physical outputs, RF loopback and the thermal test sequence disabled. Completion requires explicit inspection for panic/watchdog/reset issues and stable heap/PSRAM/fragmentation/stack headroom.
-- This entry documents the handoff only; it does **not** claim that the display implementation is complete yet.
+- Promoted the active e-ink/SCD41 development line to canonical `main`.
+- Reduced live documentation by removing superseded phase handoffs, audit plans, temporary prompts and Stage27/28 continuation files.
+- Added `HISTORY.md` as the compact milestone/evidence index.
+- Reduced `README.md`, `AGENTS.md`, `CURRENT_STATUS.md`, `PROJECT_ROADMAP.md`, `IO_MAP.md`, hardware bring-up docs and frontend docs to current responsibilities.
+- Long-lived branch policy is now `main` + `agent-control` + `gh-pages`; temporary e-ink/chat branches are retired after their tip SHAs are recorded.
+- Cleanup intentionally does not change controller behavior. The active technical blocker remains SCD41 sampling.
 
-### Final release-readiness hardening — 2026-09-12
+### CrowPanel e-ink integration / SCD41 handoff — 2026-09-13
 
-- Updated the Stage27C soak parser to preserve historical `soak_v=2` support while accepting current `soak_v=3` telemetry and its renamed storage fields.
-- For v3 fake-output soak acceptance, validate the explicit physical-output fence (`output_v=2`, `transport_active=0`) instead of treating legacy loop `io_status=2/3` as a physical-output failure.
-- Kept missing/stale lamp temperature fail-closed without synthesizing a thermal trip; a genuine over-temperature trip still survives temporary temperature loss and requires the full recovery hold.
-- Added regression coverage for both parser versions and both lamp-safety state-history cases.
-- Confirmed the intended long-lived remote branches are only `main`, `agent-control` and `gh-pages`; the latter two are required control/publishing branches, not cleanup candidates.
-- Final code-bearing hardening identity: `e03763d019af405087a5fa9c6713a7165d2e623f`. Local verification passed 500 Python tests (12 hardware/visual skips), all 50 host C++ tests, five architecture/config ownership guards, host clang-tidy and three ESP-IDF builds.
-- Canonical GitHub verification passed CI #865 and Sandbox Pack #63 on the same code-bearing SHA.
-- Bounded current-board qualification `20260912-final-main-hardware-qualification-v1` passed on `/dev/cu.usbserial-1130`: strict 120 s `soak_v=3` reported zero violations, no reset/disconnect/SHA mismatch, and the first valid SCD41 sample cleared startup fail-closed state without a false `RecoveryHold`.
-- Closeout originally left product development ready to move to Controller behavior quality; the e-ink operator-visibility task above was subsequently inserted before that tuning work.
+- Added observer-only CrowPanel 2.9-inch SSD1680 e-paper runtime integration.
+- Added compact status rendering, rotation, asynchronous display worker and partial-refresh support.
+- Physical display operation was confirmed on the board; known flashed/debug baseline: `01db8228e6d822b5c64359abd8bf2d85341b5919`.
+- Current regression evidence shows SCD41 available but producing zero successful samples while BLE/RTC/SD remain healthy.
+- Pre-cleanup branch/documentation head: `ceaaa88801568cccf2f1cbc86021ce3b2b2809d5`.
 
-### Structural cleanup closeout — 2026-09-12
+### Release-readiness and structural hardening — 2026-09-11 to 2026-09-12
 
-- Removed retired `BleOutsideSource`, `Stage27SdDataLogger` and obsolete `Stage27Telemetry.cpp` implementation.
-- Removed unused `ClimateObservabilityMetrics` and its standalone host-test target.
-- Moved `LampSafety` and `OutputBindings` under `src/climate/output/` while preserving namespaces and behavior.
-- Reduced `RealInputRuntimeCoordinator.h` coupling to two direct includes by moving concrete dependencies into the implementation file.
-- Final code-bearing identity: `0a7097a30280ec0f7bb408799c07093761d63e88`.
-- Final software verification on that code line passed all runtime/config/service-console/app-mode/output-ownership guards, `50/50` host C++ tests, host clang-tidy, the CrowPanel real-input ESP-IDF build, GitHub CI #863 and Sandbox Pack #61.
-- Final read-only structure re-audit reported zero include cycles, zero climate `.cpp` files without build/reference wiring and no remaining structural cleanup with a clear benefit-to-churn justification.
-- The structural-closeout code identity was not itself the later release-hardening hardware-qualified identity; current qualification status is tracked in `docs/CURRENT_STATUS.md`.
+- Split real-input runtime, service-console and output ownership into narrower production boundaries.
+- Centralized board/runtime configuration and retained Rule-authoritative production behavior with ML shadow/research only.
+- Removed retired BLE/storage/telemetry code and stale observability helpers.
+- Preserved `OutputSupervisor` as the only normal configured physical-output execution owner.
+- Hardened startup/fake-output/thermal semantics and current soak parsing.
+- Structural cleanup identity: `0a7097a30280ec0f7bb408799c07093761d63e88`.
+- Release-readiness identity: `e03763d019af405087a5fa9c6713a7165d2e623f`; GitHub CI #865, Sandbox Pack #63 and bounded board qualification passed for that exact executable line.
 
-### Architecture and runtime quality cleanup — 2026-09-11
+### Climate-v6 / native ESP-IDF platform
 
-- Split the real-input runtime into thin bootstrap, composition, coordinator, cycle-state, output-transport and output-telemetry boundaries.
-- Split the Stage28 service console into a thin router/transport plus output, storage and system command domains.
-- Centralize board/runtime configuration in CMake profiles and generate typed `RuntimeBuildConfig.h` for production C++.
-- Isolate legacy controller sources from production climate-v6 builds and add executable app-mode/config/runtime ownership guards.
-- Preserve `OutputSupervisor` as the only normal configured physical-output execution owner.
-- Fix `fake-locked` transport semantics so unavailable transport reports `NotAttempted/Unavailable` instead of manufacturing successful executed state.
-- Add focused `RuntimeOutputTransport` regression coverage and fail closed on invalid runtime lifecycle/automation/maintenance reports.
-- Group coordinator dependencies by input/output/support domains and move output telemetry formatting out of hot orchestration.
-- Move binary-output policy constants out of composition wiring and fence production runtime authority to deterministic Rule mode; ML remains shadow/research-only.
-- Reduce duplicated `GROWBOX_*` compile-definition surface and remove the retired Gate6 thermal test-sequence helper.
-- Compact post-refactor verification passed all architecture/config guards, the focused transport regression, `51/51` host C++ tests and a CrowPanel real-input ESP-IDF build on code-bearing SHA `1a599a58eb57841206ab92c7a5cacf50f7463f78`.
-- Clarify that historical full Physical H evidence belongs only to its historical executable identity and is not automatically inherited by later refactor SHAs.
+- Added Rule / ML_SHADOW / ML_ACTIVE runtime modes with Rule as default authority and deterministic safety final.
+- Added climate-v6 runtime, trace/replay/counterfactual evaluation and generated C inference.
+- Migrated standalone firmware to native ESP-IDF 5.5.4.
+- Added real-input adapters, RF433/output execution architecture, diagnostics, host/HIL tests and scientific simulator/twin tooling.
+- Historical full Physical H qualification belongs only to exact executable `02208d23f403bca3540dbbd652eb55703a044833`.
 
-### Earlier climate-v6 / native ESP-IDF work
+## 0.1.0 — 2026-07-11
 
-- Add Rule / ML_SHADOW / ML_ACTIVE runtime modes with Rule as the default authority and deterministic safety remaining final.
-- Add the 44-feature climate-v6 C++ runtime, Python/C++ golden parity, trace schema/NDJSON recording, deterministic replay and counterfactual ML evaluation.
-- Add `ClimateControlLoop` fail-closed I/O handling, actuator OFF recovery/fault latch, and multi-step virtual HIL coverage.
-- Compile climate-v6 sources in the real ESP-IDF ESP32-S3 firmware build and align local/CI ESP-IDF to v5.5.4.
-- Add a hardware-neutral application I/O adapter seam for sensor/configuration providers and semantic actuator-role drivers.
-- Complete climate-v6 research through Stage 16 and preserve authoritative safety after applied actions.
-- Keep the bounded 44 -> 32 -> 32 -> 6 MLP; reject residual policy and simple deterministic CO2/exhaust coupling after representative DEV regressions/trade-offs.
-- Add explicit Sequence-Teacher DAgger support while preserving the legacy rollout default; stop after one bounded DEV iteration because switching gates fail on two DEV seeds.
-- Freeze ML decisions and seed hygiene in `docs/ML_DECISION_REPORT.md`; move production use toward Rule-authoritative shadow diagnostics and deterministic trace/replay.
-- Migrate the standalone ESP32-S3 firmware from Arduino/PlatformIO to native ESP-IDF 5.5.4.
-- Preserve the bounded NDJSON serial protocol, deterministic simulator, controller behavior and generated-model identity.
-- Add native ESP-IDF components, CMake/CTest host tests and ESP-IDF CI builds.
-- Vendor the small MIT-licensed emlearn dense-network runtime surface required by the generated model.
-
-## 0.1.0 - 2026-07-11
-
-- Bootstrap the schema-driven, portable environment-controller library.
-- Add deterministic simulation, teacher, training and emlearn export pipeline.
-- Add the ESP32-S3 closed-loop demonstration firmware and bounded serial protocol.
-- Add an optional explicitly selected N32R16V OPI profile while keeping N8/no-PSRAM as default.
-- Add host tests, firmware builds, CI, scenarios and portability documentation.
-- Harden serial replay correlation and malformed-log analysis.
+- Bootstrapped the schema-driven portable environment-controller library.
+- Added deterministic simulation/training/export pipeline and ESP32-S3 demonstration firmware.
+- Added serial replay, CI, scenarios, host tests and firmware builds.
