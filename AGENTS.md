@@ -81,6 +81,20 @@ Canonical patterns:
 - actuators: horizontal `.field-stack`;
 - pot cards: common `--pot-card-w` sizing.
 
+### Układ strony
+
+- left column: `card-stack` with Control, Sensors, Targets and Actuators;
+- right column: live sensor/output state and `panel-actions`;
+- previous state and other panel-action views open in one movable panel modal: `#modal-backdrop` -> `.panel-modal.modal--wide`;
+- growbox pot cards keep the common `--pot-card-w` width and compact horizontal fields.
+
+### Antywzorzec
+
+- vertical field stacks inside compact pot/cultivation cards;
+- full-width mini-cells when several related fields belong side by side;
+- uneven two-column card grids that leave large empty gaps;
+- separate modal/tab layouts for views already owned by the single panel modal.
+
 After changing `tools/panel/static/js/form.js` or `tools/panel/static/panel.css` run:
 
 ```bash

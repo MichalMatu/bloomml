@@ -73,7 +73,9 @@ def capture(
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--port", required=True, help="Serial device, for example /dev/cu.usbserial-10"
+        "--port",
+        required=True,
+        help="Serial device; pass an explicitly authorized path, for example /dev/cu.usbserial-XXXX",
     )
     parser.add_argument("--output", required=True, type=Path, help="Append NDJSON records here")
     parser.add_argument("--baud", type=int, default=115_200)

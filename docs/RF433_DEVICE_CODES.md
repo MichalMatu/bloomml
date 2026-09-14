@@ -1,7 +1,6 @@
 # RF433 device codes and growbox hardware map
 
-Updated: 2026-09-05
-Work branch: `mvp/environment-controller`
+Updated: 2026-09-14
 
 This file is the quick human-readable source of truth for learned RF433 ON/OFF identities and the current growbox sensor/actuator topology.
 

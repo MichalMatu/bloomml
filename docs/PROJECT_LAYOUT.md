@@ -1,6 +1,6 @@
 # Project layout
 
-Intentional repository structure after the architecture cleanup. Current runtime status is tracked in `CURRENT_STATUS.md`; historical Stage27/Stage28 evidence remains under `docs/` for reproducibility.
+Intentional repository structure after the architecture cleanup. Current runtime status is tracked in `CURRENT_STATUS.md`; compact milestone history is in `HISTORY.md` and `CHANGELOG.md`, with detailed retired plans available through Git history.
 
 ```text
 .
@@ -17,12 +17,15 @@ Intentional repository structure after the architecture cleanup. Current runtime
 │   ├── boards/                  # board profiles
 │   ├── runtime/                 # canonical runtime config + profiles
 │   └── idf/                     # sdkconfig/partition profiles
+├── profiles/                    # example user/controller profiles
 ├── schemas/                     # controller/trace contracts
-├── docs/                        # live docs + historical qualification evidence
+├── docs/                        # current docs + compact history
+├── reports/                     # committed ML/model evaluation artifacts
 ├── tools/                       # host tooling, ML/panel/sandbox helpers
 ├── scripts/                     # quality/config/IDF/runtime guards and helpers
 ├── examples/
 ├── third_party/
+├── web/                         # chamber/frontend application
 │
 ├── lib/environment_control/     # portable controller core
 ├── components/                  # ESP-IDF third-party/local components
@@ -79,6 +82,7 @@ Short-lived implementation/refactor branches should be deleted after their commi
 | RF433 transport/protocol | `src/climate/rf433/` |
 | Runtime/board configuration | `config/` |
 | Host analysis / ML / sandbox | `tools/` |
+| Frontend/chamber UX | `web/` |
 | Quality/build helpers | `scripts/` |
 | Contracts | `schemas/` |
-| Current docs and historical evidence | `docs/` |
+| Current docs and compact history | `docs/` |

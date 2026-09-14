@@ -2,7 +2,6 @@
 
 Current status: [CURRENT_STATUS.md](CURRENT_STATUS.md).
 Product roadmap: [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md).
-Output execution design: [OUTPUT_EXECUTION_ARCHITECTURE.md](OUTPUT_EXECUTION_ARCHITECTURE.md).
 
 ## Design rules
 
@@ -111,6 +110,6 @@ Legacy controller/demo code remains available only through the explicit `legacy`
 - ESP-IDF production builds;
 - hardware qualification only when a fresh physical executable claim is required.
 
-Latest compact refactor verification on `1a599a58eb57841206ab92c7a5cacf50f7463f78` passed all guards, the focused runtime transport regression, `51/51` host tests and one CrowPanel real-input ESP-IDF build.
+Verification results and exact historical SHAs belong in `CURRENT_STATUS.md`, `HISTORY.md` and GitHub Actions rather than in this architecture contract.
 
 Simulator/host/firmware-build PASS is software evidence, not physical acknowledgement or a new Physical H qualification.

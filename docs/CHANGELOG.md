@@ -8,6 +8,9 @@ Only milestones that still help understand the current codebase are kept here. D
 
 - Promoted the active e-ink/SCD41 development line to canonical `main`.
 - Reduced live documentation by removing superseded phase handoffs, audit plans, temporary prompts and Stage27/28 continuation files.
+- A second clean-baseline sweep removed the obsolete autonomous-session/LiteGraph migration plans and retired one-off Stage11/Stage27C workflows.
+- Fixed the panel documentation contract, removed a dead architecture link and moved exact verification identities out of the architecture contract.
+- Hardware audit helpers now require an explicit serial port instead of guessing a device, and serial-capture help no longer names a forbidden port.
 - Added `HISTORY.md` as the compact milestone/evidence index.
 - Reduced `README.md`, `AGENTS.md`, `CURRENT_STATUS.md`, `PROJECT_ROADMAP.md`, `IO_MAP.md`, hardware bring-up docs and frontend docs to current responsibilities.
 - Long-lived branch policy is now `main` + `agent-control` + `gh-pages`; temporary e-ink/chat branches are retired after their tip SHAs are recorded.

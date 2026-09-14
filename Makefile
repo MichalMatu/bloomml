@@ -11,6 +11,7 @@ N32R16V_BUILD_DIR ?= build/idf-n32r16v
 # ESP-IDF defaults live under config/idf/ (local sdkconfig stays at repo root).
 SDKCONFIG_DEFAULTS ?= config/idf/sdkconfig.defaults;config/idf/sdkconfig.defaults.n16r8
 IDF_BUILD_ARGS := -D "SDKCONFIG_DEFAULTS=$(SDKCONFIG_DEFAULTS)" -D GROWBOX_BOARD_PROFILE=esp32s3-devkitc1-n16r8
+BOARD_TEST_PORT = $(strip $(or $(GROWBOX_BOARD_PORT),$(PORT)))
 
 ifdef PORT
 IDF_PORT_ARGS := -p $(PORT)
@@ -125,14 +126,16 @@ test-board: ensure-venv
 	$(PY) -m pytest tests/test_board_e2e.py -q
 
 test-board-exhaustive: ensure-venv
+	@test -n '$(BOARD_TEST_PORT)' || { printf 'Brak portu — ustaw GROWBOX_BOARD_PORT albo PORT; test sprzętowy nie zgaduje urządzenia.\n' >&2; exit 2; }
 	@curl -sf -X POST http://127.0.0.1:8765/api/disconnect -H 'Content-Type: application/json' -d '{}' >/dev/null 2>&1 || true
 	@sleep 0.5
-	$(PY) -m tools.ml.exhaustive_board_audit --port $(or $(GROWBOX_BOARD_PORT),$(PORT),/dev/cu.usbmodem1101)
+	$(PY) -m tools.ml.exhaustive_board_audit --port '$(BOARD_TEST_PORT)'
 
 test-board-validity-matrix: ensure-venv
+	@test -n '$(BOARD_TEST_PORT)' || { printf 'Brak portu — ustaw GROWBOX_BOARD_PORT albo PORT; test sprzętowy nie zgaduje urządzenia.\n' >&2; exit 2; }
 	@curl -sf -X POST http://127.0.0.1:8765/api/disconnect -H 'Content-Type: application/json' -d '{}' >/dev/null 2>&1 || true
 	@sleep 0.5
-	$(PY) -m tools.ml.validity_matrix_audit --port $(or $(GROWBOX_BOARD_PORT),$(PORT),/dev/cu.usbmodem1101)
+	$(PY) -m tools.ml.validity_matrix_audit --port '$(BOARD_TEST_PORT)'
 
 board-e2e: flash test-board
 
