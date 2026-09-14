@@ -16,20 +16,23 @@ Do not infer or substitute another repository. A different repository requires a
 For a fresh task read, in order:
 
 1. `AGENTS.md`
-2. `docs/CURRENT_STATUS.md`
-3. `docs/ARCHITECTURE.md`
-4. `docs/PROJECT_ROADMAP.md`
-5. the specific technical document for the subsystem being changed
+2. `docs/README.md`
+3. `docs/CURRENT_STATUS.md`
+4. `docs/ARCHITECTURE.md`
+5. `docs/PROJECT_ROADMAP.md`
+6. the specific subsystem document for the change; current display work uses `docs/DISPLAY_UI_PORT.md`
 
 Then fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any write or Local Agent task.
 
-Historical Stage27/Stage28 handoffs and temporary prompts are not live documentation. Use `docs/HISTORY.md`, `docs/CHANGELOG.md` and Git history when historical evidence is needed.
+Historical Stage27/Stage28 handoffs, temporary prompts and superseded audits are not live documentation. Use `docs/HISTORY.md`, `docs/CHANGELOG.md` and Git history when historical evidence is needed.
+
+Research documents such as `DATA_CONTRACT.md`, `CONFIG_MATRIX.*` and `docs/simulator/*` may describe the older v4 128-feature/15-output toolchain. Do not treat them as the production climate-v6 runtime contract unless the task explicitly targets that research toolchain.
 
 ## Work mode
 
 Use direct GitHub for bounded source/config/documentation changes when the exact diff and CI can verify the result.
 
-Use ChatGPT Sandbox for repository-only execution when the matching source/dependency packs exist. Canonical details are in `docs/SANDBOX_EXECUTION_FLOW.md`.
+Use ChatGPT Sandbox for repository-only execution when matching source/dependency packs exist. Canonical details are in `docs/SANDBOX_EXECUTION_FLOW.md`.
 
 Use Local Agent for Mac-local toolchains, local simulator assets not represented in the sandbox, USB/serial, flashing, physical-board observation and other machine-specific evidence.
 
@@ -52,7 +55,6 @@ Task ids/payloads are immutable. Read terminal `.agent/results/<task-id>.json` b
 Authorized growbox serial device: `/dev/cu.usbserial-1130`.
 
 Never open, probe, monitor, reset or flash `/dev/cu.usbserial-10`.
-
 Do not use `/dev/cu.usbserial-1120` without explicit authorization.
 
 For unattended qualification keep physical outputs disabled unless the operator explicitly changes that instruction.
@@ -70,6 +72,12 @@ For unattended qualification keep physical outputs disabled unless the operator 
 - e-ink/UI code is observer-side and must not mutate control or safety state;
 - slow display work must stay outside the control hot path.
 
+## Current display-port boundary
+
+`vendor/litegraph_epd_port/` is read-only donor/reference material and must stay excluded from builds.
+
+The current production application is C++17; pinned Clay 0.14 requires C++20. Follow `docs/DISPLAY_UI_PORT.md`: prefer an isolated C++20 component with Clay-free public structs. Do not replace the native SSD1680 backend or copy Arduino hardware ownership into production.
+
 ## Panel UI layout rule
 
 Inside pot/actuator/target cards, related fields stay horizontal. Do not turn compact multi-field cards into vertical stacks or full-width mini-cells.
@@ -81,19 +89,11 @@ Canonical patterns:
 - actuators: horizontal `.field-stack`;
 - pot cards: common `--pot-card-w` sizing.
 
-### Układ strony
+Page layout:
 
 - left column: `card-stack` with Control, Sensors, Targets and Actuators;
 - right column: live sensor/output state and `panel-actions`;
-- previous state and other panel-action views open in one movable panel modal: `#modal-backdrop` -> `.panel-modal.modal--wide`;
-- growbox pot cards keep the common `--pot-card-w` width and compact horizontal fields.
-
-### Antywzorzec
-
-- vertical field stacks inside compact pot/cultivation cards;
-- full-width mini-cells when several related fields belong side by side;
-- uneven two-column card grids that leave large empty gaps;
-- separate modal/tab layouts for views already owned by the single panel modal.
+- previous state and other panel-action views open in one movable panel modal: `#modal-backdrop` -> `.panel-modal.modal--wide`.
 
 After changing `tools/panel/static/js/form.js` or `tools/panel/static/panel.css` run:
 
@@ -103,4 +103,4 @@ After changing `tools/panel/static/js/form.js` or `tools/panel/static/panel.css`
 
 ## Completion rule
 
-A commit proves publication, not execution. Report the exact commit plus the relevant completed checks. Hardware claims require exact-SHA physical evidence.
+A commit proves publication, not execution. Report the exact commit plus relevant completed checks. Hardware claims require exact-SHA physical evidence.

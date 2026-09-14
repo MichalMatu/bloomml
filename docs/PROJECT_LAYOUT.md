@@ -1,88 +1,82 @@
 # Project layout
 
-Intentional repository structure after the architecture cleanup. Current runtime status is tracked in `CURRENT_STATUS.md`; compact milestone history is in `HISTORY.md` and `CHANGELOG.md`, with detailed retired plans available through Git history.
+Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for active work.
 
 ```text
 .
 ├── README.md
-├── LICENSE
 ├── AGENTS.md
 ├── Makefile
 ├── CMakeLists.txt
-├── pyproject.toml
-├── requirements-lock.txt
-├── requirements-dev.txt
-│
-├── config/
-│   ├── boards/                  # board profiles
-│   ├── runtime/                 # canonical runtime config + profiles
-│   └── idf/                     # sdkconfig/partition profiles
-├── profiles/                    # example user/controller profiles
-├── schemas/                     # controller/trace contracts
-├── docs/                        # current docs + compact history
-├── reports/                     # committed ML/model evaluation artifacts
-├── tools/                       # host tooling, ML/panel/sandbox helpers
-├── scripts/                     # quality/config/IDF/runtime guards and helpers
+├── config/                     # board/runtime/IDF profiles
+├── profiles/                   # example user/controller profiles
+├── schemas/                    # production climate-v6 + research contracts
+├── docs/                       # current docs, research references, compact history
+├── reports/                    # committed ML/model evaluation artifacts
+├── tools/                      # host, ML, panel and sandbox tooling
+├── scripts/                    # quality/config/runtime guards and helpers
 ├── examples/
 ├── third_party/
-├── web/                         # chamber/frontend application
-│
-├── lib/environment_control/     # portable controller core
-├── components/                  # ESP-IDF third-party/local components
+├── vendor/
+│   └── litegraph_epd_port/     # read-only Clay/EPD donor snapshot; not built
+├── web/                        # browser configurator/chamber UI
+├── lib/environment_control/    # portable climate-v6 controller core
+├── components/                 # ESP-IDF components
 ├── src/
-│   ├── main.cpp                 # thin app-mode dispatcher
-│   ├── legacy/                  # explicit legacy app mode only
+│   ├── main.cpp                # app-mode dispatcher
+│   ├── legacy/                 # explicit legacy mode only
 │   └── climate/
-│       ├── native/              # sensors/RTC/native I/O
-│       ├── output/              # OutputSupervisor architecture
-│       ├── rf433/               # RF protocol/transport
-│       ├── runtime/             # real-input composition/coordinator/console
+│       ├── application/
+│       ├── display/            # current presenter/raster/SSD1680/service
+│       ├── input/
+│       ├── native/
+│       ├── output/
+│       ├── rf433/
+│       ├── runtime/
 │       ├── storage/
 │       └── telemetry/
-│
-├── test/                        # portable C++/host tests
-├── tests/                       # Python/scientific/tool tests
-├── build/                       # local artifacts, gitignored
-└── logs/                        # local captures, gitignored
+├── test/                       # portable/host C++ tests
+└── tests/                      # Python/tooling tests
 ```
 
 ## Runtime boundary map
 
-The production real-input path is intentionally separated:
-
 - `ClimateV6RealInputRuntime.cpp`: bootstrap only;
-- `runtime/RealInputRuntimeComposition.*`: ownership/lifetime wiring;
-- `runtime/RealInputRuntimeCoordinator.*`: cycle orchestration;
-- `runtime/RuntimeOutputTransport.*`: transport truth boundary;
-- `runtime/RuntimeOutputTelemetryLog.*`: telemetry formatting;
+- `runtime/core/RealInputRuntimeComposition.*`: ownership/lifetime wiring;
+- `runtime/core/RealInputRuntimeCoordinator.*`: cycle orchestration;
+- `runtime/core/RuntimeOutputTransport.*`: transport truth boundary;
+- `runtime/telemetry/*`: telemetry;
 - `output/*`: configured-output ownership/policy/execution;
-- `rf433/*`: policy-free RF transport.
+- `rf433/*`: policy-free RF transport;
+- `display/*`: observer-only e-ink presentation/render/service.
 
-Do not move climate policy into transport or direct configured-output writes back into runtime/console code.
+Do not move climate policy into transport, direct configured-output writes into runtime/console code, or control ownership into display/UI code.
 
 ## Configuration boundary
 
-Board/runtime defaults live under `config/` and are resolved by CMake. Production C++ consumes the generated typed `RuntimeBuildConfig.h`; do not add duplicate fallback default tables in source files.
+Board/runtime defaults live under `config/` and are resolved by CMake. Production C++ consumes generated typed `RuntimeBuildConfig.h`; do not add duplicate fallback tables in source files.
 
-## Repository branches after cleanup
+## Display-port placement
 
-- `main`: normal product development;
-- `agent-control`: Local Agent control state;
-- `gh-pages`: publishing output.
+The planned Clay integration should not be implemented inside `vendor/`.
 
-Short-lived implementation/refactor branches should be deleted after their commits are fully integrated into `main`.
+Preferred destination is a dedicated `components/growbox_clay_ui/` C++20 component, while the existing `src` application component remains C++17. Shared public structs must stay Clay-free. If a dependency cycle appears, extract the minimal shared display model into a small C++17 component rather than exposing Clay internals.
+
+`vendor/litegraph_epd_port/` remains immutable/reference-only and excluded from builds.
 
 ## Where new work belongs
 
 | Work | Location |
-|---|---|
-| Portable controller behavior | `lib/environment_control/src/climate/` |
-| Real hardware/runtime orchestration | `src/climate/runtime/` / `src/climate/native/` |
+| --- | --- |
+| Portable climate behavior | `lib/environment_control/src/climate/` |
+| Hardware/runtime orchestration | `src/climate/runtime/`, `src/climate/input/`, `src/climate/native/` |
 | Output ownership/policy | `src/climate/output/` |
 | RF433 transport/protocol | `src/climate/rf433/` |
+| Existing display backend/service | `src/climate/display/` |
+| Future Clay layout engine | `components/growbox_clay_ui/` |
+| Clay donor/reference material | `vendor/litegraph_epd_port/` |
 | Runtime/board configuration | `config/` |
 | Host analysis / ML / sandbox | `tools/` |
 | Frontend/chamber UX | `web/` |
-| Quality/build helpers | `scripts/` |
 | Contracts | `schemas/` |
-| Current docs and compact history | `docs/` |
+| Current docs/history/research refs | `docs/` |

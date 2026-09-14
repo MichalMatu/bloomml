@@ -1,88 +1,72 @@
 # I/O map
 
-This file is a compact operator/developer map. It intentionally does **not** duplicate the full schema, historical v1/v2 plans, simulator equations, or old product-roadmap discussion.
+Compact production-oriented map. Full contract details live in schemas; research simulator inventory is separate.
 
-## Sources of truth
+## Production sources of truth
 
-- Contract and field definitions: [`schemas/environment-controller.json`](../schemas/environment-controller.json)
-- Contract rules and regeneration: [DATA_CONTRACT.md](DATA_CONTRACT.md)
-- Full ML feature/output inventory: [simulator/IO_INVENTORY.md](simulator/IO_INVENTORY.md)
-- Current firmware/runtime state: [CURRENT_STATUS.md](CURRENT_STATUS.md)
-- Current product order of work: [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md)
-- Simulator/physics details: [simulator/README.md](simulator/README.md)
+- production controller contract: `schemas/environment-controller.v6.json`;
+- runtime architecture: `ARCHITECTURE.md`;
+- current state: `CURRENT_STATUS.md`;
+- work order: `PROJECT_ROADMAP.md`;
+- RF identities: `RF433_DEVICE_CODES.md`.
 
-If this summary disagrees with the schema or generated contract, the schema wins.
+The older `schemas/environment-controller.json` v4 contract and `docs/simulator/*` describe broad simulator/training tooling and are not the production climate-v6 runtime contract.
 
-## Physical model
+## Production measurement path
 
-One controller represents one growbox air volume with up to four pots.
+Current real-input composition uses semantic sources such as:
 
-- Air measurements are shared by the growbox.
-- Pot soil measurements and pot actuators are independent per pot.
-- Every measurement has explicit validity/freshness semantics; missing hardware is never represented as a fake zero measurement.
-- Every actuator has explicit availability/capability semantics.
-- Hardware adapters remain outside the portable controller/model contract.
+- inside SCD41 temperature / RH / CO2 with validity/freshness;
+- configured BLE climate sources where enabled;
+- DS3231/time/schedule state;
+- runtime/output/storage diagnostics.
 
-## Main measurement groups
+Missing or stale hardware remains unavailable/invalid; it is never represented as a fake successful zero measurement.
 
-| Group | Measurements |
-|---|---|
-| Growbox air | temperature, relative humidity, CO2 |
-| Intake/outside air | temperature, relative humidity, optional CO2 |
-| Nutrient solution | solution temperature |
-| Pots 1-4 | soil moisture and soil temperature per pot |
-| System context | time/schedule and light-active state where configured |
-
-`lights_active` is system/schedule context, not a physical environmental sensor.
-
-## Main actuator groups
-
-The schema/model surface contains normalized actuator commands. Availability and safety may force an unavailable or unsafe output to zero.
-
-| Group | Outputs |
-|---|---|
-| Climate | heater, fan, humidifier, dehumidifier, cooler, CO2 dosing |
-| Nutrient solution | nutrient heater |
-| Pots 1-4 | irrigation and heat-mat command per pot |
-
-Lighting schedule/output ownership is intentionally separate from the ML output vector unless the contract is explicitly revised.
-
-## Runtime boundary
-
-The current ESP32-S3 production-oriented runtime keeps these concerns separate:
+## Production output path
 
 ```text
-hardware measurements/config/time
+measurements + schedule/config
             |
             v
-      semantic snapshot
+    ClimateApplication
             |
             v
-   controller / policy
+ deterministic Rule intent
             |
             v
- deterministic safety
+ safety / binary policy
             |
             v
     OutputSupervisor
             |
             v
-    physical transport
+ RuntimeOutputTransport
+            |
+            v
+        RF433
 ```
 
-The e-ink/UI path is observer-only and must not become an output owner.
+Requested, resolved, transport-attempted/executed and independently observed physical state remain distinct.
 
-## Current hardware-debugging focus
+The e-ink/UI path is observer-only and cannot become an output owner.
 
-The active debugging blocker is SCD41 sampling on the CrowPanel build. During this work:
+## Current configured growbox loads
 
-- SCD41 provides inside temperature/RH/CO2 when valid;
-- outside BLE and DS3231 continue as independent input sources;
-- physical outputs remain disabled/fake-locked;
-- no I/O-contract expansion is part of the SCD41 fix.
+The operational RF reference currently covers:
 
-See [CURRENT_STATUS.md](CURRENT_STATUS.md) for the exact evidence and debugging sequence.
+- lamp;
+- exhaust fan;
+- humidifier.
+
+Exact RF code/pulse/repeat evidence belongs in `RF433_DEVICE_CODES.md`. Shelly power-delta evidence belongs in `SHELLY_POWER_FEEDBACK.md`.
+
+## Research/simulator I/O
+
+The older v4 research contract models a broader growbox with up to four pots and 15 normalized outputs. That inventory remains useful to `tools/ml` research workflows but must not be used to infer production actuator ownership or current firmware behavior.
+
+See `DATA_CONTRACT.md`, `CONFIG_MATRIX.md` and `simulator/IO_INVENTORY.md` only when working specifically on that research toolchain.
 
 ## Change rule
 
-Do not add a sensor/output by editing this file first. A contract change requires the schema and generated artifacts/tests to change together, followed by any required model regeneration/retraining and runtime adaptation.
+Do not add a production sensor/output by editing this summary first. Change the appropriate schema/config/domain boundary, generated artifacts and tests together, then update this map.

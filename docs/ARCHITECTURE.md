@@ -1,20 +1,21 @@
 # Architecture
 
-Current status: [CURRENT_STATUS.md](CURRENT_STATUS.md).
-Product roadmap: [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md).
+Current state: [CURRENT_STATUS.md](CURRENT_STATUS.md).
+Product order: [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md).
+Display port contract: [DISPLAY_UI_PORT.md](DISPLAY_UI_PORT.md).
 
-## Design rules
+## Stable design rules
 
 The portable climate controller is independent from concrete sensor libraries and physical actuator transports. Hardware code produces semantic measurements and consumes semantic output intent through explicit application/runtime boundaries.
 
 Normal configured physical output execution has one owner: `OutputSupervisor`.
 
-Production deterministic Rule control remains authoritative. ML may be evaluated for shadow/research purposes but production composition does not enable unqualified ML authority.
+Production deterministic Rule control remains authoritative. ML may be evaluated in shadow/research modes but is not qualified as production actuation authority.
 
 ## Production real-input path
 
 ```text
-native sensor / RTC / schedule sources
+native sensors / RTC / schedule sources
                |
                v
      ClimateApplication / climate-v6
@@ -24,7 +25,7 @@ native sensor / RTC / schedule sources
                +----------------------+
                |                      |
                v                      v
-       Lamp SafetyEnvelope      manual/maintenance lifecycle
+       Lamp SafetyEnvelope      maintenance lifecycle
                |                      |
                +----------+-----------+
                           v
@@ -41,24 +42,22 @@ native sensor / RTC / schedule sources
                  RF433OutputTransport
 ```
 
-One-way RF transport completion is command/transport evidence only; it is never treated as physical acknowledgement.
+One-way RF transport completion is command/transport evidence only; it is never physical acknowledgement.
 
 ## Runtime composition
 
-The real-input runtime is deliberately split by responsibility:
+The real-input runtime is split by responsibility:
 
-- `ClimateV6RealInputRuntime.cpp` — thin bootstrap: initialize, validate, enter the loop;
-- `runtime/RealInputRuntimeComposition.*` — construction, ownership and lifetime wiring;
-- `runtime/RealInputRuntimeCoordinator.*` — one-cycle orchestration;
-- `runtime/RuntimeCycleState.*` — bounded cycle sequencing/cadence state;
-- `runtime/RuntimeOutputTransport.*` — physical transport availability/truth boundary;
-- `runtime/RuntimeOutputTelemetryLog.*` — output telemetry formatting/logging;
-- `runtime/Stage27RuntimeAdapters.*` — Stage27 source adapters and production runtime policy configuration;
-- `runtime/Stage27TelemetryReporter.*` — telemetry snapshot/storage reporting;
-- `runtime/Stage28RfDiagnostics.*` — RF diagnostics/passive capture;
-- `runtime/Stage28ServiceConsole*` — thin console IO/router plus output/storage/system domain handlers.
-
-The coordinator receives grouped input/output/support service bundles rather than a flat service-locator-like dependency bag.
+- `ClimateV6RealInputRuntime.cpp` — thin bootstrap;
+- `runtime/core/RealInputRuntimeComposition.*` — construction, ownership and lifetime wiring;
+- `runtime/core/RealInputRuntimeCoordinator.*` — one-cycle orchestration;
+- `runtime/core/RuntimeCycleState.*` — bounded sequencing/cadence state;
+- `runtime/core/RuntimeOutputTransport.*` — physical transport availability/truth boundary;
+- `runtime/telemetry/*` — runtime/output telemetry;
+- `runtime/console/*` — service-console routing/handlers;
+- `runtime/diagnostics/*` — passive diagnostics;
+- `output/*` — configured-output ownership/policy/execution;
+- `rf433/*` — RF protocol and transport.
 
 Invalid lifecycle/automation/maintenance reports fail closed by disabling physical transport readiness for the cycle rather than being silently discarded.
 
@@ -66,50 +65,82 @@ Invalid lifecycle/automation/maintenance reports fail closed by disabling physic
 
 Requested, resolved, attempted/executed transport state and independently observed physical state are distinct concepts.
 
-When physical transport is unavailable, `RuntimeOutputTransport` returns `NotAttempted` with `Unavailable`. It must not return `Completed`, because doing so would manufacture execution truth in `OutputStateStore`/projection.
+When physical transport is unavailable, `RuntimeOutputTransport` returns `NotAttempted`/`Unavailable`. It must not manufacture a completed execution state.
 
-`OutputSupervisor` owns normal configured output commands. Raw RF remains an explicit maintenance capability behind `MaintenanceLocked`.
+Raw RF remains an explicit maintenance capability behind the maintenance boundary; it is not a hidden normal-output path.
 
 ## Policy and safety ownership
 
-- climate rule logic owns environmental control decisions;
+- climate Rule logic owns environmental control decisions;
 - `BinaryActuatorPolicy` owns binary hysteresis/deadband/dwell behavior;
-- Stage28 output bindings own endpoint/policy mapping;
+- output bindings own endpoint/policy mapping;
 - lamp thermal safety owns the frozen `>=28 C` trip and `<=26 C` for 10 minutes recovery contract;
 - transport layers do not own climate policy;
-- maintenance diagnostics do not become a hidden normal-output path.
+- maintenance diagnostics do not become normal automation.
 
-The retired Stage28D thermal test-sequence helper is no longer part of production source; historical qualification evidence remains in Git history/docs.
+## Display/UI architecture
+
+The e-ink path is an observer, not a controller:
+
+```text
+runtime/output/sensor truth
+          |
+          v
+     DisplaySnapshot
+          |
+          v
+    DisplayPresenter
+          |
+          v
+ semantic page/layout data
+          |
+          v
+ renderer / framebuffer
+          |
+          v
+ async display service
+          |
+          v
+ native SSD1680 backend
+```
+
+Slow e-ink waits and transfers remain outside the control hot path. Observer state advances only after successful rendering according to the existing transaction contract.
+
+The next Clay stage must preserve that ownership. Clay may own layout/clipping/menu visual state but must not own sensor truth, output truth, RF transport or safety state.
+
+### C++ boundary for Clay
+
+Current application code is C++17. The pinned Clay 0.14 donor header requires C++20. The preferred architecture is a separate C++20 component with growbox-owned C++17-compatible input/output structs and no public `Clay_*` types. See `DISPLAY_UI_PORT.md`.
 
 ## Configuration source of truth
 
-Resolved runtime/build configuration is owned by CMake profiles under `config/` and exposed to production C++ through generated `runtime/RuntimeBuildConfig.h`.
+Resolved runtime/build configuration is owned by CMake profiles under `config/` and exposed through generated `runtime/RuntimeBuildConfig.h`.
 
-Production C++ must not reintroduce fallback `GROWBOX_*` default tables. Preprocessor definitions are retained only for switches that genuinely require compile-time preprocessing.
-
-Architecture/config guards enforce these boundaries.
+Production C++ must not reintroduce fallback `GROWBOX_*` default tables. Preprocessor definitions are retained only where compile-time preprocessing is actually required.
 
 ## Climate-v6 controller core
 
-`schemas/environment-controller.v6.json` and generated `ClimateContract.h` define the climate-v6 contract. The portable core lives under `lib/environment_control/src/climate/` and contains feature encoding, runtime rule/ML evaluation, trend estimation and the control loop.
+`schemas/environment-controller.v6.json` and generated `ClimateContract.h` define the production climate-v6 controller contract. The portable core lives under `lib/environment_control/src/climate/` and contains feature encoding, Rule/ML evaluation, trend estimation and the portable control loop.
 
-Policy modes exist in the portable research-capable core, but production real-input composition is statically configured for `Rule` authority with unqualified ML active control disabled.
+Production real-input composition is statically configured for Rule authority with unqualified ML active control disabled.
+
+The broader v4 `schemas/environment-controller.json` / 128-feature / 15-output contract belongs to older simulator/tooling workflows and is not the production runtime contract. See `DATA_CONTRACT.md` for the distinction.
 
 ## Legacy isolation
 
-Legacy controller/demo code remains available only through the explicit `legacy` app mode. Production V6 targets do not compile the legacy controller ownership path by default.
+Legacy controller/demo code remains available only through explicit `legacy` app mode. Production V6 targets do not compile the legacy controller ownership path by default.
 
-`src/main.cpp` is a small app-mode dispatcher; it no longer contains the legacy controller implementation or production control orchestration.
+`src/main.cpp` is an app-mode dispatcher; it does not own production control orchestration.
 
 ## Verification layers
 
 - architecture/config ownership guards;
 - focused portable regression tests;
-- complete host C++ suite;
-- Python scientific/replay tests where applicable;
-- ESP-IDF production builds;
+- host C++ suites;
+- Python scientific/replay tests where relevant;
+- simulator/golden checks for UI work;
+- ESP-IDF production builds/static analysis;
+- GitHub CI;
 - hardware qualification only when a fresh physical executable claim is required.
 
-Verification results and exact historical SHAs belong in `CURRENT_STATUS.md`, `HISTORY.md` and GitHub Actions rather than in this architecture contract.
-
-Simulator/host/firmware-build PASS is software evidence, not physical acknowledgement or a new Physical H qualification.
+Simulator/host/build PASS is software evidence, not physical acknowledgement.

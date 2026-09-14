@@ -1,23 +1,23 @@
 # Project history
 
-This is the compact historical record for milestones that still matter operationally. Detailed completed-phase handoffs, audit plans and temporary prompts were removed from live documentation during the 2026-09-14 repository cleanup; they remain available in Git history.
+Compact record of milestones that still matter operationally. Detailed retired plans/audits remain in Git history.
 
 ## Milestones
 
 | Period | Milestone | Evidence / identity |
 | --- | --- | --- |
-| 2026-07 | Initial environment-controller / TinyML repository | `0.1.0` line in `docs/CHANGELOG.md` |
-| 2026-09 | Climate-v6 native ESP-IDF runtime, deterministic Rule authority, ML shadow path | current `docs/ARCHITECTURE.md` and schema/runtime code |
-| 2026-09 | Stage27 native real-input baseline and Stage28 RF433/output work | preserved in Git history and `docs/CHANGELOG.md` |
+| 2026-07 | Initial environment-controller / TinyML repository | `0.1.0` line in `CHANGELOG.md` |
+| 2026-08 | Climate-v6 ML research Stages 12-16; Rule retained as authority | `ML_DECISION_REPORT.md` |
+| 2026-09 | Climate-v6 native ESP-IDF runtime, Rule authority, ML shadow path | current architecture/runtime code |
 | 2026-09 | Historical full Physical H output qualification | exact executable `02208d23f403bca3540dbbd652eb55703a044833` |
-| 2026-09-11 | Runtime/config/service-console architecture cleanup | code-bearing `1a599a58eb57841206ab92c7a5cacf50f7463f78` |
-| 2026-09-12 | Structural cleanup closeout | code-bearing `0a7097a30280ec0f7bb408799c07093761d63e88` |
-| 2026-09-12 | Release-readiness/startup-safety hardening | code-bearing `e03763d019af405087a5fa9c6713a7165d2e623f`; GitHub CI #865; Sandbox Pack #63; Local Agent task `20260912-final-main-hardware-qualification-v1` |
+| 2026-09-11 | Runtime/config/service-console architecture cleanup | `1a599a58eb57841206ab92c7a5cacf50f7463f78` |
+| 2026-09-12 | Structural cleanup closeout | `0a7097a30280ec0f7bb408799c07093761d63e88` |
+| 2026-09-12 | Release-readiness/startup-safety hardening | `e03763d019af405087a5fa9c6713a7165d2e623f`; CI #865; Sandbox Pack #63 |
 | 2026-09-13 | CrowPanel 2.9-inch e-ink physically operational | flashed/debug baseline `01db8228e6d822b5c64359abd8bf2d85341b5919` |
-| 2026-09-13 | Historical intermittent SCD41 zero-sample failure isolated | documentation head before cleanup `ceaaa88801568cccf2f1cbc86021ce3b2b2809d5` |
-| 2026-09-14 | E-ink work promoted to canonical `main` and live docs consolidated | retired feature tip `ceaaa88801568cccf2f1cbc86021ce3b2b2809d5` |
-| 2026-09-14 | SCD41 clean-start recovery hardware-qualified with e-ink enabled | code-bearing `a92074b74b055c58c0949c7c38f4896638ebf227`; 90 s qualification + 5/5 MCU-reset stress cycles; Local Agent tasks `20260914-scd41-eink-enabled-qual-v1` and `20260914-scd41-mcu-reset-stress-v1` |
-| 2026-09-14 | Abandoned alternate chat implementation identified as superseded | retired branch tip `63e5aea5fa1179593b2d8244ec47f296a038a081`; its old `src/display` experiment is superseded by the later `src/climate/display` implementation |
+| 2026-09-14 | SCD41 clean-start + e-ink hardware baseline | `a92074b74b055c58c0949c7c38f4896638ebf227`; 90 s + 5/5 MCU-reset cycles |
+| 2026-09-14 | Bounded SCD41 liveness recovery closeout | code-bearing `c720c0a1d6d6d9c80daeb04b2dc69efa53d2c8a4` |
+| 2026-09-14 | Four-page Environment/Outputs/System/Diagnostics operator UI established | current `src/climate/display` line |
+| 2026-09-14 | LiteGraph Clay/EPD donor snapshot curated for later port | growbox vendor line through `6d083e5b00a29b20a8a9bb6f2bb83a395634aff5`; donor `5b8c758c365547ddeaab65bbe9f849bdd071695d` |
 
 ## Invariants carried forward
 
@@ -26,10 +26,10 @@ This is the compact historical record for milestones that still matter operation
 - One-way RF completion is not physical acknowledgement.
 - Thermal trip is `>= 28 C`; recovery requires `<= 26 C` continuously for 10 minutes.
 - UI/e-ink remains observer-side.
-- Hardware qualification belongs to an exact executable SHA and is never automatically inherited by later commits.
+- Hardware qualification belongs to an exact executable SHA and is never inherited automatically by later commits.
 
-## Branch policy after cleanup
+## Branch policy
 
-Long-lived branches are only `main`, `agent-control` and `gh-pages`. Temporary implementation/chat branches are removed after their useful state is incorporated or recorded here.
+Long-lived branches are `main`, `agent-control` and `gh-pages`. Temporary implementation branches are disposable after verified integration.
 
-For active work use `docs/CURRENT_STATUS.md`, not historical commits or deleted handoffs.
+For active work use `CURRENT_STATUS.md`, not historical commits or retired handoffs.

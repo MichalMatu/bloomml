@@ -1,33 +1,46 @@
-# Data contract
+# Data contracts
 
-**Source of truth:** [`schemas/environment-controller.json`](../schemas/environment-controller.json) (schema_version **4**)
+This repository currently contains two distinct contract generations. They serve different purposes and must not be treated as one source of truth.
 
-Field names, order, ranges, and outputs are defined only there. Change the schema → regenerate C++ → retrain → commit generated artifacts together.
+## 1. Production climate-v6 contract
 
-## Domain: pots, not zones
+Source: `schemas/environment-controller.v6.json`.
 
-Up to **four pots (donice)** share one growbox air volume. JSON root is `pots` (array index 0..3). Feature names use 1-based labels (`pot_1_*`, `irrigation_pot_1`, …).
+This is the contract used by the current portable climate-v6 controller/runtime architecture. It has the bounded climate feature/output surface described by `docs/MODEL_PIPELINE.md` and generated `ClimateContract.h`.
 
-## Rules
+Production ownership rules come from `ARCHITECTURE.md`, not from the older v4 simulator schema.
 
-**Mix & match:** fixed slot list; every sensor and actuator is independently enabled. No required bundles.
+## 2. Broad v4 growbox simulator/tooling contract
 
-**Sensors:** each measurement has its own `validity` flag. If false, the encoder substitutes the contract default and the mask tells the model the value is imputed.
+Source: `schemas/environment-controller.json` (schema version 4).
 
-**Actuators:** each output has its own `available`. When false, zero max capability; safety forces final output to zero.
+This older contract remains active inside parts of `tools/ml` and the simulator/config-matrix research tooling. It models one growbox air volume with up to four pots, 128 encoded features and 15 normalized actuator outputs.
 
-**Outputs:** continuous `[0, 1]` per actuator (15 total including irrigation and heat mats per pot).
+It remains in the repository because working tools depend on it. It is **not** the production real-input runtime contract.
 
-**Physics (training only):** lumped growbox thermodynamics live in `tools/ml/simulator.py`, not in the JSON contract.
+Research rules:
 
-**Version:** schema version + hash. `ModelRuntime` rejects a model built for a different hash/dimensions.
+- field names/order/ranges come from the v4 schema;
+- sensor validity masks control imputation;
+- actuator `available=false` forces zero capability/safe output;
+- simulator physics lives under `tools/ml`, not in the JSON contract;
+- schema/hash mismatch must be rejected by the matching model/runtime tooling.
 
-## Regenerate
+Regeneration for that toolchain:
 
 ```bash
 python tools/schema/generate_environment_schema.py
-python tools/schema/generate_environment_schema.py --check   # CI
+python tools/schema/generate_environment_schema.py --check
 ```
 
-I/O worksheet: [IO_MAP.md](IO_MAP.md). Full ML inventory: [simulator/IO_INVENTORY.md](simulator/IO_INVENTORY.md).
-Pipeline: [MODEL_PIPELINE.md](MODEL_PIPELINE.md). Simulator research: [simulator/README.md](simulator/README.md).
+Related research docs:
+
+- `CONFIG_MATRIX.md` / `.csv`;
+- `simulator/IO_INVENTORY.md`;
+- `simulator/README.md`.
+
+## Change rule
+
+Before changing either schema, identify which generation the task targets. Do not migrate production climate-v6 behavior by editing the v4 schema, and do not silently rewrite the v4 simulator contract to match production.
+
+A deliberate convergence/migration of the two contracts would be a separate project requiring tool, generated-code, dataset/model and runtime compatibility planning.

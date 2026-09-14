@@ -6,41 +6,33 @@ Updated: 2026-09-14
 
 The product is a native ESP-IDF ESP32-S3 growbox controller using real sensors, deterministic Rule control, RF433 outputs, durable telemetry, e-ink operator visibility and an ML shadow/research path.
 
-Architecture cleanup is finished. Avoid broad rewrites unless concrete evidence requires them. Prefer small measurable improvements that preserve ownership and safety boundaries.
+Broad architecture cleanup and the SCD41/e-ink recovery closeout are finished. Prefer bounded changes that preserve ownership, safety and ESP32-S3 resource limits.
 
 ## Active work
 
-### 0. SCD41 regression
+### 1. Clay/menu/button/simulator display stage
 
-Restore successful SCD41 sampling on the current CrowPanel firmware before changing display semantics or controller behavior.
+Use `DISPLAY_UI_PORT.md` as the implementation contract.
 
-Acceptance:
+Order:
 
-- root cause identified from evidence;
-- smallest coherent fix;
-- regression coverage;
-- exact candidate builds and flashes;
-- real SCD41 samples appear on `/dev/cu.usbserial-1130`;
-- no new panic/watchdog/reset/memory regression;
-- physical outputs remain disabled during unattended verification.
+1. isolated C++20 Clay component and 296x128 host simulator;
+2. reproduce current four pages on host;
+3. connect Clay behind the existing async display transaction;
+4. implement true dirty-region RAM-window partial transfer;
+5. add native ESP-IDF buttons with host-tested debounce/long-press logic;
+6. add only justified growbox menu/settings flows;
+7. exact-SHA physical qualification when needed.
 
-### 1. Finish e-ink operator UI
-
-After SCD41 is healthy:
-
-- show authoritative environment values;
-- finish bounded Environment / Outputs / System / Diagnostics presentation;
-- port only the useful Clay/menu/button/simulator pieces from the proven LiteGraph implementation;
-- preserve observer-only ownership and output-truth semantics;
-- qualify the final exact firmware SHA on hardware.
+Do not replace the native SSD1680 backend or make UI another output owner.
 
 ### 2. Controller behavior quality
 
-Build a replay/telemetry baseline from real growbox data, quantify temperature/humidity and absolute-humidity ventilation behavior, then choose exactly one tuning candidate with explicit acceptance criteria.
+Build a replay/telemetry baseline from real growbox data, quantify temperature/humidity and absolute-humidity ventilation behavior, then choose one tuning candidate with explicit acceptance criteria.
 
 ### 3. Configuration and operator UX
 
-Reduce friction in sensors, targets, schedules, outputs and growbox parameters without inflating ESP32-S3 RAM/CPU/flash cost.
+Reduce friction in sensors, targets, schedules, outputs and growbox parameters without inflating ESP32-S3 RAM/CPU/flash cost. UI writes must route through existing application/domain ownership.
 
 ### 4. Logging, history and explainability
 
@@ -54,22 +46,25 @@ Improve datasets, replay metrics and Rule-vs-ML comparison. ML stays non-authori
 
 Add integrations only when a concrete growbox use case justifies implementation and maintenance cost.
 
+## Closed work that should not be reopened by default
+
+- SCD41 clean-start/liveness recovery;
+- CrowPanel SSD1680 pin map and native backend ownership;
+- display rotation and async worker architecture;
+- Rule-authoritative production ownership;
+- output truth separation and `OutputSupervisor` ownership.
+
+Reopen only on new evidence, not because an older handoff or research document mentions the old issue.
+
 ## Selection rule
 
-Rank work by:
-
-1. practical growbox value;
-2. safety risk;
-3. ownership clarity;
-4. ESP32-S3 resource cost;
-5. verification coverage;
-6. change size and reversibility.
+Rank work by practical growbox value, safety risk, ownership clarity, ESP32-S3 resource cost, verification coverage and reversibility.
 
 ## Branch/work policy
 
-- `main` — canonical source;
+- `main` — canonical source/documentation;
 - `agent-control` — Local Agent control only;
 - `gh-pages` — publishing only;
-- temporary feature branches are disposable after verified integration.
+- temporary branches are disposable after verified integration.
 
-For current execution details read `AGENTS.md` and `docs/CURRENT_STATUS.md`.
+For each new task start from `docs/README.md`, `CURRENT_STATUS.md` and the relevant subsystem contract.
