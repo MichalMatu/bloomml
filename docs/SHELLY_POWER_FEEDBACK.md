@@ -1,178 +1,83 @@
 # Shelly power-feedback reference
 
-Updated: 2026-09-05
+Updated: 2026-09-14
 
-## Available device
+## Device/reference state
 
-The current growbox test setup has a Shelly Plug S Gen3 reachable from the Local Agent host at:
+The growbox test setup has used a Shelly Plug S Gen3 at `http://192.168.0.16` as an independent mains-power observation channel.
 
-`http://192.168.0.16`
+Observed during qualification:
 
-Read-only RPC access was physically/network verified from the Local Agent host on 2026-09-05.
+- model `S3PL-00112EU` / Plug S Gen3;
+- firmware `1.7.5` at the time of the test;
+- RPC authentication was disabled at that time.
 
-Observed device identity:
+Do not assume network reachability, firmware or authentication state is unchanged; re-read device identity before a new hardware qualification.
 
-- model: `S3PL-00112EU`;
-- generation: 3;
-- application: `PlugSG3`;
-- firmware observed during qualification: `1.7.5`;
-- RPC authentication was disabled at the time of qualification.
-
-Verified read-only RPC endpoints:
-
-- `/rpc/Shelly.GetDeviceInfo`;
-- `/rpc/Switch.GetStatus?id=0`.
-
-`Switch.GetStatus` exposes the measurements needed for growbox feedback, including relay state, active power (`apower`), voltage, current, accumulated energy and plug temperature.
-
-At the qualification read the relay was OFF and the plug reported `0.0 W` at approximately `244.4 V`. These values are evidence of the read-only probe only, not fixed operating values.
-
-## RPC usage from the Local Agent host
-
-Read device identity:
+Useful RPC reads:
 
 ```sh
 curl -fsS --max-time 5 http://192.168.0.16/rpc/Shelly.GetDeviceInfo
-```
-
-Read relay state and power telemetry:
-
-```sh
 curl -fsS --max-time 5 'http://192.168.0.16/rpc/Switch.GetStatus?id=0'
 ```
 
-The most important response fields are:
+Important status fields: `output`, `apower`, `voltage`, `current`, `aenergy.total`, `temperature.tC`.
 
-- `output`: physical Shelly relay state;
-- `apower`: active power in watts;
-- `voltage`: mains voltage;
-- `current`: current in amperes;
-- `aenergy.total`: accumulated consumed energy;
-- `temperature.tC`: Shelly internal temperature.
+For an explicitly authorized relay write use deterministic `Switch.Set`, then read status back. Do not use `Switch.Toggle` in automation.
 
-Control the Shelly relay through the official `Switch.Set` RPC method:
+## Why it is useful
 
-```sh
-curl -fsS -X POST \
-  -H 'Content-Type: application/json' \
-  -d '{"id":1,"method":"Switch.Set","params":{"id":0,"on":true},"tag":"growbox"}' \
-  http://192.168.0.16/rpc
+Shelly is independent of the ESP32/RF433 transmit path, so a before/after active-power delta can provide physical evidence that a mains load changed state.
+
+Model the observation as:
+
+```text
+requested state
+-> RF command
+-> expected load power signature
+-> Shelly measured delta
+-> physical-state confidence / anomaly
 ```
 
-Use `"on":false` for OFF. After every write, read `Switch.GetStatus?id=0` and verify the returned `output` state instead of assuming the write succeeded.
+RF TX completion alone is not physical acknowledgement.
 
-Do not use `Switch.Toggle` in automated control because an explicit requested state is safer and deterministic.
+## Calibrated reference signatures
 
-## Intended growbox role
+Two supervised calibrations on 2026-09-05, including a 20-second settled repeat, produced these useful centers/ranges:
 
-The Shelly can be installed upstream of the current growbox loads and used as an independent power-feedback channel. It can remain upstream of a power strip: individual loads can still be identified from characteristic changes in total active power.
+| Load | Approx. power contribution |
+| --- | ---: |
+| lamp | 97.0-97.1 W |
+| exhaust fan | 2.8-3.2 W |
+| humidifier | 15.4-15.7 W |
+| all controlled loads OFF baseline | about 2.2 W |
 
-The core measurement is a delta, not an absolute total:
+Observed mains during those tests was roughly 243-245 V.
 
-`device power contribution ~= stable power after command - stable power before command`
+These are reference signatures, not immutable acceptance constants. Use multiple samples and a median/trimmed estimate, record mains voltage, and reject ambiguous windows where another load changes.
 
-For an ON transition:
+## Recommended confirmation sequence
 
-`delta_on_w = median(apower_after_on) - median(apower_before_on)`
+For a supervised actuator check:
 
-For the matching OFF transition:
+1. read a stable pre-transition Shelly window;
+2. issue one explicit actuator transition;
+3. allow settling;
+4. read a stable post-transition window;
+5. compare the median delta against the calibrated range/tolerance;
+6. perform the reverse transition and confirm the opposite-sign delta;
+7. end in the intended safe state and record final power.
 
-`delta_off_w = median(apower_before_off) - median(apower_after_off)`
+Do not switch multiple loads in one calibration transition if you need attribution.
 
-The ON and OFF deltas should be similar in magnitude. Agreement between both directions increases confidence that the RF-controlled load really changed state.
+## Safety/master-relay role
 
-During actuator calibration, measure the stable power delta for:
+Shelly is not the normal climate-control owner and is not the normal thermal response mechanism.
 
-- all controlled loads OFF (baseline);
-- lamp only ON;
-- exhaust fan only ON;
-- humidifier only ON;
-- useful combinations of the above.
+Normal lamp overtemperature handling remains actuator-specific: lamp OFF while exhaust fan cooling remains available. A master cutoff could remove power from cooling or the controller, so automatic Shelly master-off behavior requires a separately documented and physically qualified safety design.
 
-Use multiple Shelly samples before and after each transition, allow a short settling interval, and use a median/trimmed estimate rather than one instantaneous reading. Record mains voltage with each calibration because power can vary with supply voltage.
+Use Shelly writes only in explicitly authorized supervised work until such a design exists.
 
-The resulting characteristic wattage ranges can provide physical feedback after an RF command. For example, an RF `lamp ON` transmission followed by the calibrated positive lamp power delta is strong evidence that the lamp physically turned on. An RF TX completion followed by no expected power change is evidence of a failed or ineffective physical state transition.
+## Evidence boundary
 
-The power-feedback path should therefore be modeled as:
-
-`requested actuator state -> RF command -> expected power delta/signature -> Shelly measured delta -> physical-state confidence / anomaly`
-
-Do not require exact wattage equality. Use calibrated ranges/tolerances and settling time because mains voltage, lamp driver behavior, fan load and humidifier duty can vary.
-
-A shared power strip is acceptable. If other constant loads are present, they become part of the baseline and cancel out in the before/after delta. If another load changes during the observation window, mark that sample ambiguous and do not use it as actuator-state confirmation.
-
-## Calibration sequence
-
-The safe reference sequence is:
-
-1. ensure the Shelly master is ON and read a stable baseline;
-2. send explicit RF OFF to lamp, fan and humidifier, then measure the all-controlled-loads-OFF baseline;
-3. for each device separately: collect pre-transition samples, send RF ON, wait for settling, collect post-ON samples, send RF OFF, wait for settling, collect post-OFF samples;
-4. derive characteristic ON and OFF power deltas and an initial tolerance band;
-5. end with lamp OFF, fan OFF and humidifier OFF, then record the final Shelly status.
-
-Never intentionally switch more than one actuator during a single calibration transition because that would make attribution ambiguous.
-
-## First measured power signatures — 2026-09-05
-
-A supervised Local Agent calibration was completed successfully with the Shelly master ON and the three RF loads exercised one at a time. The measurement sequence used multiple samples and median active power before and after each transition.
-
-Observed all-controlled-loads-OFF baseline:
-
-- `2.2 W` median;
-- about `243.8 V` mains during baseline;
-- final baseline after all tests returned to `2.2 W` exactly within measurement resolution.
-
-Observed characteristic signatures:
-
-| actuator | pre/OFF median | ON median | ON delta | OFF delta | observed mains |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| lamp | 2.2 W | 99.3 W | +97.1 W | -97.1 W | about 243.4 V |
-| exhaust fan | 2.2 W | 5.4 W | +3.2 W | -3.2 W | about 244.1 V |
-| humidifier | 2.2 W | 17.6 W | +15.4 W | -15.4 W | about 244.1 V |
-
-The ON and OFF deltas matched exactly for all three devices in this first calibration, which is strong evidence that the individual RF transitions corresponded to physical load changes measured independently by Shelly.
-
-Initial reference signatures are therefore:
-
-- lamp: approximately `97.1 W` contribution;
-- exhaust fan: approximately `3.2 W` contribution;
-- humidifier: approximately `15.4 W` contribution.
-
-## 20-second settled repeat calibration — 2026-09-05
-
-A second supervised calibration repeated the same one-device-at-a-time sequence but waited a full `20 s` after every RF ON and every RF OFF before sampling Shelly. Each stable state was then represented by the median of nine Shelly samples.
-
-Results:
-
-| actuator | pre/OFF median | ON median after 20 s | OFF median after 20 s | ON delta | OFF delta | ON/OFF delta disagreement | observed mains |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| lamp | 2.2 W | 99.2 W | 2.2 W | +97.0 W | -97.0 W | 0.0 W | about 243.8 V |
-| exhaust fan | 2.3 W | 5.1 W | 2.2 W | +2.8 W | -2.9 W | 0.1 W | about 245.0 V |
-| humidifier | 2.2 W | 17.9 W | 2.2 W | +15.7 W | -15.7 W | 0.0 W | about 243.9 V |
-
-The all-controlled-loads-OFF baseline was `2.2 W` and the final state after the full repeat also returned to `2.2 W`.
-
-This repeat strongly confirms that the characteristic load signatures remain visible after Shelly and the loads have had ample time to settle. It also demonstrates why production confirmation must use tolerance ranges rather than one exact wattage constant: the low-power fan moved from approximately `3.2 W` contribution in the first short-settle calibration to approximately `2.8-2.9 W` in the 20-second calibration, while the much larger lamp and humidifier signatures remained within a few tenths of a watt of the first test.
-
-Practical initial centers from both supervised calibrations are therefore approximately:
-
-- lamp: `97.0-97.1 W` contribution;
-- exhaust fan: `2.8-3.2 W` contribution;
-- humidifier: `15.4-15.7 W` contribution.
-
-Do not freeze final acceptance bands from only two calibration cycles. Continue collecting signatures during supervised hardware tests, including mains voltage and settled state, and derive robust tolerance bands from the distribution. For low-power loads such as the fan, use a relative/wider tolerance and require a stable baseline because a small unrelated load change can be comparable with the fan signature.
-
-The calibration ended safely with lamp OFF, fan OFF and humidifier OFF; the Shelly master remained ON and final measured power returned to the `2.2 W` baseline.
-
-## Master-switch role
-
-The Shelly relay may also be used as an emergency master cutoff, but it is not the normal thermal-control mechanism.
-
-The normal high-temperature response remains actuator-specific:
-
-`thermal trip -> lamp OFF + exhaust fan ON`
-
-A master cutoff that removes power from both the lamp and the exhaust fan would defeat active cooling, and a master cutoff that also powers down the ESP32 controller would remove telemetry/control. Therefore master OFF is reserved for higher-level fault handling such as an unsafe/unexplained power signature, failed actuator shutdown, overload/fault conditions, or an explicit emergency action.
-
-Before enabling automatic Shelly relay writes as a production safety action, document exactly which loads and controller components are downstream of the plug and qualify the fail-safe behavior separately. Shelly writes used during supervised calibration must be explicit and verified by readback.
+The calibration demonstrates that these three RF loads produced distinct independently measured power deltas. It does not prove future commands succeeded, and it does not transfer output ownership away from `OutputSupervisor`.

@@ -12,14 +12,20 @@ Compact production-oriented map. Full contract details live in schemas; research
 
 The older `schemas/environment-controller.json` v4 contract and `docs/simulator/*` describe broad simulator/training tooling and are not the production climate-v6 runtime contract.
 
-## Production measurement path
+## Current real-input composition
 
-Current real-input composition uses semantic sources such as:
+The production real-input adapter currently composes inside/nearby state as follows:
 
-- inside SCD41 temperature / RH / CO2 with validity/freshness;
-- configured BLE climate sources where enabled;
-- DS3231/time/schedule state;
-- runtime/output/storage diagnostics.
+| Semantic role | Current source | Production use |
+| --- | --- | --- |
+| inside temperature | TP357 BLE | inside air temperature |
+| inside relative humidity | TP357 BLE | inside RH |
+| inside CO₂ | SCD41 | CO₂ only in the composed inside snapshot |
+| nearby/outside temperature | Xiaomi BLE | nearby/outside air temperature |
+| nearby/outside relative humidity | Xiaomi BLE | nearby/outside RH |
+| wall clock | DS3231/runtime clock path | schedule/time context |
+
+The SCD41 driver may expose temperature/RH internally, but current `RuntimeInsideSource` intentionally takes T/RH from TP357 and only copies valid SCD41 CO₂ into the production inside snapshot.
 
 Missing or stale hardware remains unavailable/invalid; it is never represented as a fake successful zero measurement.
 
@@ -53,7 +59,7 @@ The e-ink/UI path is observer-only and cannot become an output owner.
 
 ## Current configured growbox loads
 
-The operational RF reference currently covers:
+The operational RF reference covers:
 
 - lamp;
 - exhaust fan;
@@ -63,9 +69,9 @@ Exact RF code/pulse/repeat evidence belongs in `RF433_DEVICE_CODES.md`. Shelly p
 
 ## Research/simulator I/O
 
-The older v4 research contract models a broader growbox with up to four pots and 15 normalized outputs. That inventory remains useful to `tools/ml` research workflows but must not be used to infer production actuator ownership or current firmware behavior.
+The older v4 research contract models a broader growbox with up to four pots and 15 normalized outputs. It remains useful to `tools/ml` research workflows but must not be used to infer production actuator ownership or current firmware behavior.
 
-See `DATA_CONTRACT.md`, `CONFIG_MATRIX.md` and `simulator/IO_INVENTORY.md` only when working specifically on that research toolchain.
+See `DATA_CONTRACT.md`, `CONFIG_MATRIX.md` and `simulator/IO_INVENTORY.md` only for that research toolchain.
 
 ## Change rule
 
