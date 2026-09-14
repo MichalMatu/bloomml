@@ -4,6 +4,17 @@ Only milestones that still help understand the current codebase are kept here. D
 
 ## Unreleased
 
+### SCD41 startup recovery qualification — 2026-09-14
+
+- Hardened `Scd41InsideSource::begin()` with the Sensirion-aligned SCD41 clean-start sequence `wake_up -> stop_periodic_measurement -> reinit -> start_periodic_measurement`.
+- Code-bearing recovery candidate: `a92074b74b055c58c0949c7c38f4896638ebf227`.
+- The earlier missing-board incident was a loose USB cable, not a firmware boot loop; `/dev/cu.usbserial-10` remained untouched during diagnosis.
+- Exact candidate passed a 90-second hardware qualification with e-ink enabled: 8 SCD41 samples, 5 successful physical display refreshes, zero SCD41 read/invalid errors, zero panic/brownout and no unexpected reboot.
+- Exact candidate then passed 5/5 bounded MCU-only reset cycles with SCD41 sampling and e-ink refresh healthy after every reset.
+- GitHub CI for the code candidate completed successfully across web, host and ESP-IDF jobs.
+- Added a source-policy regression test that preserves the clean-start command order and availability semantics.
+- Historical zero-sample behavior is treated as an intermittent retained-device-state/startup issue; the qualification strongly supports the mitigation but does not claim recurrence is impossible.
+
 ### Repository consolidation — 2026-09-14
 
 - Promoted the active e-ink/SCD41 development line to canonical `main`.
@@ -14,14 +25,14 @@ Only milestones that still help understand the current codebase are kept here. D
 - Added `HISTORY.md` as the compact milestone/evidence index.
 - Reduced `README.md`, `AGENTS.md`, `CURRENT_STATUS.md`, `PROJECT_ROADMAP.md`, `IO_MAP.md`, hardware bring-up docs and frontend docs to current responsibilities.
 - Long-lived branch policy is now `main` + `agent-control` + `gh-pages`; temporary e-ink/chat branches are retired after their tip SHAs are recorded.
-- Cleanup intentionally does not change controller behavior. The active technical blocker remains SCD41 sampling.
+- Cleanup intentionally does not change controller behavior. The active technical blocker at cleanup time was SCD41 sampling; that blocker was subsequently qualified as recovered by the entry above.
 
 ### CrowPanel e-ink integration / SCD41 handoff — 2026-09-13
 
 - Added observer-only CrowPanel 2.9-inch SSD1680 e-paper runtime integration.
 - Added compact status rendering, rotation, asynchronous display worker and partial-refresh support.
 - Physical display operation was confirmed on the board; known flashed/debug baseline: `01db8228e6d822b5c64359abd8bf2d85341b5919`.
-- Current regression evidence shows SCD41 available but producing zero successful samples while BLE/RTC/SD remain healthy.
+- Historical regression evidence showed SCD41 available but producing zero successful samples while BLE/RTC/SD remained healthy.
 - Pre-cleanup branch/documentation head: `ceaaa88801568cccf2f1cbc86021ce3b2b2809d5`.
 
 ### Release-readiness and structural hardening — 2026-09-11 to 2026-09-12
