@@ -239,9 +239,9 @@ void formatStorage(const DisplayStorageState& storage_state, char* buffer,
   std::snprintf(buffer, buffer_size, "UNKNOWN");
 }
 
-void buildStatusPage(const DisplaySnapshot& snapshot, const DisplayPresenterConfig& config,
-                     DisplayPageModel& page) noexcept {
-  setText(page.title, "Growbox status");
+void buildEnvironmentPage(const DisplaySnapshot& snapshot, const DisplayPresenterConfig& config,
+                          DisplayPageModel& page) noexcept {
+  setText(page.title, "Environment");
   char value[28]{};
 
   formatMeasurement(snapshot.temperature_c, "C", value, sizeof(value));
@@ -250,20 +250,10 @@ void buildStatusPage(const DisplaySnapshot& snapshot, const DisplayPresenterConf
   (void)appendLine(page, "RH", value);
   formatMeasurement(snapshot.co2_ppm, "ppm", value, sizeof(value));
   (void)appendLine(page, "CO2", value);
-
   formatSensorFreshness(snapshot, config.sensor_stale_after_ms, value, sizeof(value));
   (void)appendLine(page, "SCD41", value);
   formatClock(snapshot, value, sizeof(value), false);
   (void)appendLine(page, "Time", value);
-  (void)appendLine(page, "Mode", modeName(snapshot.lifecycle_mode));
-
-  formatActuator(snapshot.lamp, value, sizeof(value));
-  (void)appendLine(page, "Lamp", value);
-  formatActuator(snapshot.exhaust_fan, value, sizeof(value));
-  (void)appendLine(page, "Fan", value);
-  formatActuator(snapshot.humidifier, value, sizeof(value));
-  (void)appendLine(page, "Humid", value);
-
   formatSafety(snapshot, value, sizeof(value));
   (void)appendLine(page, "Safety", value);
 }
@@ -291,12 +281,36 @@ void buildOutputsPage(const DisplaySnapshot& snapshot, DisplayPageModel& page) n
   (void)appendLine(page, "Humid phys", value);
 }
 
-void buildDiagnosticsPage(const DisplaySnapshot& snapshot, DisplayPageModel& page) noexcept {
+void buildSystemPage(const DisplaySnapshot& snapshot, DisplayPageModel& page) noexcept {
+  setText(page.title, "System");
+  char value[28]{};
+
+  (void)appendLine(page, "Mode", modeName(snapshot.lifecycle_mode));
+  (void)appendLine(page, "Automation", snapshot.automation_requested ? "REQUESTED" : "OFF");
+  (void)appendLine(page, "Transport", snapshot.transport_active ? "ACTIVE" : "LOCKED");
+  (void)appendLine(page, "Lifecycle", snapshot.lifecycle_active ? "ACTIVE" : "IDLE");
+  (void)appendLine(page, "BLE", snapshot.ble_scanning ? "SCANNING" : "IDLE");
+  formatClock(snapshot, value, sizeof(value), true);
+  (void)appendLine(page, "RTC", value);
+  formatStorage(snapshot.storage, value, sizeof(value));
+  (void)appendLine(page, "Storage", value);
+  (void)appendLine(page, "FW",
+                   snapshot.firmware_sha[0] != '\0' ? snapshot.firmware_sha.data() : "--");
+  std::snprintf(value, sizeof(value), "%llus",
+                static_cast<unsigned long long>(snapshot.uptime_ms / 1000U));
+  (void)appendLine(page, "Uptime", value);
+  formatSafety(snapshot, value, sizeof(value));
+  (void)appendLine(page, "Safety", value);
+}
+
+void buildDiagnosticsPage(const DisplaySnapshot& snapshot, const DisplayPresenterConfig& config,
+                          DisplayPageModel& page) noexcept {
   setText(page.title, "Diagnostics");
   char value[28]{};
 
-  formatClock(snapshot, value, sizeof(value), true);
-  (void)appendLine(page, "RTC", value);
+  (void)appendLine(page, "Climate", snapshot.climate_sampled ? "SAMPLED" : "WAITING");
+  formatSensorFreshness(snapshot, config.sensor_stale_after_ms, value, sizeof(value));
+  (void)appendLine(page, "SCD41", value);
   formatStorage(snapshot.storage, value, sizeof(value));
   (void)appendLine(page, "Storage", value);
 
@@ -309,6 +323,12 @@ void buildDiagnosticsPage(const DisplaySnapshot& snapshot, DisplayPageModel& pag
   std::snprintf(value, sizeof(value), "%lu",
                 static_cast<unsigned long>(snapshot.storage.queue_drops));
   (void)appendLine(page, "Drops", value);
+  std::snprintf(value, sizeof(value), "%lu",
+                static_cast<unsigned long>(snapshot.storage.sd_mount_errors));
+  (void)appendLine(page, "SD err", value);
+  std::snprintf(value, sizeof(value), "%lu",
+                static_cast<unsigned long>(snapshot.storage.flash_mount_errors));
+  (void)appendLine(page, "Flash err", value);
 
   if (snapshot.storage.last_write_ms == 0U || snapshot.storage.last_write_ms > snapshot.uptime_ms) {
     std::snprintf(value, sizeof(value), "--");
@@ -318,16 +338,9 @@ void buildDiagnosticsPage(const DisplaySnapshot& snapshot, DisplayPageModel& pag
                       (snapshot.uptime_ms - snapshot.storage.last_write_ms) / 1000U));
   }
   (void)appendLine(page, "Last write", value);
-  (void)appendLine(page, "FW",
-                   snapshot.firmware_sha[0] != '\0' ? snapshot.firmware_sha.data() : "--");
-  (void)appendLine(page, "SCD41", snapshot.scd_available ? "AVAILABLE" : "MISSING");
-
   std::snprintf(value, sizeof(value), "%llus",
                 static_cast<unsigned long long>(snapshot.uptime_ms / 1000U));
   (void)appendLine(page, "Uptime", value);
-
-  formatSafety(snapshot, value, sizeof(value));
-  (void)appendLine(page, "Safety", value);
 }
 
 } // namespace
@@ -337,20 +350,20 @@ bool DisplayNavigation::handle(DisplayButton button) noexcept {
   switch (button) {
   case DisplayButton::Home:
   case DisplayButton::Back:
-    page_ = DisplayPage::Status;
+    page_ = DisplayPage::Environment;
     break;
   case DisplayButton::Previous:
-    page_ = page_ == DisplayPage::Status
+    page_ = page_ == DisplayPage::Environment
                 ? DisplayPage::Diagnostics
                 : static_cast<DisplayPage>(static_cast<std::uint8_t>(page_) - 1U);
     break;
   case DisplayButton::Next:
     page_ = page_ == DisplayPage::Diagnostics
-                ? DisplayPage::Status
+                ? DisplayPage::Environment
                 : static_cast<DisplayPage>(static_cast<std::uint8_t>(page_) + 1U);
     break;
   case DisplayButton::Ok:
-    if (page_ == DisplayPage::Status) {
+    if (page_ == DisplayPage::Environment) {
       page_ = DisplayPage::Outputs;
     }
     break;
@@ -380,14 +393,17 @@ bool buildDisplayPage(const DisplaySnapshot& snapshot, DisplayPage selected_page
   }
 
   switch (selected_page) {
-  case DisplayPage::Status:
-    buildStatusPage(snapshot, config, page);
+  case DisplayPage::Environment:
+    buildEnvironmentPage(snapshot, config, page);
     break;
   case DisplayPage::Outputs:
     buildOutputsPage(snapshot, page);
     break;
+  case DisplayPage::System:
+    buildSystemPage(snapshot, page);
+    break;
   case DisplayPage::Diagnostics:
-    buildDiagnosticsPage(snapshot, page);
+    buildDiagnosticsPage(snapshot, config, page);
     break;
   }
 
