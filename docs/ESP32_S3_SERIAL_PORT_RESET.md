@@ -59,6 +59,20 @@ The wall-time versus firmware-uptime difference proves that the reset was confin
 
 The same class of startup reset was also observed when Python configured `DTR=False` and `RTS=False` before opening the port. Therefore, on this exact board/adapter/driver path, pre-setting the modem-control values in pyserial is not sufficient evidence that opening the port will be reset-free.
 
+## Repository monitor policy
+
+For normal observation, connecting the monitor must not intentionally reset the board. The repository defaults are:
+
+- `make monitor` sets `ESP_IDF_MONITOR_NO_RESET=1`;
+- the recommended VS Code ESP-IDF extension setting is `idf.monitorNoReset: true`;
+- `make flash-monitor` flashes as requested but does not request an additional monitor-start reset;
+- `make monitor-reset` is the explicit connect-and-reset mode;
+- inside an already open ESP-IDF Monitor, `Ctrl+R` is the explicit target reset action.
+
+On this exact Mac/CrowPanel path, a bounded hardware check on 2026-09-14 opened ESP-IDF Monitor 1.9.0 with `--no-reset` on `/dev/cu.usbserial-1130` without observing an ESP-ROM/POWERON boot marker. Raw pyserial opens are **not** equivalent: historical tests showed that pre-setting `DTR=False` and `RTS=False` was still able to reset this board.
+
+Use the no-reset monitor whenever boot continuity matters. Use the reset mode only when a restart is deliberately part of the operation. Flashing naturally remains a rebooting operation.
+
 ## Mandatory interpretation rule for future runtime tests
 
 Do **not** classify a ROM boot marker or uptime restart caused by opening `/dev/cu.usbserial-1130` as a spontaneous firmware failure.

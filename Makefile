@@ -25,15 +25,17 @@ endif
         test-board test-board-exhaustive test-board-validity-matrix board-e2e \
         test test-python test-host test-panel test-layout test-visual panel-screenshots \
         panel ports idf-gate-build build build-n8 build-n32r16v rebuild clean-idf \
-        flash monitor flash-monitor menuconfig clean
+        flash monitor monitor-reset flash-monitor menuconfig clean
 
 help: ## Lista komend make (domyślny cel)
 	@printf '\nGrowbox ML — make targets\n\n'
 	@printf '  Firmware (wymaga ESP-IDF — scripts/source_idf.sh):\n'
 	@printf '    make build          — kompilacja domyślnego profilu N16R8\n'
 	@printf '    make flash          — build + wgranie na płytkę\n'
-	@printf '    make flash-monitor  — build + flash + monitor serial\n'
-	@printf '    make monitor        — monitor serial (bez buildu)\n'
+	@printf '    make flash-monitor  — build + flash + monitor bez dodatkowego resetu\n'
+	@printf '    make monitor        — monitor serial bez resetu przy podłączeniu\n'
+	@printf '    make monitor-reset  — monitor serial z jawnym resetem przy podłączeniu\n'
+	@printf '                         W otwartym monitorze Ctrl+R = jawny restart płytki\n'
 	@printf '    make rebuild        — wyczyść build/idf i zbuduj od nowa\n'
 	@printf '    make menuconfig     — konfiguracja sdkconfig\n'
 	@printf '    PORT=/dev/cu.X make flash   — wybór portu USB\n\n'
@@ -190,10 +192,13 @@ flash: build
 	$(RUN_IDF) -B $(IDF_BUILD_DIR) $(IDF_PORT_ARGS) flash
 
 monitor: ensure-idf
+	ESP_IDF_MONITOR_NO_RESET=1 $(RUN_IDF) -B $(IDF_BUILD_DIR) $(IDF_PORT_ARGS) monitor
+
+monitor-reset: ensure-idf
 	$(RUN_IDF) -B $(IDF_BUILD_DIR) $(IDF_PORT_ARGS) monitor
 
 flash-monitor: build
-	$(RUN_IDF) -B $(IDF_BUILD_DIR) $(IDF_PORT_ARGS) flash monitor
+	ESP_IDF_MONITOR_NO_RESET=1 $(RUN_IDF) -B $(IDF_BUILD_DIR) $(IDF_PORT_ARGS) flash monitor
 
 menuconfig: ensure-idf
 	$(RUN_IDF) -B $(IDF_BUILD_DIR) menuconfig
