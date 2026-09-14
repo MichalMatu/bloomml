@@ -67,7 +67,7 @@ void testInitialRefreshRetriesUntilRenderedAndRoutineChangesCoalesce() {
   assert(frame.refresh_kind == display::DisplayRefreshKind::Full);
   assert(frame.refresh_reason == display::DisplayRefreshReason::Initial);
   assert(frame.page == display::DisplayPage::Environment);
-  assert(frame.render_list.command_count == 12U);
+  assert(frame.render_list.command_count == 20U);
   assert(runtime.hasPendingRefresh());
 
   display::DisplayRuntimeFrame retry{};

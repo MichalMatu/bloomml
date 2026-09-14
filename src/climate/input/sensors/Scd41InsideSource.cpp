@@ -15,6 +15,7 @@ namespace {
 constexpr char kScd41Tag[] = "scd41";
 constexpr std::uint8_t kScd41Address = 0x62U;
 constexpr std::uint32_t kI2cClockHz = 100'000U;
+constexpr std::uint64_t kNoMeasurementRecoveryMs = 30'000U;
 
 std::uint64_t ageSince(std::uint64_t now_ms, std::uint64_t then_ms) noexcept {
   return now_ms >= then_ms ? now_ms - then_ms : 0U;
@@ -78,7 +79,37 @@ bool Scd41InsideSource::begin(NativeI2cBus& bus) noexcept {
   }
   available_ = error == 0;
   started_ = available_;
+  recovery_attempted_ = false;
+  recovery_window_started_ = false;
+  recovery_window_start_ms_ = 0U;
+  recovery_attempt_count_ = 0U;
   return available_;
+}
+
+bool Scd41InsideSource::recoverPeriodicMeasurement() noexcept {
+  growbox_sensirion_i2c_bind_device(device_);
+  const int16_t wake_error = scd4x_wake_up();
+  if (wake_error != 0) {
+    ESP_LOGI(kScd41Tag, "recovery wake_up returned %d; continuing", static_cast<int>(wake_error));
+  }
+  const int16_t stop_error = scd4x_stop_periodic_measurement();
+  if (stop_error != 0) {
+    ESP_LOGI(kScd41Tag, "recovery stop_periodic_measurement returned %d; continuing",
+             static_cast<int>(stop_error));
+  }
+  const int16_t reinit_error = scd4x_reinit();
+  if (reinit_error != 0) {
+    ESP_LOGW(kScd41Tag, "recovery reinit failed: %d; attempting periodic start",
+             static_cast<int>(reinit_error));
+  }
+  const int16_t start_error = scd4x_start_periodic_measurement();
+  if (start_error != 0) {
+    ESP_LOGW(kScd41Tag, "recovery start_periodic_measurement failed: %d",
+             static_cast<int>(start_error));
+    return false;
+  }
+  ESP_LOGW(kScd41Tag, "one-shot periodic measurement recovery started");
+  return true;
 }
 
 bool Scd41InsideSource::fillCached(std::uint64_t monotonic_ms,
@@ -102,6 +133,11 @@ bool Scd41InsideSource::sample(std::uint64_t monotonic_ms,
     return false;
   }
 
+  if (!recovery_window_started_) {
+    recovery_window_started_ = true;
+    recovery_window_start_ms_ = monotonic_ms;
+  }
+
   growbox_sensirion_i2c_bind_device(device_);
   bool data_ready = false;
   const int16_t ready_error = scd4x_get_data_ready_status(&data_ready);
@@ -112,6 +148,16 @@ bool Scd41InsideSource::sample(std::uint64_t monotonic_ms,
   }
   available_ = true;
   if (!data_ready) {
+    const std::uint64_t progress_ms =
+        has_measurement_ ? last_measurement_ms_ : recovery_window_start_ms_;
+    if (!recovery_attempted_ && ageSince(monotonic_ms, progress_ms) >= kNoMeasurementRecoveryMs) {
+      recovery_attempted_ = true;
+      ++recovery_attempt_count_;
+      ESP_LOGW(kScd41Tag, "no new measurement for %llums; attempting one-shot recovery",
+               static_cast<unsigned long long>(ageSince(monotonic_ms, progress_ms)));
+      available_ = recoverPeriodicMeasurement();
+      recovery_window_start_ms_ = monotonic_ms;
+    }
     return fillCached(monotonic_ms, output);
   }
 

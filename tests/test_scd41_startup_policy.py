@@ -30,3 +30,21 @@ def test_scd41_availability_depends_on_periodic_start_result() -> None:
     started = body.index("started_ = available_", availability)
     returned = body.index("return available_", started)
     assert start < availability < started < returned
+
+
+def _sample_body() -> str:
+    source = SOURCE.read_text()
+    sample = source.index("bool Scd41InsideSource::sample")
+    return source[sample:]
+
+
+def test_scd41_no_data_recovery_is_one_shot_and_delayed() -> None:
+    source = SOURCE.read_text()
+    sample = _sample_body()
+    assert "kNoMeasurementRecoveryMs = 30'000U" in source
+    guard = sample.index("if (!recovery_attempted_ &&")
+    mark = sample.index("recovery_attempted_ = true", guard)
+    count = sample.index("++recovery_attempt_count_", mark)
+    recover = sample.index("recoverPeriodicMeasurement()", count)
+    assert guard < mark < count < recover
+    assert sample.count("recoverPeriodicMeasurement()") == 1

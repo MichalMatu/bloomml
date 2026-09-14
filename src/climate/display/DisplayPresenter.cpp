@@ -241,7 +241,7 @@ void formatStorage(const DisplayStorageState& storage_state, char* buffer,
 
 void buildEnvironmentPage(const DisplaySnapshot& snapshot, const DisplayPresenterConfig& config,
                           DisplayPageModel& page) noexcept {
-  setText(page.title, "Environment");
+  setText(page.title, "Growbox status");
   char value[28]{};
 
   formatMeasurement(snapshot.temperature_c, "C", value, sizeof(value));
@@ -254,6 +254,13 @@ void buildEnvironmentPage(const DisplaySnapshot& snapshot, const DisplayPresente
   (void)appendLine(page, "SCD41", value);
   formatClock(snapshot, value, sizeof(value), false);
   (void)appendLine(page, "Time", value);
+  (void)appendLine(page, "Mode", modeName(snapshot.lifecycle_mode));
+  formatActuator(snapshot.lamp, value, sizeof(value));
+  (void)appendLine(page, "Lamp", value);
+  formatActuator(snapshot.exhaust_fan, value, sizeof(value));
+  (void)appendLine(page, "Fan", value);
+  formatActuator(snapshot.humidifier, value, sizeof(value));
+  (void)appendLine(page, "Humid", value);
   formatSafety(snapshot, value, sizeof(value));
   (void)appendLine(page, "Safety", value);
 }

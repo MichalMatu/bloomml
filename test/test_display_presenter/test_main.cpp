@@ -50,7 +50,7 @@ public:
     if (std::strcmp(element.text, "!") == 0) {
       saw_warning = true;
       warning_style = element.style;
-    } else if (std::strcmp(element.text, "Environment") == 0) {
+    } else if (std::strcmp(element.text, "Growbox status") == 0) {
       saw_title = true;
       title_style = element.style;
       title_x = element.x_px;
@@ -153,8 +153,8 @@ void testEnvironmentPageContainsAuthoritativeClimateState() {
   const auto snapshot = nominalSnapshot();
   display::DisplayPageModel page{};
   assert(display::buildDisplayPage(snapshot, display::DisplayPage::Environment, page));
-  assert(std::strcmp(page.title.data(), "Environment") == 0);
-  assert(page.line_count == 6U);
+  assert(std::strcmp(page.title.data(), "Growbox status") == 0);
+  assert(page.line_count == 10U);
   assert(!page.warning);
 
   assert(std::strcmp(findLine(page, "Temp")->value.data(), "23.4 C") == 0);
@@ -162,9 +162,11 @@ void testEnvironmentPageContainsAuthoritativeClimateState() {
   assert(std::strcmp(findLine(page, "CO2")->value.data(), "712.0 ppm") == 0);
   assert(std::strcmp(findLine(page, "SCD41")->value.data(), "OK 2s") == 0);
   assert(std::strcmp(findLine(page, "Time")->value.data(), "01:00") == 0);
+  assert(std::strcmp(findLine(page, "Mode")->value.data(), "AUTO") == 0);
+  assert(std::strcmp(findLine(page, "Lamp")->value.data(), "100% -> ON") == 0);
+  assert(std::strcmp(findLine(page, "Fan")->value.data(), "20% -> ON") == 0);
+  assert(std::strcmp(findLine(page, "Humid")->value.data(), "0% -> OFF") == 0);
   assert(std::strcmp(findLine(page, "Safety")->value.data(), "OK") == 0);
-  assert(findLine(page, "Lamp") == nullptr);
-  assert(findLine(page, "Mode") == nullptr);
 }
 
 void testWarningsAreDerivedFromProjectedRuntimeTruth() {
@@ -261,7 +263,7 @@ void testTextSimulatorUsesTheSameSurfaceSeamAsHardwareAdapters() {
   display::DisplayTextSimulator simulator{};
   assert(display::renderDisplayPage(page, simulator));
   assert(simulator.size() > 0U);
-  assert(std::strstr(simulator.text(), "Environment") != nullptr);
+  assert(std::strstr(simulator.text(), "Growbox status") != nullptr);
   assert(std::strstr(simulator.text(), "23.4 C") != nullptr);
   assert(std::strstr(simulator.text(), "OK 2s") != nullptr);
   assert(simulator.text()[0] == ' ');
@@ -285,7 +287,7 @@ void testRenderListSurfaceMapsPresenterDataToFixedGeometry() {
   display::DisplayRenderList render_list{};
   display::DisplayRenderListSurface surface{geometry, render_list};
   assert(display::renderDisplayPage(page, surface));
-  assert(render_list.command_count == 12U);
+  assert(render_list.command_count == 20U);
   assert(!render_list.warning);
 
   const auto& first_label = render_list.commands[0];
@@ -301,7 +303,7 @@ void testRenderListSurfaceMapsPresenterDataToFixedGeometry() {
 
   page.warning = true;
   assert(display::renderDisplayPage(page, surface));
-  assert(render_list.command_count == 13U);
+  assert(render_list.command_count == 21U);
   assert(render_list.warning);
   assert(render_list.commands[0].role == display::DisplayTextRole::WarningMarker);
   assert(std::strcmp(render_list.commands[0].text.data(), "!") == 0);

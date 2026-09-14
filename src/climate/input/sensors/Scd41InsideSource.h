@@ -34,14 +34,21 @@ public:
   std::uint32_t successfulMeasurementCount() const noexcept {
     return successful_measurement_count_;
   }
+  std::uint32_t recoveryAttemptCount() const noexcept {
+    return recovery_attempt_count_;
+  }
 
 private:
+  bool recoverPeriodicMeasurement() noexcept;
   bool fillCached(std::uint64_t monotonic_ms, InsideEnvironmentSnapshot& output) const noexcept;
 
   i2c_master_dev_handle_t device_ = nullptr;
   bool started_ = false;
   bool available_ = false;
   bool has_measurement_ = false;
+  bool recovery_attempted_ = false;
+  bool recovery_window_started_ = false;
+  std::uint64_t recovery_window_start_ms_ = 0U;
   std::uint64_t last_measurement_ms_ = 0U;
   float temperature_c_ = 0.0F;
   float relative_humidity_pct_ = 0.0F;
@@ -49,6 +56,7 @@ private:
   std::uint32_t read_error_count_ = 0U;
   std::uint32_t invalid_measurement_count_ = 0U;
   std::uint32_t successful_measurement_count_ = 0U;
+  std::uint32_t recovery_attempt_count_ = 0U;
 };
 
 } // namespace growbox::app::climate_io::native
