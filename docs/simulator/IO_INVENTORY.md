@@ -1,19 +1,22 @@
-# ML I/O inventory (live contract)
+# v4 research I/O inventory
 
-**Source of truth:** `schemas/environment-controller.json`
-**Verify:** `python -c "from tools.ml import summarize_training_fields; print(summarize_training_fields())"`
+Scope: older `schemas/environment-controller.json` simulator/tooling contract only. This is not the production climate-v6 runtime contract.
 
-Generated conceptually for schema **v4** — if this file drifts, trust the schema + the command above.
+Verify the research toolchain directly with:
 
-## Counts
+```bash
+python -c "from tools.ml import summarize_training_fields; print(summarize_training_fields())"
+```
 
-| | Count |
-|--|------:|
+## Shape
+
+| Item | Count |
+| --- | ---: |
 | Features | 128 |
 | Outputs | 15 |
 | Max pots | 4 |
 
-## Outputs (order fixed)
+## Output order
 
 1. `heater`
 2. `fan`
@@ -21,49 +24,35 @@ Generated conceptually for schema **v4** — if this file drifts, trust the sche
 4. `dehumidifier`
 5. `cooler`
 6. `co2_doser`
-7. `irrigation_pot_1` … `irrigation_pot_4`
+7. `irrigation_pot_1` ... `irrigation_pot_4`
 8. `nutrient_heater`
-9. `heat_mat_pot_1` … `heat_mat_pot_4`
+9. `heat_mat_pot_1` ... `heat_mat_pot_4`
 
-All outputs normalized to **[0, 1]**; safety may force 0.
+All are normalized to `[0, 1]`; research safety logic may force unavailable/unsafe outputs to zero.
 
-## Feature groups (training fields)
+## Feature groups
 
-| Group | Count | Role |
-|-------|------:|------|
-| `sensors.*` | 7 | air in, nutrient T, outside air |
-| `validity.*` | 7 | masks for those sensors |
-| `pots.*.available` | 4 | donica on/off |
-| `pots.*.sensors` | 8 | soil moisture + soil T ×4 |
-| `pots.*.validity` | 8 | soil masks |
-| `pseudo.lights_active` | 1 | lamp schedule readback |
-| `environment.*` | 4 | volume, thermal mass, loss, ACH |
-| `actuators.*` | 18 | available + capabilities (global) |
-| `targets.*` | 4 | air T/RH/CO₂ + nutrient T |
-| `previous.*` | 7 | global previous commands |
-| `pots.*.cultivation` | 12 | pot volume, water capacity, transpiration |
-| `pots.*.targets` | 8 | soil moisture + soil T targets |
-| `pots.*.irrigation` | 20 | pump caps + control type |
-| `pots.*.heat_mat` | 12 | mat caps + control type |
-| `pots.*.previous` | 8 | previous irrigation + heat mat |
+The 128 features cover:
 
-## Settings vs sensors (mental model)
+- live growbox/outside/nutrient measurements plus validity masks;
+- up to four pot availability/soil measurements/validity;
+- `lights_active` context;
+- growbox/environment configuration;
+- actuator capability/availability;
+- targets/setpoints;
+- previous commands;
+- per-pot cultivation, irrigation and heat-mat configuration/state.
 
-| Kind | Examples | In ML vector? |
-|------|----------|----------------|
-| **Live sensors** | air T/RH, soil moisture | yes + validity |
-| **Configuration / settings** | growbox volume, heater max W, pump flow | yes (scenario config) |
-| **Targets / setpoints** | target air T, target soil moisture | yes |
-| **Previous commands** | previous fan | yes (memory) |
-| **Safety limits** | max air T alarm | in scenario JSON / safety config — **not** all are ML features |
-| **Physics-only params** | response lags, lamp heat W | simulator scenario only until exposed |
+Exact field order/ranges come from `schemas/environment-controller.json`, not this summary.
 
-## Mix & match rules
+## Mix-and-match semantics
 
-- Sensor off → `validity.<path> = false` (encoder uses default).
-- Actuator off → `available = false` (model sees zero capability; safety output 0).
-- Pot off → `pots[i].available = false` (targets/soil features canonicalized).
+- sensor disabled/invalid -> validity mask false and contract-default imputation;
+- actuator unavailable -> zero capability and safe-zero output;
+- pot unavailable -> pot-specific targets/features canonicalized and pot outputs safe-zero.
 
-## Not in v4 ML vector (by design)
+## Boundary
 
-PPFD, leaf T, EC/pH, flood sensor, exhaust air sensors and weather-station inputs are outside this contract. See [IO_MAP.md](../IO_MAP.md) for the compact I/O map and [PROJECT_ROADMAP.md](../PROJECT_ROADMAP.md) for current product priorities.
+PPFD, leaf temperature, EC/pH, flood sensors and additional weather/exhaust sensors are outside this v4 vector.
+
+For current production work use `../IO_MAP.md`, `../ARCHITECTURE.md` and `../CURRENT_STATUS.md`. For this research toolchain use `../DATA_CONTRACT.md`, `../CONFIG_MATRIX.md` and `README.md`.

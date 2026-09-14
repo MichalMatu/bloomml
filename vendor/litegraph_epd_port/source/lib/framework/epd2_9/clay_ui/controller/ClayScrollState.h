@@ -37,4 +37,3 @@ class ClayScrollState {
 };
 
 }  // namespace epd2_9
-
