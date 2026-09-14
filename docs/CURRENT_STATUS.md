@@ -8,27 +8,63 @@ Publishing branch: `gh-pages`
 
 ## Current phase
 
-Repository structure and documentation are being consolidated before debugging resumes. The active technical blocker remains the **SCD41 measurement regression** discovered after the first working CrowPanel e-ink integration.
+Repository cleanup and the CrowPanel SCD41/e-ink recovery investigation are complete enough to resume normal development.
 
-The e-ink hardware path itself is working and should not be reimplemented.
+The previous active SCD41 blocker is no longer reproduced on the qualified candidate. The current code-bearing recovery candidate is:
 
-## Exact known-good/current evidence
+`a92074b74b055c58c0949c7c38f4896638ebf227`
 
-Latest code-bearing display/debug baseline that was built and flashed during the e-ink work:
+It adds the Sensirion-aligned SCD41 clean-start sequence:
 
-`01db8228e6d822b5c64359abd8bf2d85341b5919`
+`wake_up -> stop_periodic_measurement -> reinit -> start_periodic_measurement`
 
-The later branch head before repository cleanup was:
+Do not claim the historical intermittent fault is mathematically impossible to recur; it was intermittent. The candidate has, however, passed bounded hardware qualification including repeated MCU-only resets with the sensor left powered.
 
-`ceaaa88801568cccf2f1cbc86021ce3b2b2809d5`
-
-Its latest commits only updated the SCD41 continuation/status documentation; the active behavior problem is unchanged.
+## Hardware qualification evidence
 
 Authorized growbox serial device: `/dev/cu.usbserial-1130`.
 
 Never use `/dev/cu.usbserial-10`.
 
 Do not use `/dev/cu.usbserial-1120` without separate authorization.
+
+The apparent missing-board incident on 2026-09-14 was traced to a loose USB cable. Once corrected, `/dev/cu.usbserial-1130` enumerated normally. The protected `/dev/cu.usbserial-10` device was not opened or reset during diagnosis.
+
+### Pre-fix baseline observation
+
+The previously flashed display baseline `01db8228e6d822b5c64359abd8bf2d85341b5919` was passively observed for 45 seconds after the cable was corrected:
+
+- one normal POWERON boot;
+- zero panic/brownout events;
+- SCD41 produced a valid sample in that boot;
+- e-ink refreshed successfully.
+
+This confirms the historical failure was intermittent rather than a deterministic source regression.
+
+### `a92074b...` qualification
+
+With physical outputs fenced off, exact SHA `a92074b74b055c58c0949c7c38f4896638ebf227` was built/flashed to `/dev/cu.usbserial-1130` and observed with the CrowPanel e-ink path enabled.
+
+90-second qualification result:
+
+- `eink_requested=1`, `eink_ready=1`;
+- 5 successful physical e-ink refreshes;
+- 8 consecutive SCD41 samples;
+- `scd_read_errors=0`;
+- `scd_invalid=0`;
+- zero panic events;
+- zero brownout events;
+- no unexpected reboot.
+
+A bounded 5-cycle MCU-reset stress test then passed 5/5 cycles. Every cycle reached a valid SCD41 sample, had e-ink enabled/ready, completed a physical refresh, matched firmware SHA `a92074b...`, and recorded no panic or brownout.
+
+Local Agent evidence tasks:
+
+- `20260914-scd41-ab-after-cable-fix-v1`
+- `20260914-scd41-eink-enabled-qual-v1`
+- `20260914-scd41-mcu-reset-stress-v1`
+
+The canonical GitHub CI run for the code candidate also completed successfully across `web-tests`, `host-tests`, and `esp-idf-build`.
 
 ## E-ink status
 
@@ -50,42 +86,9 @@ Completed and physically observed:
 - observer-only display ownership;
 - asynchronous display worker outside the controller hot path;
 - partial refresh path;
-- real runtime data reaches the display snapshot path when valid.
+- real runtime values coexist with SCD41 sampling.
 
-Do not reopen the panel pin map, SSD1680 backend, rotation or async architecture unless new evidence directly requires it.
-
-## Active SCD41 blocker
-
-The display currently cannot show valid environment values because its snapshot validity depends on the SCD41 sample, while the SCD41 source reports availability without ever recording a successful measurement.
-
-Stable UART evidence captured during the handoff:
-
-```text
-scd_available=1
-scd_sample=0
-scd_read_errors=0
-scd_invalid=0
-scd_samples=0
-
-tp_sample=1
-xiaomi_sample=1
-rtc_available=1
-rtc_trusted=1
-SD mounted/logging healthy
-```
-
-This points to the SCD41 measurement/start/readiness path rather than a general I2C, RTC, SD or display failure.
-
-## Debugging sequence
-
-1. Run the existing service-console `sensors` command on the already flashed board.
-2. Capture complete boot evidence for I2C probe, SCD41 `begin()`, periodic-measurement start and early telemetry.
-3. If samples remain zero, add only bounded diagnostics for return codes / ready state around `scd4x_start_periodic_measurement`, `scd4x_get_data_ready_status` and `scd4x_read_measurement`.
-4. Compare with a known-good pre-regression executable or a minimal SCD41-only diagnostic on the same board if needed.
-5. Identify the root/regression boundary before changing behavior.
-6. Implement the smallest fix and a regression test.
-7. Build, flash and verify the exact candidate on `/dev/cu.usbserial-1130` with physical outputs disabled.
-8. After SCD41 is healthy, improve display fallback semantics if useful without fabricating CO2 or hiding a real sensor fault.
+Do not reopen the panel pin map, SSD1680 backend, rotation, async architecture or the discarded display-brownout hypothesis unless new evidence directly requires it.
 
 ## Safety/output invariants
 
@@ -118,9 +121,9 @@ Temporary implementation branches should be deleted after their work is incorpor
 
 Detailed historical phase handoffs/plans are intentionally kept in Git history instead of live `docs/`. Compact milestone evidence is in `docs/HISTORY.md` and `docs/CHANGELOG.md`.
 
-## Next work after SCD41
+## Next work
 
-1. Confirm real environment values on the display.
+1. Keep the SCD41 recovery regression test and exact hardware evidence intact.
 2. Continue the bounded Clay/menu/button/simulator port from the proven LiteGraph implementation using an appropriately bound source context.
-3. Complete display/runtime/memory/hardware qualification.
-4. Only then resume controller behavior-quality tuning from `docs/PROJECT_ROADMAP.md`.
+3. Complete display/runtime/memory/hardware qualification where still missing.
+4. Resume controller behavior-quality tuning from `docs/PROJECT_ROADMAP.md` only after the remaining display/UI work is stable.
