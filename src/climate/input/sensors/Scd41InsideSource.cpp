@@ -50,14 +50,26 @@ bool Scd41InsideSource::begin(NativeI2cBus& bus) noexcept {
   sensirion_i2c_hal_init();
   scd4x_init(kScd41Address);
 
-  // The SCD4x keeps measuring across an MCU-only reset. Stop any inherited
-  // periodic session first; the upstream call includes the required 500 ms
-  // settling delay when the stop command is accepted. An idle sensor may NACK
-  // the stop command, in which case starting a fresh session is still valid.
+  // Follow Sensirion's clean-start sequence for SCD41. The sensor can retain a
+  // measurement or sleep state across MCU-only resets, so wake it first, stop
+  // any inherited periodic session, reload EEPROM-backed settings, then start
+  // a fresh periodic session. The generated wake_up command intentionally
+  // ignores its expected missing ACK and includes the required settling delay.
+  const int16_t wake_error = scd4x_wake_up();
+  if (wake_error != 0) {
+    ESP_LOGI(kScd41Tag, "wake_up returned %d; continuing", static_cast<int>(wake_error));
+  }
+
   const int16_t stop_error = scd4x_stop_periodic_measurement();
   if (stop_error != 0) {
     ESP_LOGI(kScd41Tag, "pre-start stop_periodic_measurement returned %d; continuing",
              static_cast<int>(stop_error));
+  }
+
+  const int16_t reinit_error = scd4x_reinit();
+  if (reinit_error != 0) {
+    ESP_LOGW(kScd41Tag, "pre-start reinit failed: %d; attempting periodic start",
+             static_cast<int>(reinit_error));
   }
 
   const int16_t error = scd4x_start_periodic_measurement();
