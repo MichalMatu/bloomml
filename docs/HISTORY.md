@@ -14,8 +14,9 @@ This is the compact historical record for milestones that still matter operation
 | 2026-09-12 | Structural cleanup closeout | code-bearing `0a7097a30280ec0f7bb408799c07093761d63e88` |
 | 2026-09-12 | Release-readiness/startup-safety hardening | code-bearing `e03763d019af405087a5fa9c6713a7165d2e623f`; GitHub CI #865; Sandbox Pack #63; Local Agent task `20260912-final-main-hardware-qualification-v1` |
 | 2026-09-13 | CrowPanel 2.9-inch e-ink physically operational | flashed/debug baseline `01db8228e6d822b5c64359abd8bf2d85341b5919` |
-| 2026-09-13 | SCD41 regression isolated as current blocker | documentation head before cleanup `ceaaa88801568cccf2f1cbc86021ce3b2b2809d5` |
+| 2026-09-13 | Historical intermittent SCD41 zero-sample failure isolated | documentation head before cleanup `ceaaa88801568cccf2f1cbc86021ce3b2b2809d5` |
 | 2026-09-14 | E-ink work promoted to canonical `main` and live docs consolidated | retired feature tip `ceaaa88801568cccf2f1cbc86021ce3b2b2809d5` |
+| 2026-09-14 | SCD41 clean-start recovery hardware-qualified with e-ink enabled | code-bearing `a92074b74b055c58c0949c7c38f4896638ebf227`; 90 s qualification + 5/5 MCU-reset stress cycles; Local Agent tasks `20260914-scd41-eink-enabled-qual-v1` and `20260914-scd41-mcu-reset-stress-v1` |
 | 2026-09-14 | Abandoned alternate chat implementation identified as superseded | retired branch tip `63e5aea5fa1179593b2d8244ec47f296a038a081`; its old `src/display` experiment is superseded by the later `src/climate/display` implementation |
 
 ## Invariants carried forward
