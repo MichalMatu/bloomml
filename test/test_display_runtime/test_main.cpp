@@ -66,8 +66,8 @@ void testInitialRefreshRetriesUntilRenderedAndRoutineChangesCoalesce() {
   assert(runtime.update(snapshot, 0U, frame));
   assert(frame.refresh_kind == display::DisplayRefreshKind::Full);
   assert(frame.refresh_reason == display::DisplayRefreshReason::Initial);
-  assert(frame.page == display::DisplayPage::Status);
-  assert(frame.render_list.command_count == 20U);
+  assert(frame.page == display::DisplayPage::Environment);
+  assert(frame.render_list.command_count == 12U);
   assert(runtime.hasPendingRefresh());
 
   display::DisplayRuntimeFrame retry{};
@@ -111,6 +111,14 @@ void testNavigationRefreshBypassesRoutineInterval() {
   assert(frame.page == display::DisplayPage::Outputs);
   assert(std::strcmp(frame.page_model.title.data(), "Outputs") == 0);
   assert(runtime.confirmRendered(frame, 11U));
+
+  assert(runtime.handleButton(display::DisplayButton::Next));
+  assert(runtime.page() == display::DisplayPage::System);
+  assert(runtime.update(snapshot, 12U, frame));
+  assert(frame.refresh_reason == display::DisplayRefreshReason::Navigation);
+  assert(frame.page == display::DisplayPage::System);
+  assert(std::strcmp(frame.page_model.title.data(), "System") == 0);
+  assert(runtime.confirmRendered(frame, 12U));
 }
 
 void testWarningIdentityChangesForceImmediateFullRefresh() {
