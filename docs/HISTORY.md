@@ -15,6 +15,8 @@ This is the compact historical record for milestones that still matter operation
 | 2026-09-12 | Release-readiness/startup-safety hardening | code-bearing `e03763d019af405087a5fa9c6713a7165d2e623f`; GitHub CI #865; Sandbox Pack #63; Local Agent task `20260912-final-main-hardware-qualification-v1` |
 | 2026-09-13 | CrowPanel 2.9-inch e-ink physically operational | flashed/debug baseline `01db8228e6d822b5c64359abd8bf2d85341b5919` |
 | 2026-09-13 | SCD41 regression isolated as current blocker | documentation head before cleanup `ceaaa88801568cccf2f1cbc86021ce3b2b2809d5` |
+| 2026-09-14 | E-ink work promoted to canonical `main` and live docs consolidated | retired feature tip `ceaaa88801568cccf2f1cbc86021ce3b2b2809d5` |
+| 2026-09-14 | Abandoned alternate chat implementation identified as superseded | retired branch tip `63e5aea5fa1179593b2d8244ec47f296a038a081`; its old `src/display` experiment is superseded by the later `src/climate/display` implementation |
 
 ## Invariants carried forward
 
@@ -24,5 +26,9 @@ This is the compact historical record for milestones that still matter operation
 - Thermal trip is `>= 28 C`; recovery requires `<= 26 C` continuously for 10 minutes.
 - UI/e-ink remains observer-side.
 - Hardware qualification belongs to an exact executable SHA and is never automatically inherited by later commits.
+
+## Branch policy after cleanup
+
+Long-lived branches are only `main`, `agent-control` and `gh-pages`. Temporary implementation/chat branches are removed after their useful state is incorporated or recorded here.
 
 For active work use `docs/CURRENT_STATUS.md`, not historical commits or deleted handoffs.
