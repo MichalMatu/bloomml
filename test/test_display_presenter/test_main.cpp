@@ -50,7 +50,7 @@ public:
     if (std::strcmp(element.text, "!") == 0) {
       saw_warning = true;
       warning_style = element.style;
-    } else if (std::strcmp(element.text, "Growbox status") == 0) {
+    } else if (std::strcmp(element.text, "Environment") == 0) {
       saw_title = true;
       title_style = element.style;
       title_x = element.x_px;
@@ -149,12 +149,12 @@ display::DisplaySnapshot nominalSnapshot() {
   return snapshot;
 }
 
-void testStatusPageContainsOperationalState() {
+void testEnvironmentPageContainsAuthoritativeClimateState() {
   const auto snapshot = nominalSnapshot();
   display::DisplayPageModel page{};
-  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Status, page));
-  assert(std::strcmp(page.title.data(), "Growbox status") == 0);
-  assert(page.line_count == 10U);
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Environment, page));
+  assert(std::strcmp(page.title.data(), "Environment") == 0);
+  assert(page.line_count == 6U);
   assert(!page.warning);
 
   assert(std::strcmp(findLine(page, "Temp")->value.data(), "23.4 C") == 0);
@@ -162,11 +162,9 @@ void testStatusPageContainsOperationalState() {
   assert(std::strcmp(findLine(page, "CO2")->value.data(), "712.0 ppm") == 0);
   assert(std::strcmp(findLine(page, "SCD41")->value.data(), "OK 2s") == 0);
   assert(std::strcmp(findLine(page, "Time")->value.data(), "01:00") == 0);
-  assert(std::strcmp(findLine(page, "Mode")->value.data(), "AUTO") == 0);
-  assert(std::strcmp(findLine(page, "Lamp")->value.data(), "100% -> ON") == 0);
-  assert(std::strcmp(findLine(page, "Fan")->value.data(), "20% -> ON") == 0);
-  assert(std::strcmp(findLine(page, "Humid")->value.data(), "0% -> OFF") == 0);
   assert(std::strcmp(findLine(page, "Safety")->value.data(), "OK") == 0);
+  assert(findLine(page, "Lamp") == nullptr);
+  assert(findLine(page, "Mode") == nullptr);
 }
 
 void testWarningsAreDerivedFromProjectedRuntimeTruth() {
@@ -180,11 +178,13 @@ void testWarningsAreDerivedFromProjectedRuntimeTruth() {
   snapshot.lamp.safety_override = true;
 
   display::DisplayPageModel page{};
-  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Status, page));
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Environment, page));
   assert(page.warning);
   assert(std::strcmp(findLine(page, "SCD41")->value.data(), "STALE 45s") == 0);
-  assert(std::strcmp(findLine(page, "Lamp")->value.data(), "100% -> OFF !S") == 0);
   assert(std::strcmp(findLine(page, "Safety")->value.data(), "LATCH OVER TEMP") == 0);
+
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Outputs, page));
+  assert(std::strcmp(findLine(page, "Lamp")->value.data(), "100% -> OFF !S") == 0);
 
   assert(display::buildDisplayPage(snapshot, display::DisplayPage::Diagnostics, page));
   assert(std::strcmp(findLine(page, "Storage")->value.data(), "SD FAULT") == 0);
@@ -197,7 +197,7 @@ void testFreshnessPolicyIsExplicitPresenterConfig() {
   display::DisplayPresenterConfig config{};
   config.sensor_stale_after_ms = 60'000U;
   display::DisplayPageModel page{};
-  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Status, config, page));
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Environment, config, page));
   assert(!page.warning);
   assert(std::strcmp(findLine(page, "SCD41")->value.data(), "OK 45s") == 0);
 }
@@ -213,37 +213,57 @@ void testOutputsPageKeepsRequestedEffectiveAndPhysicalTruthSeparate() {
   assert(std::strcmp(findLine(page, "Humid phys")->value.data(), "OFF") == 0);
 }
 
+void testSystemPageContainsRuntimeAndPlatformState() {
+  const auto snapshot = nominalSnapshot();
+  display::DisplayPageModel page{};
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::System, page));
+  assert(std::strcmp(page.title.data(), "System") == 0);
+  assert(page.line_count == 10U);
+  assert(std::strcmp(findLine(page, "Mode")->value.data(), "AUTO") == 0);
+  assert(std::strcmp(findLine(page, "Automation")->value.data(), "REQUESTED") == 0);
+  assert(std::strcmp(findLine(page, "Transport")->value.data(), "ACTIVE") == 0);
+  assert(std::strcmp(findLine(page, "Lifecycle")->value.data(), "ACTIVE") == 0);
+  assert(std::strcmp(findLine(page, "BLE")->value.data(), "SCANNING") == 0);
+  assert(std::strcmp(findLine(page, "RTC")->value.data(), "2026-01-01 01:00") == 0);
+  assert(std::strcmp(findLine(page, "Storage")->value.data(), "SD OK") == 0);
+  assert(std::strcmp(findLine(page, "FW")->value.data(), "--") == 0);
+  assert(std::strcmp(findLine(page, "Uptime")->value.data(), "123s") == 0);
+  assert(std::strcmp(findLine(page, "Safety")->value.data(), "OK") == 0);
+}
+
 void testNavigationMatchesFivePhysicalKeys() {
   display::DisplayNavigation navigation;
-  assert(navigation.page() == display::DisplayPage::Status);
+  assert(navigation.page() == display::DisplayPage::Environment);
   assert(navigation.handle(display::DisplayButton::Next));
   assert(navigation.page() == display::DisplayPage::Outputs);
   assert(navigation.handle(display::DisplayButton::Next));
+  assert(navigation.page() == display::DisplayPage::System);
+  assert(navigation.handle(display::DisplayButton::Next));
   assert(navigation.page() == display::DisplayPage::Diagnostics);
   assert(navigation.handle(display::DisplayButton::Next));
-  assert(navigation.page() == display::DisplayPage::Status);
+  assert(navigation.page() == display::DisplayPage::Environment);
   assert(navigation.handle(display::DisplayButton::Previous));
   assert(navigation.page() == display::DisplayPage::Diagnostics);
   assert(navigation.handle(display::DisplayButton::Home));
-  assert(navigation.page() == display::DisplayPage::Status);
+  assert(navigation.page() == display::DisplayPage::Environment);
   assert(navigation.handle(display::DisplayButton::Ok));
   assert(navigation.page() == display::DisplayPage::Outputs);
   assert(navigation.handle(display::DisplayButton::Back));
-  assert(navigation.page() == display::DisplayPage::Status);
+  assert(navigation.page() == display::DisplayPage::Environment);
   assert(!navigation.handle(display::DisplayButton::Back));
 }
 
 void testTextSimulatorUsesTheSameSurfaceSeamAsHardwareAdapters() {
   const auto snapshot = nominalSnapshot();
   display::DisplayPageModel page{};
-  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Status, page));
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Environment, page));
 
   display::DisplayTextSimulator simulator{};
   assert(display::renderDisplayPage(page, simulator));
   assert(simulator.size() > 0U);
-  assert(std::strstr(simulator.text(), "Growbox status") != nullptr);
+  assert(std::strstr(simulator.text(), "Environment") != nullptr);
   assert(std::strstr(simulator.text(), "23.4 C") != nullptr);
-  assert(std::strstr(simulator.text(), "20% -> ON") != nullptr);
+  assert(std::strstr(simulator.text(), "OK 2s") != nullptr);
   assert(simulator.text()[0] == ' ');
   assert(simulator.text()[1] == ' ');
 
@@ -259,13 +279,13 @@ void testTextSimulatorUsesTheSameSurfaceSeamAsHardwareAdapters() {
 void testRenderListSurfaceMapsPresenterDataToFixedGeometry() {
   const auto snapshot = nominalSnapshot();
   display::DisplayPageModel page{};
-  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Status, page));
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Environment, page));
 
   display::DisplayRenderGeometry geometry{};
   display::DisplayRenderList render_list{};
   display::DisplayRenderListSurface surface{geometry, render_list};
   assert(display::renderDisplayPage(page, surface));
-  assert(render_list.command_count == 20U);
+  assert(render_list.command_count == 12U);
   assert(!render_list.warning);
 
   const auto& first_label = render_list.commands[0];
@@ -281,7 +301,7 @@ void testRenderListSurfaceMapsPresenterDataToFixedGeometry() {
 
   page.warning = true;
   assert(display::renderDisplayPage(page, surface));
-  assert(render_list.command_count == 21U);
+  assert(render_list.command_count == 13U);
   assert(render_list.warning);
   assert(render_list.commands[0].role == display::DisplayTextRole::WarningMarker);
   assert(std::strcmp(render_list.commands[0].text.data(), "!") == 0);
@@ -302,7 +322,7 @@ void testRenderListSurfaceMapsPresenterDataToFixedGeometry() {
 void testClayAdapterMapsRenderRolesAndFailsClosedBeforeFrame() {
   const auto snapshot = nominalSnapshot();
   display::DisplayPageModel page{};
-  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Status, page));
+  assert(display::buildDisplayPage(snapshot, display::DisplayPage::Environment, page));
   page.warning = true;
 
   display::DisplayRenderGeometry geometry{};
@@ -379,10 +399,11 @@ void testClayAdapterMapsRenderRolesAndFailsClosedBeforeFrame() {
 } // namespace
 
 int main() {
-  testStatusPageContainsOperationalState();
+  testEnvironmentPageContainsAuthoritativeClimateState();
   testWarningsAreDerivedFromProjectedRuntimeTruth();
   testFreshnessPolicyIsExplicitPresenterConfig();
   testOutputsPageKeepsRequestedEffectiveAndPhysicalTruthSeparate();
+  testSystemPageContainsRuntimeAndPlatformState();
   testNavigationMatchesFivePhysicalKeys();
   testTextSimulatorUsesTheSameSurfaceSeamAsHardwareAdapters();
   testRenderListSurfaceMapsPresenterDataToFixedGeometry();
