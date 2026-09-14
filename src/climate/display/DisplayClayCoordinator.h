@@ -41,8 +41,8 @@ private:
 // responsible for acknowledging successful hardware completion.
 template <typename Backend>
 bool renderDisplayFrameToClay(const DisplayRuntimeFrame& frame,
-                              const DisplayRenderGeometry& geometry,
-                              const ClayDisplayTheme& theme, Backend& backend) noexcept {
+                              const DisplayRenderGeometry& geometry, const ClayDisplayTheme& theme,
+                              Backend& backend) noexcept {
   if (!frame.refreshRequired()) {
     return false;
   }

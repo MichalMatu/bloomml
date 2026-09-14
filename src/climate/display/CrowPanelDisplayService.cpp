@@ -17,8 +17,8 @@ bool CrowPanelDisplayService::begin() noexcept {
     return true;
   }
 
-  render_queue_ = xQueueCreateStatic(1U, sizeof(DisplayRenderWorkItem), render_queue_storage_.data(),
-                                     &render_queue_control_);
+  render_queue_ = xQueueCreateStatic(1U, sizeof(DisplayRenderWorkItem),
+                                     render_queue_storage_.data(), &render_queue_control_);
   completion_queue_ =
       xQueueCreateStatic(1U, sizeof(DisplayRenderCompletion), completion_queue_storage_.data(),
                          &completion_queue_control_);
@@ -41,8 +41,7 @@ bool CrowPanelDisplayService::begin() noexcept {
   }
 
   started_ = true;
-  ESP_LOGI(kTag, "Display worker started stack_bytes=%u",
-           static_cast<unsigned>(taskStackBytes()));
+  ESP_LOGI(kTag, "Display worker started stack_bytes=%u", static_cast<unsigned>(taskStackBytes()));
   return true;
 }
 
@@ -82,17 +81,14 @@ void CrowPanelDisplayService::taskLoop() noexcept {
     if (success) {
       const std::uint32_t successes =
           render_successes_.fetch_add(1U, std::memory_order_relaxed) + 1U;
-      ESP_LOGI(kTag,
-               "Physical refresh completed generation=%llu kind=%u reason=%u successes=%lu",
+      ESP_LOGI(kTag, "Physical refresh completed generation=%llu kind=%u reason=%u successes=%lu",
                static_cast<unsigned long long>(work_item.generation),
                static_cast<unsigned>(work_item.frame.refresh_kind),
                static_cast<unsigned>(work_item.frame.refresh_reason),
                static_cast<unsigned long>(successes));
     } else {
-      const std::uint32_t failures =
-          render_failures_.fetch_add(1U, std::memory_order_relaxed) + 1U;
-      ESP_LOGE(kTag,
-               "Physical refresh failed generation=%llu kind=%u reason=%u failures=%lu",
+      const std::uint32_t failures = render_failures_.fetch_add(1U, std::memory_order_relaxed) + 1U;
+      ESP_LOGE(kTag, "Physical refresh failed generation=%llu kind=%u reason=%u failures=%lu",
                static_cast<unsigned long long>(work_item.generation),
                static_cast<unsigned>(work_item.frame.refresh_kind),
                static_cast<unsigned>(work_item.frame.refresh_reason),
@@ -142,8 +138,7 @@ void CrowPanelDisplayService::submitPending(std::uint64_t now_ms) noexcept {
   }
   if (xQueueSend(render_queue_, &work_item, 0U) != pdTRUE) {
     transaction_.abort();
-    const std::uint32_t failures =
-        submit_failures_.fetch_add(1U, std::memory_order_relaxed) + 1U;
+    const std::uint32_t failures = submit_failures_.fetch_add(1U, std::memory_order_relaxed) + 1U;
     ESP_LOGW(kTag, "Display queue submit failed failures=%lu",
              static_cast<unsigned long>(failures));
     return;

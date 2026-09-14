@@ -133,14 +133,12 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
         {stage28d::kExhaustFanEndpoint, stage28d::kScheduledLightEndpoint,
          stage28d::kHumidifierEndpoint},
         runtime_config::kFirmwareGitSha);
-    static display::CrowPanelSsd1680DisplayBackend display_backend(
-        display::CrowPanelSsd1680Config{
-            {runtime_config::kEinkSclkGpio, runtime_config::kEinkMosiGpio,
-             runtime_config::kEinkCsGpio, runtime_config::kEinkDcGpio,
-             runtime_config::kEinkRstGpio, runtime_config::kEinkBusyGpio,
-             runtime_config::kEinkPowerGpio},
-            display::Ssd1680Rotation::CounterClockwise90,
-        });
+    static display::CrowPanelSsd1680DisplayBackend display_backend(display::CrowPanelSsd1680Config{
+        {runtime_config::kEinkSclkGpio, runtime_config::kEinkMosiGpio, runtime_config::kEinkCsGpio,
+         runtime_config::kEinkDcGpio, runtime_config::kEinkRstGpio, runtime_config::kEinkBusyGpio,
+         runtime_config::kEinkPowerGpio},
+        display::Ssd1680Rotation::CounterClockwise90,
+    });
     static display::CrowPanelDisplayService enabled_display_service(enabled_display_observer,
                                                                     display_backend);
     display_ready = enabled_display_service.begin();
@@ -152,10 +150,9 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
     }
   }
 
-  runtime::TelemetryReporter telemetry_reporter(ble, scd41, clock, storage_logger,
-                                                storage_logger_ready,
-                                                static_cast<std::int32_t>(reset_reason),
-                                                display_observer);
+  runtime::TelemetryReporter telemetry_reporter(
+      ble, scd41, clock, storage_logger, storage_logger_ready,
+      static_cast<std::int32_t>(reset_reason), display_observer);
 
   ESP_LOGI(kTag,
            "Stage27 real-input runtime: i2c=%d scd41=%d ds3231=%d ble=%d sd=%d "

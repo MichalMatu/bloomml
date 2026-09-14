@@ -4,8 +4,8 @@
 #include "climate/display/DisplaySnapshot.h"
 
 #include <array>
-#include <cstdio>
 #include <cstdint>
+#include <cstdio>
 
 namespace growbox::app::climate_io::display {
 

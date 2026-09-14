@@ -17,8 +17,9 @@ display::ClayDisplayTextElement textElement(std::uint16_t x, std::uint16_t y,
 
 void setLogicalBlack(display::DisplayMonochromeRaster::Buffer& buffer, std::uint16_t x,
                      std::uint16_t y) {
-  const std::size_t index = static_cast<std::size_t>(y) * display::DisplayMonochromeRaster::kBytesPerRow +
-                            static_cast<std::size_t>(x / 8U);
+  const std::size_t index =
+      static_cast<std::size_t>(y) * display::DisplayMonochromeRaster::kBytesPerRow +
+      static_cast<std::size_t>(x / 8U);
   const std::uint8_t mask = static_cast<std::uint8_t>(0x80U >> (x % 8U));
   buffer[index] = static_cast<std::uint8_t>(buffer[index] & static_cast<std::uint8_t>(~mask));
 }
@@ -32,7 +33,8 @@ int main() {
   display::DisplayMonochromeRaster::Buffer buffer{};
   display::DisplayMonochromeRaster raster(buffer);
   raster.clearWhite();
-  assert(std::all_of(buffer.begin(), buffer.end(), [](std::uint8_t value) { return value == 0xFFU; }));
+  assert(
+      std::all_of(buffer.begin(), buffer.end(), [](std::uint8_t value) { return value == 0xFFU; }));
 
   const auto normal_a = textElement(0U, 0U, 6U, 10U, "A");
   assert(raster.drawText(normal_a));
@@ -83,8 +85,8 @@ int main() {
   setLogicalBlack(buffer, 0U, 0U);
   setLogicalBlack(buffer, 295U, 127U);
   std::uint8_t native = 0U;
-  assert(display::Ssd1680FrameMapper::nativeByteAt(
-      buffer, 15U, display::Ssd1680Rotation::Clockwise90, native));
+  assert(display::Ssd1680FrameMapper::nativeByteAt(buffer, 15U,
+                                                   display::Ssd1680Rotation::Clockwise90, native));
   assert(native == 0xFEU);
   assert(display::Ssd1680FrameMapper::nativeByteAt(
       buffer, 295U * display::Ssd1680FrameMapper::kNativeBytesPerRow,
@@ -98,12 +100,12 @@ int main() {
   assert(display::Ssd1680FrameMapper::nativeByteAt(
       buffer, 15U, display::Ssd1680Rotation::CounterClockwise90, native));
   assert(native == 0xFEU);
-  assert(display::Ssd1680FrameMapper::nativeByteAt(
-      buffer, 16U, display::Ssd1680Rotation::Clockwise90, native));
+  assert(display::Ssd1680FrameMapper::nativeByteAt(buffer, 16U,
+                                                   display::Ssd1680Rotation::Clockwise90, native));
   assert(native == 0xFFU);
-  assert(!display::Ssd1680FrameMapper::nativeByteAt(
-      buffer, display::Ssd1680FrameMapper::kNativeBufferBytes,
-      display::Ssd1680Rotation::Clockwise90, native));
+  assert(!display::Ssd1680FrameMapper::nativeByteAt(buffer,
+                                                    display::Ssd1680FrameMapper::kNativeBufferBytes,
+                                                    display::Ssd1680Rotation::Clockwise90, native));
 
   return 0;
 }

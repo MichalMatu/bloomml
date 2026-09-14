@@ -25,7 +25,9 @@ public:
   bool drawText(const ClayDisplayTextElement& element) noexcept;
 
   bool isBlack(std::uint16_t x_px, std::uint16_t y_px) const noexcept;
-  const Buffer& buffer() const noexcept { return buffer_; }
+  const Buffer& buffer() const noexcept {
+    return buffer_;
+  }
 
 private:
   void setBlack(std::uint16_t x_px, std::uint16_t y_px) noexcept;

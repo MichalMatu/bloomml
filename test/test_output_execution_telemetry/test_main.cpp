@@ -246,7 +246,8 @@ void testDisplaySnapshotProjectsReadOnlyRuntimeTruthByRole() {
   assert(projected.storage.last_write_ms == 43'000U);
 
   display::DisplaySnapshot invalid{};
-  assert(!display::buildDisplaySnapshot(source, storage_status, {kFan, kFan, kHumidifier}, invalid));
+  assert(
+      !display::buildDisplaySnapshot(source, storage_status, {kFan, kFan, kHumidifier}, invalid));
   assert(invalid.uptime_ms == 0U);
 }
 

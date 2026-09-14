@@ -18,10 +18,8 @@ struct DisplaySensorValue {
 struct DisplayActuatorState {
   bool requested_known{false};
   ::growbox::app::output::NormalizedOutputLevel requested_level{0.0F};
-  ::growbox::app::output::OutputSource requested_source{
-      ::growbox::app::output::OutputSource::None};
-  ::growbox::app::output::OutputReason requested_reason{
-      ::growbox::app::output::OutputReason::None};
+  ::growbox::app::output::OutputSource requested_source{::growbox::app::output::OutputSource::None};
+  ::growbox::app::output::OutputReason requested_reason{::growbox::app::output::OutputReason::None};
 
   bool effective_known{false};
   ::growbox::app::output::BinaryOutputState effective_state{
@@ -33,8 +31,7 @@ struct DisplayActuatorState {
   bool safety_active{false};
   ::growbox::app::output::SafetyConstraint safety_constraint{
       ::growbox::app::output::SafetyConstraint::Allow};
-  ::growbox::app::output::OutputReason safety_reason{
-      ::growbox::app::output::OutputReason::None};
+  ::growbox::app::output::OutputReason safety_reason{::growbox::app::output::OutputReason::None};
 
   ::growbox::app::output::PhysicalOutputState physical_state{
       ::growbox::app::output::PhysicalOutputState::Unknown};
@@ -57,8 +54,7 @@ struct DisplayStorageState {
 struct DisplayEndpointRoles {
   ::growbox::app::output::OutputEndpointId exhaust_fan{
       ::growbox::app::output::kInvalidOutputEndpoint};
-  ::growbox::app::output::OutputEndpointId lamp{
-      ::growbox::app::output::kInvalidOutputEndpoint};
+  ::growbox::app::output::OutputEndpointId lamp{::growbox::app::output::kInvalidOutputEndpoint};
   ::growbox::app::output::OutputEndpointId humidifier{
       ::growbox::app::output::kInvalidOutputEndpoint};
 };
@@ -117,8 +113,8 @@ findEndpoint(const ::growbox::app::output::OutputExecutionTelemetrySnapshot& sna
   return nullptr;
 }
 
-inline DisplayActuatorState projectActuator(
-    const ::growbox::app::output::OutputEndpointExecutionTelemetry* source) noexcept {
+inline DisplayActuatorState
+projectActuator(const ::growbox::app::output::OutputEndpointExecutionTelemetry* source) noexcept {
   DisplayActuatorState result{};
   if (source == nullptr) {
     return result;

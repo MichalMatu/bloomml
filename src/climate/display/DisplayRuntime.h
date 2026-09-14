@@ -171,7 +171,8 @@ public:
     const bool initial = !has_last_frame_;
     const bool warning_changed =
         has_last_frame_ && !detail::displayWarningsEqual(output.page_model, last_page_);
-    const bool content_changed = initial || !detail::displayPageModelsEqual(output.page_model, last_page_);
+    const bool content_changed =
+        initial || !detail::displayPageModelsEqual(output.page_model, last_page_);
     const bool interval_elapsed =
         initial || detail::elapsedAtLeast(now_ms, last_refresh_ms_,
                                           config_.refresh.minimum_refresh_interval_ms);
@@ -239,8 +240,7 @@ private:
     }
 
     const std::uint16_t cadence = config_.refresh.full_refresh_every_partial;
-    if (cadence > 0U &&
-        static_cast<std::uint32_t>(partial_refreshes_since_full_) + 1U >= cadence) {
+    if (cadence > 0U && static_cast<std::uint32_t>(partial_refreshes_since_full_) + 1U >= cadence) {
       return DisplayRefreshKind::Full;
     }
     return DisplayRefreshKind::Partial;

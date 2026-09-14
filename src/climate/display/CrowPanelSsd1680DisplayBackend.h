@@ -47,8 +47,12 @@ public:
   bool endFrame() noexcept;
   void cancelFrame() noexcept;
 
-  bool hardwareReady() const noexcept { return controller_initialized_; }
-  bool previousRamSeeded() const noexcept { return previous_ram_seeded_; }
+  bool hardwareReady() const noexcept {
+    return controller_initialized_;
+  }
+  bool previousRamSeeded() const noexcept {
+    return previous_ram_seeded_;
+  }
 
 private:
   static constexpr spi_host_device_t kSpiHost = SPI2_HOST;
@@ -63,8 +67,7 @@ private:
   bool waitWhileBusy(std::uint32_t timeout_ms) noexcept;
   bool sendCommand(std::uint8_t command) noexcept;
   bool sendData(const std::uint8_t* data, std::size_t length) noexcept;
-  bool sendCommandData(std::uint8_t command, const std::uint8_t* data,
-                       std::size_t length) noexcept;
+  bool sendCommandData(std::uint8_t command, const std::uint8_t* data, std::size_t length) noexcept;
   bool setFullRamWindow() noexcept;
   bool setRamCountersToOrigin() noexcept;
   bool writeMappedRam(std::uint8_t command) noexcept;

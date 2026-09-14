@@ -98,8 +98,7 @@ telemetry::Stage27TelemetrySnapshot nominalTelemetry(std::uint64_t uptime_ms) {
   snapshot.output.transport_active = true;
   snapshot.output.lifecycle_active = true;
   snapshot.output.automation_requested = true;
-  snapshot.output.safety_reason_code =
-      static_cast<std::uint32_t>(stage28d::LampSafetyReason::Safe);
+  snapshot.output.safety_reason_code = static_cast<std::uint32_t>(stage28d::LampSafetyReason::Safe);
   snapshot.output.endpoint_count = 3U;
 
   auto& lamp = snapshot.output.endpoints[0];
@@ -274,9 +273,9 @@ void testClayCoordinatorAcknowledgesOnlySuccessfulBackendRender() {
 }
 
 void testObserverFailsClosedOnInvalidEndpointRoles() {
-  const display::DisplayEndpointRoles invalid_roles{
-      stage28d::kScheduledLightEndpoint, stage28d::kScheduledLightEndpoint,
-      stage28d::kHumidifierEndpoint};
+  const display::DisplayEndpointRoles invalid_roles{stage28d::kScheduledLightEndpoint,
+                                                    stage28d::kScheduledLightEndpoint,
+                                                    stage28d::kHumidifierEndpoint};
   display::DisplayTelemetryObserver observer{invalid_roles};
 
   const auto telemetry_snapshot = nominalTelemetry(123'000U);

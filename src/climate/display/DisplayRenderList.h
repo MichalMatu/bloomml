@@ -44,7 +44,8 @@ struct DisplayRenderList final {
 
 class DisplayRenderListSurface final {
 public:
-  DisplayRenderListSurface(const DisplayRenderGeometry& geometry, DisplayRenderList& output) noexcept
+  DisplayRenderListSurface(const DisplayRenderGeometry& geometry,
+                           DisplayRenderList& output) noexcept
       : geometry_(geometry), output_(output) {}
 
   bool beginPage(const char* title, bool warning) noexcept {
@@ -62,17 +63,17 @@ public:
         return false;
       }
 
-      const std::uint16_t title_x = static_cast<std::uint16_t>(
-          geometry_.left_margin_px + (warning ? 14U : 0U));
+      const std::uint16_t title_x =
+          static_cast<std::uint16_t>(geometry_.left_margin_px + (warning ? 14U : 0U));
       if (title_x >= geometry_.width_px - geometry_.right_margin_px) {
         output_ = {};
         return false;
       }
 
-      if (!appendText(title_x, geometry_.title_y_px,
-                      static_cast<std::uint16_t>(geometry_.width_px - geometry_.right_margin_px -
-                                                 title_x),
-                      DisplayTextRole::Title, title)) {
+      if (!appendText(
+              title_x, geometry_.title_y_px,
+              static_cast<std::uint16_t>(geometry_.width_px - geometry_.right_margin_px - title_x),
+              DisplayTextRole::Title, title)) {
         output_ = {};
         return false;
       }
@@ -80,11 +81,9 @@ public:
       constexpr std::uint16_t kWarningWidthPx = 12U;
       const std::uint16_t warning_x = static_cast<std::uint16_t>(
           geometry_.width_px - geometry_.right_margin_px - kWarningWidthPx);
-      const std::uint16_t warning_y = geometry_.title_y_px > 10U
-                                          ? static_cast<std::uint16_t>(geometry_.title_y_px - 10U)
-                                          : 0U;
-      if (!appendText(warning_x, warning_y, kWarningWidthPx,
-                      DisplayTextRole::WarningMarker, "!")) {
+      const std::uint16_t warning_y =
+          geometry_.title_y_px > 10U ? static_cast<std::uint16_t>(geometry_.title_y_px - 10U) : 0U;
+      if (!appendText(warning_x, warning_y, kWarningWidthPx, DisplayTextRole::WarningMarker, "!")) {
         output_ = {};
         return false;
       }

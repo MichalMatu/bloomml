@@ -206,8 +206,7 @@ void formatPhysical(const DisplayActuatorState& actuator, char* buffer,
     break;
   }
 
-  std::snprintf(buffer, buffer_size, "%s%s", state,
-                actuator.physical_independent ? " FB" : "");
+  std::snprintf(buffer, buffer_size, "%s%s", state, actuator.physical_independent ? " FB" : "");
 }
 
 bool storageMounted(const DisplayStorageState& storage_state) noexcept {
@@ -234,8 +233,7 @@ void formatStorage(const DisplayStorageState& storage_state, char* buffer,
     std::snprintf(buffer, buffer_size, "SD %s", storage_state.sd_mounted ? "OK" : "FAULT");
     return;
   case Stage27StorageBackendKind::Flash:
-    std::snprintf(buffer, buffer_size, "FLASH %s",
-                  storage_state.flash_mounted ? "OK" : "FAULT");
+    std::snprintf(buffer, buffer_size, "FLASH %s", storage_state.flash_mounted ? "OK" : "FAULT");
     return;
   }
   std::snprintf(buffer, buffer_size, "UNKNOWN");
@@ -302,22 +300,26 @@ void buildDiagnosticsPage(const DisplaySnapshot& snapshot, DisplayPageModel& pag
   formatStorage(snapshot.storage, value, sizeof(value));
   (void)appendLine(page, "Storage", value);
 
-  std::snprintf(value, sizeof(value), "%lu", static_cast<unsigned long>(snapshot.storage.records_written));
+  std::snprintf(value, sizeof(value), "%lu",
+                static_cast<unsigned long>(snapshot.storage.records_written));
   (void)appendLine(page, "Writes", value);
-  std::snprintf(value, sizeof(value), "%lu", static_cast<unsigned long>(snapshot.storage.write_errors));
+  std::snprintf(value, sizeof(value), "%lu",
+                static_cast<unsigned long>(snapshot.storage.write_errors));
   (void)appendLine(page, "Write err", value);
-  std::snprintf(value, sizeof(value), "%lu", static_cast<unsigned long>(snapshot.storage.queue_drops));
+  std::snprintf(value, sizeof(value), "%lu",
+                static_cast<unsigned long>(snapshot.storage.queue_drops));
   (void)appendLine(page, "Drops", value);
 
   if (snapshot.storage.last_write_ms == 0U || snapshot.storage.last_write_ms > snapshot.uptime_ms) {
     std::snprintf(value, sizeof(value), "--");
   } else {
     std::snprintf(value, sizeof(value), "%llus ago",
-                  static_cast<unsigned long long>((snapshot.uptime_ms - snapshot.storage.last_write_ms) /
-                                                  1000U));
+                  static_cast<unsigned long long>(
+                      (snapshot.uptime_ms - snapshot.storage.last_write_ms) / 1000U));
   }
   (void)appendLine(page, "Last write", value);
-  (void)appendLine(page, "FW", snapshot.firmware_sha[0] != '\0' ? snapshot.firmware_sha.data() : "--");
+  (void)appendLine(page, "FW",
+                   snapshot.firmware_sha[0] != '\0' ? snapshot.firmware_sha.data() : "--");
   (void)appendLine(page, "SCD41", snapshot.scd_available ? "AVAILABLE" : "MISSING");
 
   std::snprintf(value, sizeof(value), "%llus",

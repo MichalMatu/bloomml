@@ -74,8 +74,8 @@ inline bool clayCommandFits(const DisplayTextCommand& command,
 // hardware.
 template <typename ClaySink>
 bool renderDisplayListToClay(const DisplayRenderList& render_list,
-                             const DisplayRenderGeometry& geometry,
-                             const ClayDisplayTheme& theme, ClaySink& sink) noexcept {
+                             const DisplayRenderGeometry& geometry, const ClayDisplayTheme& theme,
+                             ClaySink& sink) noexcept {
   if (render_list.command_count == 0U || render_list.command_count > render_list.commands.size() ||
       !detail::clayThemeValid(theme) || geometry.width_px == 0U || geometry.height_px == 0U) {
     return false;
@@ -94,10 +94,8 @@ bool renderDisplayListToClay(const DisplayRenderList& render_list,
   for (std::size_t index = 0U; index < render_list.command_count; ++index) {
     const auto& command = render_list.commands[index];
     const ClayDisplayTextElement element{
-        command.x_px,
-        command.y_px,
-        command.max_width_px,
-        detail::clayStyleForRole(command.role, theme),
+        command.x_px,         command.y_px,
+        command.max_width_px, detail::clayStyleForRole(command.role, theme),
         command.text.data(),
     };
     if (!sink.drawText(element)) {

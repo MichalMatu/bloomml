@@ -350,8 +350,8 @@ void testClayAdapterMapsRenderRolesAndFailsClosedBeforeFrame() {
   auto invalid_theme = theme;
   invalid_theme.value.font_size_px = 0U;
   FakeClaySink invalid_theme_sink{};
-  assert(!display::renderDisplayListToClay(render_list, geometry, invalid_theme,
-                                           invalid_theme_sink));
+  assert(
+      !display::renderDisplayListToClay(render_list, geometry, invalid_theme, invalid_theme_sink));
   assert(invalid_theme_sink.begin_count == 0U);
   assert(invalid_theme_sink.cancel_count == 0U);
 

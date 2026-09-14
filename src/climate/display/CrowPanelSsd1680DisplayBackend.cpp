@@ -112,8 +112,8 @@ void CrowPanelSsd1680DisplayBackend::cancelFrame() noexcept {
 
 bool CrowPanelSsd1680DisplayBackend::configValid() const noexcept {
   const std::array<int, 7U> pins{config_.pins.sclk, config_.pins.mosi, config_.pins.cs,
-                                config_.pins.dc,   config_.pins.rst,  config_.pins.busy,
-                                config_.pins.power};
+                                 config_.pins.dc,   config_.pins.rst,  config_.pins.busy,
+                                 config_.pins.power};
   if (config_.spi_clock_hz == 0U || config_.spi_clock_hz > kMaxSpiClockHz ||
       config_.init_busy_timeout_ms == 0U || config_.partial_busy_timeout_ms == 0U ||
       config_.full_busy_timeout_ms == 0U) {
@@ -263,8 +263,7 @@ bool CrowPanelSsd1680DisplayBackend::sendCommand(std::uint8_t command) noexcept 
 
 bool CrowPanelSsd1680DisplayBackend::sendData(const std::uint8_t* data,
                                               std::size_t length) noexcept {
-  if (spi_device_ == nullptr || data == nullptr || length == 0U ||
-      length > kTransferChunkBytes ||
+  if (spi_device_ == nullptr || data == nullptr || length == 0U || length > kTransferChunkBytes ||
       gpio_set_level(static_cast<gpio_num_t>(config_.pins.dc), 1) != ESP_OK) {
     return false;
   }
@@ -274,8 +273,7 @@ bool CrowPanelSsd1680DisplayBackend::sendData(const std::uint8_t* data,
   return spi_device_transmit(spi_device_, &transaction) == ESP_OK;
 }
 
-bool CrowPanelSsd1680DisplayBackend::sendCommandData(std::uint8_t command,
-                                                     const std::uint8_t* data,
+bool CrowPanelSsd1680DisplayBackend::sendCommandData(std::uint8_t command, const std::uint8_t* data,
                                                      std::size_t length) noexcept {
   return sendCommand(command) && sendData(data, length);
 }

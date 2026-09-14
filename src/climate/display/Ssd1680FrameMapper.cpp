@@ -20,8 +20,7 @@ bool Ssd1680FrameMapper::nativeByteAt(const DisplayMonochromeRaster::Buffer& log
     return false;
   }
 
-  const std::uint16_t native_y =
-      static_cast<std::uint16_t>(native_byte_index / kNativeBytesPerRow);
+  const std::uint16_t native_y = static_cast<std::uint16_t>(native_byte_index / kNativeBytesPerRow);
   const std::uint16_t native_byte_x =
       static_cast<std::uint16_t>(native_byte_index % kNativeBytesPerRow);
 
