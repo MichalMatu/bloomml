@@ -8,7 +8,15 @@
 
 namespace growbox::app::climate_io::display {
 
-enum class DisplayPage : std::uint8_t { Status = 0U, Outputs, Diagnostics };
+enum class DisplayPage : std::uint8_t {
+  Environment = 0U,
+  // Compatibility alias for code/tests written before the operator UI was
+  // split into explicit Environment / Outputs / System / Diagnostics pages.
+  Status = Environment,
+  Outputs = 1U,
+  System = 2U,
+  Diagnostics = 3U,
+};
 enum class DisplayButton : std::uint8_t { Home = 0U, Back, Previous, Next, Ok };
 
 enum class DisplayWarning : std::uint8_t {
@@ -28,7 +36,7 @@ public:
   bool handle(DisplayButton button) noexcept;
 
 private:
-  DisplayPage page_{DisplayPage::Status};
+  DisplayPage page_{DisplayPage::Environment};
 };
 
 struct DisplayLine final {
