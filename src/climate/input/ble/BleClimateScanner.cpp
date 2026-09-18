@@ -5,7 +5,6 @@
 #include <host/ble_hs.h>
 #include <nimble/nimble_port.h>
 #include <nimble/nimble_port_freertos.h>
-#include <nvs_flash.h>
 
 namespace growbox::app::climate_io::native {
 namespace {
@@ -41,16 +40,7 @@ bool BleClimateScanner::begin(const char* tp357_inside_mac,
     return false;
   }
 
-  esp_err_t nvs_error = nvs_flash_init();
-  if (nvs_error == ESP_ERR_NVS_NO_FREE_PAGES || nvs_error == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    if (nvs_flash_erase() != ESP_OK) {
-      vSemaphoreDelete(mutex_);
-      mutex_ = nullptr;
-      return false;
-    }
-    nvs_error = nvs_flash_init();
-  }
-  if (nvs_error != ESP_OK || nimble_port_init() != 0) {
+  if (nimble_port_init() != 0) {
     vSemaphoreDelete(mutex_);
     mutex_ = nullptr;
     return false;
