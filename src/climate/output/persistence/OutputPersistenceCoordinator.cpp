@@ -38,6 +38,10 @@ OutputPersistenceCoordinator::initialize(OutputStateStore& state_store) noexcept
 
   OutputPersistenceCoordinatorInitResult result{};
   result.load = store_.load();
+  if (result.load.status == OutputPersistenceStoreStatus::DefaultedBackendError) {
+    result.status = OutputPersistenceCoordinatorStatus::StoreError;
+    return result;
+  }
   if (!state_store.valid() ||
       validateOutputPersistenceSnapshot(result.load.snapshot) != OutputPersistenceStatus::Ok) {
     result.status = OutputPersistenceCoordinatorStatus::InvalidStateStore;
