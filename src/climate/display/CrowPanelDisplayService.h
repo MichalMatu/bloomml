@@ -25,6 +25,7 @@ struct CrowPanelDisplayServiceStatus final {
   std::uint32_t render_failures{0U};
   std::uint32_t confirm_failures{0U};
   std::uint32_t stale_completions{0U};
+  std::uint32_t stack_min_free_bytes{0U};
 };
 
 // Low-priority asynchronous owner of the physical e-paper backend. tick() is
@@ -51,8 +52,12 @@ public:
   }
 
 private:
+  static constexpr std::size_t kTaskStackElements =
+      (taskStackBytes() + sizeof(StackType_t) - 1U) / sizeof(StackType_t);
+
   static void taskEntry(void* context) noexcept;
   void taskLoop() noexcept;
+  void observeStackWatermark() noexcept;
   void drainCompletions(std::uint64_t now_ms) noexcept;
   void submitPending(std::uint64_t now_ms) noexcept;
 
@@ -71,6 +76,8 @@ private:
   StaticQueue_t completion_queue_control_{};
   std::array<std::uint8_t, sizeof(DisplayRenderWorkItem)> render_queue_storage_{};
   std::array<std::uint8_t, sizeof(DisplayRenderCompletion)> completion_queue_storage_{};
+  StaticTask_t task_control_{};
+  std::array<StackType_t, kTaskStackElements> task_stack_storage_{};
   QueueHandle_t render_queue_{nullptr};
   QueueHandle_t completion_queue_{nullptr};
   TaskHandle_t task_{nullptr};
@@ -82,6 +89,7 @@ private:
   std::atomic<std::uint32_t> render_failures_{0U};
   std::atomic<std::uint32_t> confirm_failures_{0U};
   std::atomic<std::uint32_t> stale_completions_{0U};
+  std::atomic<std::uint32_t> stack_min_free_bytes_{taskStackBytes()};
 };
 
 } // namespace growbox::app::climate_io::display
