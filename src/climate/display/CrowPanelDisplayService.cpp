@@ -29,19 +29,22 @@ bool CrowPanelDisplayService::begin() noexcept {
     return false;
   }
 
-  if (xTaskCreate(&CrowPanelDisplayService::taskEntry, "eink_display", taskStackBytes(), this,
-                  tskIDLE_PRIORITY + 1U, &task_) != pdPASS) {
+  stack_min_free_bytes_.store(taskStackBytes(), std::memory_order_relaxed);
+  task_ = xTaskCreateStatic(&CrowPanelDisplayService::taskEntry, "eink_display", taskStackBytes(),
+                            this, tskIDLE_PRIORITY + 1U, task_stack_storage_.data(),
+                            &task_control_);
+  if (task_ == nullptr) {
     vQueueDelete(render_queue_);
     vQueueDelete(completion_queue_);
     render_queue_ = nullptr;
     completion_queue_ = nullptr;
-    task_ = nullptr;
-    ESP_LOGE(kTag, "Failed to create display worker task");
+    ESP_LOGE(kTag, "Failed to create static display worker task");
     return false;
   }
 
   started_ = true;
-  ESP_LOGI(kTag, "Display worker started stack_bytes=%u", static_cast<unsigned>(taskStackBytes()));
+  ESP_LOGI(kTag, "Display worker started static_stack_bytes=%u",
+           static_cast<unsigned>(taskStackBytes()));
   return true;
 }
 
@@ -63,11 +66,17 @@ CrowPanelDisplayServiceStatus CrowPanelDisplayService::status() const noexcept {
   result.render_failures = render_failures_.load(std::memory_order_relaxed);
   result.confirm_failures = confirm_failures_.load(std::memory_order_relaxed);
   result.stale_completions = stale_completions_.load(std::memory_order_relaxed);
+  result.stack_min_free_bytes = stack_min_free_bytes_.load(std::memory_order_relaxed);
   return result;
 }
 
 void CrowPanelDisplayService::taskEntry(void* context) noexcept {
   static_cast<CrowPanelDisplayService*>(context)->taskLoop();
+}
+
+void CrowPanelDisplayService::observeStackWatermark() noexcept {
+  stack_min_free_bytes_.store(static_cast<std::uint32_t>(uxTaskGetStackHighWaterMark(nullptr)),
+                              std::memory_order_relaxed);
 }
 
 void CrowPanelDisplayService::taskLoop() noexcept {
@@ -78,21 +87,30 @@ void CrowPanelDisplayService::taskLoop() noexcept {
     }
 
     const bool success = renderDisplayFrameToClay(work_item.frame, geometry_, theme_, backend_);
+    observeStackWatermark();
+    const std::uint32_t stack_min_free_bytes =
+        stack_min_free_bytes_.load(std::memory_order_relaxed);
     if (success) {
       const std::uint32_t successes =
           render_successes_.fetch_add(1U, std::memory_order_relaxed) + 1U;
-      ESP_LOGI(kTag, "Physical refresh completed generation=%llu kind=%u reason=%u successes=%lu",
+      ESP_LOGI(kTag,
+               "Physical refresh completed generation=%llu kind=%u reason=%u successes=%lu "
+               "stack_min_free_bytes=%lu",
                static_cast<unsigned long long>(work_item.generation),
                static_cast<unsigned>(work_item.frame.refresh_kind),
                static_cast<unsigned>(work_item.frame.refresh_reason),
-               static_cast<unsigned long>(successes));
+               static_cast<unsigned long>(successes),
+               static_cast<unsigned long>(stack_min_free_bytes));
     } else {
       const std::uint32_t failures = render_failures_.fetch_add(1U, std::memory_order_relaxed) + 1U;
-      ESP_LOGE(kTag, "Physical refresh failed generation=%llu kind=%u reason=%u failures=%lu",
+      ESP_LOGE(kTag,
+               "Physical refresh failed generation=%llu kind=%u reason=%u failures=%lu "
+               "stack_min_free_bytes=%lu",
                static_cast<unsigned long long>(work_item.generation),
                static_cast<unsigned>(work_item.frame.refresh_kind),
                static_cast<unsigned>(work_item.frame.refresh_reason),
-               static_cast<unsigned long>(failures));
+               static_cast<unsigned long>(failures),
+               static_cast<unsigned long>(stack_min_free_bytes));
     }
 
     DisplayRenderCompletion completion{};
