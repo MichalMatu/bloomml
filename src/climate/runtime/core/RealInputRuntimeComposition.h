@@ -25,7 +25,35 @@
 #include "climate/runtime/diagnostics/RfDiagnostics.h"
 #include "climate/storage/Stage27TelemetryLogger.h"
 
+#include <cstdint>
+
 namespace growbox::app::climate_io::runtime {
+
+class RuntimeNvsOwner final {
+public:
+  bool begin() noexcept;
+
+  RuntimeNvsOwner(const RuntimeNvsOwner&) = delete;
+  RuntimeNvsOwner& operator=(const RuntimeNvsOwner&) = delete;
+
+  bool ready() const noexcept {
+    return ready_;
+  }
+
+  bool erasedOnRecovery() const noexcept {
+    return erased_on_recovery_;
+  }
+
+  std::int32_t lastError() const noexcept {
+    return last_error_;
+  }
+
+private:
+  bool initialized_{false};
+  bool ready_{false};
+  bool erased_on_recovery_{false};
+  std::int32_t last_error_{0};
+};
 
 class RuntimeIoOwner final {
 public:
@@ -71,7 +99,7 @@ public:
   RuntimePersistenceOwner(const RuntimePersistenceOwner&) = delete;
   RuntimePersistenceOwner& operator=(const RuntimePersistenceOwner&) = delete;
 
-  void initialize() noexcept;
+  void initialize(bool persistent_storage_ready) noexcept;
 
   bool stateStoreReady() const noexcept {
     return state_store_ready_;
