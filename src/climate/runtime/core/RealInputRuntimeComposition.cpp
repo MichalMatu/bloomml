@@ -3,6 +3,8 @@
 #include "climate/output/OutputBindings.h"
 #include "climate/runtime/RuntimeBuildConfig.h"
 
+#include <nvs_flash.h>
+
 #include <array>
 
 namespace growbox::app::climate_io::runtime {
@@ -41,6 +43,28 @@ makeRuntimeSupervisorConfig(output::BinaryActuatorPolicy& exhaust_policy,
 
 } // namespace
 
+bool RuntimeNvsOwner::begin() noexcept {
+  if (initialized_) {
+    return ready_;
+  }
+
+  initialized_ = true;
+  esp_err_t error = nvs_flash_init();
+  if (error == ESP_ERR_NVS_NO_FREE_PAGES || error == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    const esp_err_t erase_error = nvs_flash_erase();
+    if (erase_error != ESP_OK) {
+      last_error_ = static_cast<std::int32_t>(erase_error);
+      return false;
+    }
+    erased_on_recovery_ = true;
+    error = nvs_flash_init();
+  }
+
+  last_error_ = static_cast<std::int32_t>(error);
+  ready_ = error == ESP_OK;
+  return ready_;
+}
+
 RuntimeIoOwner::RuntimeIoOwner() noexcept
     : storage_config_(makeStorageConfig()), storage_logger_(storage_config_),
       rf_diagnostics_config_(makeRfDiagnosticsConfig()),
@@ -62,14 +86,15 @@ const output::OutputPolicyConfig& safeOutputPolicy() noexcept {
 RuntimePersistenceOwner::RuntimePersistenceOwner() noexcept
     : persistence_store_(nvs_backend_, safeOutputPolicy()), persistence_(persistence_store_) {}
 
-void RuntimePersistenceOwner::initialize() noexcept {
+void RuntimePersistenceOwner::initialize(bool persistent_storage_ready) noexcept {
   static constexpr std::array<output::OutputEndpointId, output::kOutputEndpointCapacity>
       kShadowOutputEndpoints{stage28d::kExhaustFanEndpoint, stage28d::kScheduledLightEndpoint,
                              stage28d::kHumidifierEndpoint};
   state_store_ready_ =
       state_store_.configure(kShadowOutputEndpoints, kShadowOutputEndpoints.size());
-  init_result_ = state_store_ready_ ? persistence_.initialize(state_store_)
-                                    : output::OutputPersistenceCoordinatorInitResult{};
+  init_result_ = state_store_ready_ && persistent_storage_ready
+                     ? persistence_.initialize(state_store_)
+                     : output::OutputPersistenceCoordinatorInitResult{};
 }
 
 const output::OutputPolicyConfig& RuntimePersistenceOwner::policy() const noexcept {
