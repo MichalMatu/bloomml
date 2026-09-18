@@ -30,19 +30,6 @@ namespace growbox::app::climate_io::runtime {
 namespace {
 
 constexpr char kTag[] = "climate_stage27";
-constexpr std::uint64_t kPersistenceRetryInitialMs = 1'000U;
-constexpr std::uint64_t kPersistenceRetryMaximumMs = 60'000U;
-constexpr std::uint64_t kPersistenceErrorLogIntervalMs = 60'000U;
-
-std::uint64_t nextPersistenceRetryDelayMs(std::uint64_t current_delay_ms) noexcept {
-  if (current_delay_ms == 0U) {
-    return kPersistenceRetryInitialMs;
-  }
-  if (current_delay_ms >= (kPersistenceRetryMaximumMs / 2U)) {
-    return kPersistenceRetryMaximumMs;
-  }
-  return current_delay_ms * 2U;
-}
 
 } // namespace
 
@@ -170,40 +157,29 @@ void RealInputRuntimeCoordinator::tick(std::uint64_t loop_started_us) noexcept {
     services_.outputs.execution_status.output_ready = false;
   }
 
-  if (services_.outputs.persistence.valid() &&
-      (!persistence_retry_pending_ || now_ms >= persistence_retry_after_ms_)) {
+  if (services_.outputs.persistence.valid() && persistence_retry_state_.due(now_ms)) {
     const auto persistence_status = services_.outputs.persistence.syncFromStateStore(
         services_.outputs.state_store, real_transport_active_this_cycle);
     if (persistence_status == output::OutputPersistenceCoordinatorStatus::StoreError) {
-      persistence_retry_delay_ms_ = nextPersistenceRetryDelayMs(persistence_retry_delay_ms_);
-      persistence_retry_after_ms_ = now_ms + persistence_retry_delay_ms_;
-      persistence_retry_pending_ = true;
-
-      const bool log_due = !persistence_error_active_ ||
-                           (now_ms - last_persistence_error_log_ms_) >=
-                               kPersistenceErrorLogIntervalMs;
-      if (log_due) {
+      if (persistence_retry_state_.onFailure(now_ms)) {
         ESP_LOGW(kTag,
                  "Output persistence write failed attempts=%lu successes=%lu retry_in_ms=%llu",
                  static_cast<unsigned long>(services_.outputs.persistence.writeAttemptCount()),
                  static_cast<unsigned long>(services_.outputs.persistence.writeSuccessCount()),
-                 static_cast<unsigned long long>(persistence_retry_delay_ms_));
-        last_persistence_error_log_ms_ = now_ms;
+                 static_cast<unsigned long long>(persistence_retry_state_.delayMs()));
       }
-      persistence_error_active_ = true;
     } else {
+      const bool recovered = persistence_retry_state_.errorActive();
       if (persistence_status == output::OutputPersistenceCoordinatorStatus::InvalidPolicy ||
           persistence_status == output::OutputPersistenceCoordinatorStatus::InvalidStateStore) {
         ESP_LOGE(kTag, "Output persistence synchronization invalid status=%u",
                  static_cast<unsigned>(persistence_status));
-      } else if (persistence_error_active_) {
+      } else if (recovered) {
         ESP_LOGI(kTag, "Output persistence recovered attempts=%lu successes=%lu",
                  static_cast<unsigned long>(services_.outputs.persistence.writeAttemptCount()),
                  static_cast<unsigned long>(services_.outputs.persistence.writeSuccessCount()));
       }
-      persistence_retry_pending_ = false;
-      persistence_retry_delay_ms_ = 0U;
-      persistence_error_active_ = false;
+      persistence_retry_state_.onSuccess();
     }
   }
   services_.support.timing.control_cycle.observe(static_cast<std::uint64_t>(esp_timer_get_time()) -
