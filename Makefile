@@ -6,6 +6,7 @@ RUN_IDF := bash scripts/run_idf.sh
 IDF_BUILD_DIR ?= build/idf
 IDF_GATE_BUILD_DIR ?= build/idf-gate
 HOST_BUILD_DIR ?= build/host-tests
+HOST_BUILD_JOBS ?= 2
 N8_BUILD_DIR ?= build/idf-n8
 N32R16V_BUILD_DIR ?= build/idf-n32r16v
 # ESP-IDF defaults live under config/idf/ (local sdkconfig stays at repo root).
@@ -36,8 +37,6 @@ help: ## Lista komend make (domyślny cel)
 	@printf '    make monitor        — monitor serial bez resetu przy podłączeniu\n'
 	@printf '    make monitor-reset  — monitor serial z jawnym resetem przy podłączeniu\n'
 	@printf '                         W otwartym monitorze Ctrl+R = jawny restart płytki\n'
-	@printf '    make rebuild        — wyczyść build/idf i zbuduj od nowa\n'
-	@printf '    make menuconfig     — konfiguracja sdkconfig\n'
 	@printf '    PORT=/dev/cu.X make flash   — wybór portu USB\n\n'
 	@printf '  Panel i serial:\n'
 	@printf '    make panel          — serwer panelu http://127.0.0.1:8765\n'
@@ -148,7 +147,7 @@ test-python: ensure-venv
 
 test-host:
 	cmake -S test/host -B $(HOST_BUILD_DIR)
-	cmake --build $(HOST_BUILD_DIR) --parallel
+	cmake --build $(HOST_BUILD_DIR) --parallel $(HOST_BUILD_JOBS)
 	ctest --test-dir $(HOST_BUILD_DIR) --output-on-failure
 	bash scripts/test_display_host.sh
 
