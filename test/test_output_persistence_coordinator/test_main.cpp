@@ -176,6 +176,26 @@ void testFakeModeCommandTruthIsNotDurable() {
   assert(backend.write_count == 1U);
 }
 
+void testBackendReadFailureFailsClosedWithoutWrites() {
+  FakeBackend backend;
+  backend.read_status = output::OutputPersistenceBackendStatus::ReadFailed;
+  output::OutputPersistenceStore persistence_store(backend, safePolicy());
+  auto state = configuredStateStore();
+  output::OutputPersistenceCoordinator coordinator(persistence_store);
+
+  const auto init = coordinator.initialize(state);
+  assert(init.status == output::OutputPersistenceCoordinatorStatus::StoreError);
+  assert(init.load.status == output::OutputPersistenceStoreStatus::DefaultedBackendError);
+  assert(!coordinator.valid());
+  assert(backend.write_count == 0U);
+
+  assert(state.recordAttempt(command(1U, output::BinaryOutputState::On), 100U,
+                             {output::TransportStatus::Completed, output::TransportError::None}));
+  assert(coordinator.syncFromStateStore(state, true) ==
+         output::OutputPersistenceCoordinatorStatus::InvalidPolicy);
+  assert(backend.write_count == 0U);
+}
+
 void testFailedWriteRetriesSameSnapshotAfterBackendRecovery() {
   FakeBackend backend;
   backend.write_status = output::OutputPersistenceBackendStatus::WriteFailed;
@@ -295,6 +315,7 @@ int main() {
   testSuccessfulCommandWritesOnceAndRestoresWithoutAttempt();
   testFailedTransportDoesNotPersistFalseCommand();
   testFakeModeCommandTruthIsNotDurable();
+  testBackendReadFailureFailsClosedWithoutWrites();
   testFailedWriteRetriesSameSnapshotAfterBackendRecovery();
   testPolicyChangeWritesOnlyWhenChanged();
   testRestoreLastCommandHonorsRetransmitPolicyAcrossReboot();
