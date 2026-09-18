@@ -33,7 +33,6 @@ OutputPersistenceCoordinator::initialize(OutputStateStore& state_store) noexcept
   policy_ = {};
   snapshot_ = {};
   has_persisted_blob_ = false;
-  has_last_attempted_blob_ = false;
   write_attempt_count_ = 0U;
   write_success_count_ = 0U;
 
@@ -125,12 +124,7 @@ OutputPersistenceCoordinator::saveIfChanged(const OutputPersistenceSnapshot& can
   if (has_persisted_blob_ && sameBlob(candidate_blob, persisted_blob_)) {
     return OutputPersistenceCoordinatorStatus::Unchanged;
   }
-  if (has_last_attempted_blob_ && sameBlob(candidate_blob, last_attempted_blob_)) {
-    return OutputPersistenceCoordinatorStatus::SuppressedDuplicate;
-  }
 
-  last_attempted_blob_ = candidate_blob;
-  has_last_attempted_blob_ = true;
   ++write_attempt_count_;
   if (store_.save(candidate) != OutputPersistenceStoreStatus::Ok) {
     return OutputPersistenceCoordinatorStatus::StoreError;
