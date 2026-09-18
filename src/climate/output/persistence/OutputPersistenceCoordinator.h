@@ -10,7 +10,6 @@ namespace growbox::app::output {
 enum class OutputPersistenceCoordinatorStatus : std::uint8_t {
   Ok = 0U,
   Unchanged,
-  SuppressedDuplicate,
   InvalidStateStore,
   InvalidPolicy,
   StoreError,
@@ -64,9 +63,7 @@ private:
   OutputPolicyConfig policy_{};
   OutputPersistenceSnapshot snapshot_{};
   OutputPersistenceBlob persisted_blob_{};
-  OutputPersistenceBlob last_attempted_blob_{};
   bool has_persisted_blob_{false};
-  bool has_last_attempted_blob_{false};
   bool valid_{false};
   std::uint32_t write_attempt_count_{0U};
   std::uint32_t write_success_count_{0U};
