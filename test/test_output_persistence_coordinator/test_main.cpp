@@ -176,7 +176,7 @@ void testFakeModeCommandTruthIsNotDurable() {
   assert(backend.write_count == 1U);
 }
 
-void testFailedWriteIsSuppressedUntilSnapshotChanges() {
+void testFailedWriteRetriesSameSnapshotAfterBackendRecovery() {
   FakeBackend backend;
   backend.write_status = output::OutputPersistenceBackendStatus::WriteFailed;
   output::OutputPersistenceStore persistence_store(backend, safePolicy());
@@ -189,16 +189,18 @@ void testFailedWriteIsSuppressedUntilSnapshotChanges() {
   assert(coordinator.syncFromStateStore(state, true) ==
          output::OutputPersistenceCoordinatorStatus::StoreError);
   assert(backend.write_count == 1U);
-  for (unsigned index = 0U; index < 20U; ++index) {
-    assert(coordinator.syncFromStateStore(state, true) ==
-           output::OutputPersistenceCoordinatorStatus::SuppressedDuplicate);
-  }
-  assert(backend.write_count == 1U);
+  assert(coordinator.writeAttemptCount() == 1U);
+  assert(coordinator.writeSuccessCount() == 0U);
 
-  assert(state.recordAttempt(command(1U, output::BinaryOutputState::Off), 200U,
-                             {output::TransportStatus::Completed, output::TransportError::None}));
+  backend.write_status = output::OutputPersistenceBackendStatus::Ok;
   assert(coordinator.syncFromStateStore(state, true) ==
-         output::OutputPersistenceCoordinatorStatus::StoreError);
+         output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(backend.write_count == 2U);
+  assert(coordinator.writeAttemptCount() == 2U);
+  assert(coordinator.writeSuccessCount() == 1U);
+
+  assert(coordinator.syncFromStateStore(state, true) ==
+         output::OutputPersistenceCoordinatorStatus::Unchanged);
   assert(backend.write_count == 2U);
 }
 
@@ -293,7 +295,7 @@ int main() {
   testSuccessfulCommandWritesOnceAndRestoresWithoutAttempt();
   testFailedTransportDoesNotPersistFalseCommand();
   testFakeModeCommandTruthIsNotDurable();
-  testFailedWriteIsSuppressedUntilSnapshotChanges();
+  testFailedWriteRetriesSameSnapshotAfterBackendRecovery();
   testPolicyChangeWritesOnlyWhenChanged();
   testRestoreLastCommandHonorsRetransmitPolicyAcrossReboot();
   return 0;
