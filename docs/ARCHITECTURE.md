@@ -61,6 +61,16 @@ The real-input runtime is split by responsibility:
 
 Invalid lifecycle/automation/maintenance reports fail closed by disabling physical transport readiness for the cycle rather than being silently discarded.
 
+### NVS and durable-output ownership
+
+Global ESP-IDF NVS lifecycle is owned by `RuntimeNvsOwner` in the runtime composition layer. It initializes NVS once before BLE and output persistence are started. Recovery erase for `ESP_ERR_NVS_NO_FREE_PAGES` / `ESP_ERR_NVS_NEW_VERSION_FOUND` is centralized there and is reported at boot because it resets durable state to safe defaults.
+
+`BleClimateScanner` is an NVS consumer through NimBLE only. It must not initialize, erase or otherwise own the global NVS partition.
+
+`RuntimePersistenceOwner` owns the durable output-policy/last-successful-command snapshot through `OutputNvsBackend`. When NVS is unavailable, the runtime keeps the configured shadow state store and safe output policy but leaves persistence disabled.
+
+A failed persistence write does not mark the candidate snapshot as durable. The same snapshot remains eligible for retry. The real-input coordinator applies bounded exponential retry backoff (1 s, 2 s, 4 s ... capped at 60 s), rate-limits persistent-error logging and reports recovery after a later successful/unchanged synchronization.
+
 ## Output truth model
 
 Requested, resolved, attempted/executed transport state and independently observed physical state are distinct concepts.
