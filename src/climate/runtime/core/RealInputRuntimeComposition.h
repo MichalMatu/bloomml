@@ -31,10 +31,12 @@ namespace growbox::app::climate_io::runtime {
 
 class RuntimeNvsOwner final {
 public:
-  bool begin() noexcept;
+  RuntimeNvsOwner() = default;
 
   RuntimeNvsOwner(const RuntimeNvsOwner&) = delete;
   RuntimeNvsOwner& operator=(const RuntimeNvsOwner&) = delete;
+
+  bool begin() noexcept;
 
   bool ready() const noexcept {
     return ready_;
