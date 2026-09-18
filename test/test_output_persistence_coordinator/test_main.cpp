@@ -145,6 +145,59 @@ void testSuccessfulCommandWritesOnceAndRestoresWithoutAttempt() {
   assert(!restored->physical.has_independent_feedback);
 }
 
+void testMissingBlobIsPersistedOnFirstSync() {
+  FakeBackend backend;
+  output::OutputPersistenceStore persistence_store(backend, safePolicy());
+  auto state = configuredStateStore();
+  output::OutputPersistenceCoordinator coordinator(persistence_store);
+
+  const auto init = coordinator.initialize(state);
+  assert(init.status == output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(init.load.status == output::OutputPersistenceStoreStatus::DefaultedNotFound);
+  assert(coordinator.syncFromStateStore(state, false) ==
+         output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(backend.write_count == 1U);
+  assert(coordinator.writeSuccessCount() == 1U);
+  assert(coordinator.syncFromStateStore(state, false) ==
+         output::OutputPersistenceCoordinatorStatus::Unchanged);
+  assert(backend.write_count == 1U);
+}
+
+void testCorruptBlobIsRepairedOnFirstSync() {
+  FakeBackend backend;
+  output::OutputPersistenceStore seed_store(backend, safePolicy());
+  auto seed_state = configuredStateStore();
+  output::OutputPersistenceCoordinator seed(seed_store);
+  assert(seed.initialize(seed_state).status == output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(seed.syncFromStateStore(seed_state, false) ==
+         output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(backend.write_count == 1U);
+
+  backend.blob.bytes[20U] ^= 0x55U;
+
+  output::OutputPersistenceStore persistence_store(backend, safePolicy());
+  auto state = configuredStateStore();
+  output::OutputPersistenceCoordinator coordinator(persistence_store);
+  const auto init = coordinator.initialize(state);
+  assert(init.status == output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(init.load.status == output::OutputPersistenceStoreStatus::DefaultedDecodeError);
+  assert(init.load.used_safe_defaults);
+  assert(!init.restored_command_truth);
+
+  assert(coordinator.syncFromStateStore(state, false) ==
+         output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(backend.write_count == 2U);
+
+  output::OutputPersistenceStore reboot_store(backend, safePolicy());
+  auto reboot_state = configuredStateStore();
+  output::OutputPersistenceCoordinator rebooted(reboot_store);
+  const auto reboot_init = rebooted.initialize(reboot_state);
+  assert(reboot_init.status == output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(reboot_init.load.status == output::OutputPersistenceStoreStatus::Ok);
+  assert(!reboot_init.load.used_safe_defaults);
+  assert(!reboot_init.restored_command_truth);
+}
+
 void testFailedTransportDoesNotPersistFalseCommand() {
   FakeBackend backend;
   output::OutputPersistenceStore persistence_store(backend, safePolicy());
@@ -155,8 +208,15 @@ void testFailedTransportDoesNotPersistFalseCommand() {
   assert(state.recordAttempt(command(1U, output::BinaryOutputState::On), 100U,
                              {output::TransportStatus::Failed, output::TransportError::IoFailure}));
   assert(coordinator.syncFromStateStore(state, true) ==
-         output::OutputPersistenceCoordinatorStatus::Unchanged);
-  assert(backend.write_count == 0U);
+         output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(backend.write_count == 1U);
+
+  output::OutputPersistenceStore reboot_store(backend, safePolicy());
+  auto reboot_state = configuredStateStore();
+  output::OutputPersistenceCoordinator rebooted(reboot_store);
+  const auto reboot_init = rebooted.initialize(reboot_state);
+  assert(reboot_init.status == output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(!reboot_init.restored_command_truth);
 }
 
 void testFakeModeCommandTruthIsNotDurable() {
@@ -169,11 +229,19 @@ void testFakeModeCommandTruthIsNotDurable() {
   assert(state.recordAttempt(command(1U, output::BinaryOutputState::On), 100U,
                              {output::TransportStatus::Completed, output::TransportError::None}));
   assert(coordinator.syncFromStateStore(state, false) ==
-         output::OutputPersistenceCoordinatorStatus::Unchanged);
-  assert(backend.write_count == 0U);
-  assert(coordinator.syncFromStateStore(state, true) ==
          output::OutputPersistenceCoordinatorStatus::Ok);
   assert(backend.write_count == 1U);
+
+  output::OutputPersistenceStore fake_reboot_store(backend, safePolicy());
+  auto fake_reboot_state = configuredStateStore();
+  output::OutputPersistenceCoordinator fake_rebooted(fake_reboot_store);
+  const auto fake_reboot_init = fake_rebooted.initialize(fake_reboot_state);
+  assert(fake_reboot_init.status == output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(!fake_reboot_init.restored_command_truth);
+
+  assert(coordinator.syncFromStateStore(state, true) ==
+         output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(backend.write_count == 2U);
 }
 
 void testBackendReadFailureFailsClosedWithoutWrites() {
@@ -313,6 +381,8 @@ void testRestoreLastCommandHonorsRetransmitPolicyAcrossReboot() {
 
 int main() {
   testSuccessfulCommandWritesOnceAndRestoresWithoutAttempt();
+  testMissingBlobIsPersistedOnFirstSync();
+  testCorruptBlobIsRepairedOnFirstSync();
   testFailedTransportDoesNotPersistFalseCommand();
   testFakeModeCommandTruthIsNotDurable();
   testBackendReadFailureFailsClosedWithoutWrites();
