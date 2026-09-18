@@ -36,6 +36,15 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
 } // namespace
 
 [[noreturn]] void runClimateV6RealInputRuntime() noexcept {
+  static runtime::RuntimeNvsOwner nvs_owner;
+  const bool nvs_ready = nvs_owner.begin();
+  if (!nvs_ready) {
+    ESP_LOGE(kTag, "NVS initialization failed err=%ld; BLE and output persistence disabled",
+             static_cast<long>(nvs_owner.lastError()));
+  } else if (nvs_owner.erasedOnRecovery()) {
+    ESP_LOGW(kTag, "NVS partition was erased during recovery; durable state reset to defaults");
+  }
+
   native::NativeI2cBus i2c(runtime_config::kI2cSdaGpio, runtime_config::kI2cSclGpio);
   const bool i2c_ready = i2c.begin() == ESP_OK;
   const esp_err_t scd41_probe = i2c_ready ? i2c.probe(0x62U) : ESP_ERR_INVALID_STATE;
@@ -48,7 +57,8 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
   native::BleClimateScanner ble;
   const bool scd41_ready = i2c_ready && scd41.begin(i2c);
   const bool rtc_ready = i2c_ready && clock.begin(i2c);
-  const bool ble_ready = ble.begin(runtime_config::kBleTp357Mac, runtime_config::kBleXiaomiMac);
+  const bool ble_ready =
+      nvs_ready && ble.begin(runtime_config::kBleTp357Mac, runtime_config::kBleXiaomiMac);
 
   static runtime::RuntimeIoOwner io_owner;
   const auto& storage_config = io_owner.storageConfig();
@@ -60,7 +70,7 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
   const bool rf_ready = io_owner.beginRf();
 
   static runtime::RuntimePersistenceOwner persistence_owner;
-  persistence_owner.initialize();
+  persistence_owner.initialize(nvs_ready);
   if (!persistence_owner.stateStoreReady()) {
     ESP_LOGE(kTag, "Output state-store shadow configuration failed");
   }
@@ -155,15 +165,17 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
       static_cast<std::int32_t>(reset_reason), display_observer);
 
   ESP_LOGI(kTag,
-           "Stage27 real-input runtime: i2c=%d scd41=%d ds3231=%d ble=%d sd=%d "
-           "flash_fallback=%d storage_logger=%d rf433_loopback=%d rf433_tx_gpio=%d "
-           "rf433_rx_gpio=%d service_console=%d eink_requested=%d eink_ready=%d "
-           "real_outputs_requested=%d real_outputs_ready=%d thermal_test=%d outputs=%s",
-           i2c_ready, scd41_ready, rtc_ready, ble_ready, storage_config.sd_enabled,
-           storage_config.flash_fallback_enabled, storage_logger_ready, rf_ready,
-           runtime_config::kRf433TxGpio, runtime_config::kRf433RxGpio, service_console_ready,
-           runtime_config::kEinkDisplayEnabled, display_ready, runtime_config::kRealOutputsEnabled,
-           execution_status.output_ready, runtime_config::kThermalTestSequenceEnabled,
+           "Stage27 real-input runtime: nvs=%d nvs_recovered=%d i2c=%d scd41=%d ds3231=%d "
+           "ble=%d sd=%d flash_fallback=%d storage_logger=%d rf433_loopback=%d "
+           "rf433_tx_gpio=%d rf433_rx_gpio=%d service_console=%d eink_requested=%d "
+           "eink_ready=%d real_outputs_requested=%d real_outputs_ready=%d thermal_test=%d "
+           "outputs=%s",
+           nvs_ready, nvs_owner.erasedOnRecovery(), i2c_ready, scd41_ready, rtc_ready, ble_ready,
+           storage_config.sd_enabled, storage_config.flash_fallback_enabled, storage_logger_ready,
+           rf_ready, runtime_config::kRf433TxGpio, runtime_config::kRf433RxGpio,
+           service_console_ready, runtime_config::kEinkDisplayEnabled, display_ready,
+           runtime_config::kRealOutputsEnabled, execution_status.output_ready,
+           runtime_config::kThermalTestSequenceEnabled,
            execution_status.output_ready ? "real-bounded" : "fake-locked");
   GROWBOX_STAGE28E_LOG_INFO(runtime::DiagnosticLogModule::Sys,
                             "boot firmware_sha=%s reset_reason=%d started_us=%llu outputs=%s",
