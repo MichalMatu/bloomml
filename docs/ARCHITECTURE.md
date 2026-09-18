@@ -67,7 +67,7 @@ Global ESP-IDF NVS lifecycle is owned by `RuntimeNvsOwner` in the runtime compos
 
 `BleClimateScanner` is an NVS consumer through NimBLE only. It must not initialize, erase or otherwise own the global NVS partition.
 
-`RuntimePersistenceOwner` owns the durable output-policy/last-successful-command snapshot through `OutputNvsBackend`. When NVS is unavailable, the runtime keeps the configured shadow state store and safe output policy but leaves persistence disabled.
+`RuntimePersistenceOwner` owns the durable output-policy/last-successful-command snapshot through `OutputNvsBackend`. When NVS is unavailable, the runtime keeps the configured shadow state store and safe output policy but leaves persistence disabled. A backend read error also keeps persistence disabled: safe defaults may be used for runtime policy, but an unreadable/unknown durable blob must not be treated as successfully loaded and later overwritten. A genuinely missing entry may initialize from safe defaults, while a decoded corrupt payload follows the explicit safe-default recovery path.
 
 A failed persistence write does not mark the candidate snapshot as durable. The same snapshot remains eligible for retry. The real-input coordinator applies bounded exponential retry backoff (1 s, 2 s, 4 s ... capped at 60 s), rate-limits persistent-error logging and reports recovery after a later successful/unchanged synchronization.
 
