@@ -1,13 +1,15 @@
 # Current controller status
 
-Updated: 2026-09-14
+Updated: 2026-09-19
 Repository: `MichalMatu/growbox-ml-controller`
 Canonical source branch: `main`
 Control branch: `agent-control`
 
 ## Current phase
 
-The SCD41/e-ink recovery phase is closed for normal development. The active next stage is the bounded display UI port: Clay layout, host simulator, menu/navigation and native buttons, while preserving the existing native SSD1680 backend and observer-only architecture.
+The SCD41/e-ink recovery phase is closed for normal development. The active next stage remains the bounded display UI port: Clay layout, host simulator, menu/navigation and native buttons, while preserving the existing native SSD1680 backend and observer-only architecture.
+
+Before starting that feature stage, the runtime reliability audit closed three cross-cutting issues: global NVS ownership is now centralized before BLE/output persistence startup; failed output-persistence writes remain retryable with bounded runtime backoff; and the e-ink worker uses a statically allocated FreeRTOS task with stack high-water instrumentation. Host-test build parallelism is also bounded by default to avoid memory-dependent gate failures.
 
 The documentation/vendor re-audit was performed from `main` baseline `6d083e5b00a29b20a8a9bb6f2bb83a395634aff5`.
 
@@ -25,7 +27,9 @@ The live implementation contract for the next stage is `docs/DISPLAY_UI_PORT.md`
 - lamp thermal trip remains `>= 28 C`;
 - lamp recovery remains `<= 26 C` continuously for 10 minutes;
 - UI/e-ink is observer-side and does not mutate control or safety state;
-- slow display work stays outside the 1-second control hot path.
+- slow display work stays outside the 1-second control hot path;
+- global NVS lifecycle/recovery is owned by runtime composition, not BLE;
+- failed durable-output writes are retried without falsely advancing persisted state.
 
 ## Current e-ink baseline
 
@@ -37,6 +41,7 @@ Keep:
 - native ESP-IDF SPI/GPIO ownership;
 - 180-degree rotation already established;
 - asynchronous display worker;
+- statically allocated display worker task/stack with stack high-water diagnostics;
 - display success/confirmation transaction semantics;
 - four operator pages: Environment, Outputs, System, Diagnostics;
 - current `DisplaySnapshot` / presenter truth boundary.
@@ -58,6 +63,12 @@ Historical exact-SHA physical evidence and the intermittent-failure reproduction
 Current `src` compiles as C++17. The pinned Clay 0.14 header requires C++20.
 
 Preferred implementation is an isolated C++20 `growbox_clay_ui` component with a plain growbox-owned API; `Clay_*` types must not escape into the normal C++17 runtime. The rest of the firmware should not be upgraded to C++20 merely to make the first Clay port easier.
+
+## Verification state
+
+The runtime-hardening branch has passed the focused persistence regression, the complete host C++ suite with bounded build parallelism, display host suites and ESP-IDF production build. `git diff --check` and the explicit NVS ownership guard are clean.
+
+`make check-fast` was not executed successfully in the Local Agent workspace because that workspace does not currently contain the repository `.venv`; this is an environment limitation, not a recorded source/test failure.
 
 ## Next work
 
