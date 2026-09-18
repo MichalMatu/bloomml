@@ -71,8 +71,15 @@ OutputPersistenceCoordinator::initialize(OutputStateStore& state_store) noexcept
 
   snapshot_ = result.load.snapshot;
   policy_ = snapshot_.policy;
-  persisted_blob_ = encoded;
-  has_persisted_blob_ = true;
+  if (result.load.status == OutputPersistenceStoreStatus::Ok) {
+    persisted_blob_ = encoded;
+    has_persisted_blob_ = true;
+  } else {
+    // A safe fallback is valid runtime state, but it is not durable state yet. Keep it dirty so
+    // the next synchronization initializes a missing blob or replaces a corrupt one.
+    persisted_blob_ = {};
+    has_persisted_blob_ = false;
+  }
   valid_ = true;
   result.status = OutputPersistenceCoordinatorStatus::Ok;
   return result;
