@@ -81,6 +81,11 @@ public:
 private:
   RealInputRuntimeServices services_;
   RuntimeCycleState cycle_state_{};
+  std::uint64_t persistence_retry_after_ms_{0U};
+  std::uint64_t persistence_retry_delay_ms_{0U};
+  std::uint64_t last_persistence_error_log_ms_{0U};
+  bool persistence_retry_pending_{false};
+  bool persistence_error_active_{false};
 };
 
 } // namespace runtime
