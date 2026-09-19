@@ -1,0 +1,10 @@
+source_repository=MichalMatu/esp32s3_LiteGraph
+source_commit=5b8c758c365547ddeaab65bbe9f849bdd071695d
+source_path=lib/thirdparty/clay/include/clay/clay.h
+source_blob_sha=58006d208f7e58d646578b42524068f44445a4dc
+source_size_bytes=269888
+reported_version=0.14
+language_requirement=C99_or_C++20
+license=zlib
+
+The 269888-byte upstream single-header is intentionally pinned here by immutable commit/blob identity. The GitHub connector cannot reuse a blob object across repositories, so this large third-party header is not duplicated into the reference snapshot. Copy it verbatim from the pinned source when the isolated C++20 growbox Clay component is created.

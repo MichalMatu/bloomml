@@ -1,7 +1,7 @@
 # Local quality gate. Install: make setup-dev
 # Manual run: make check-fast  |  Full gate: make check
 default_install_hook_types: [pre-commit, pre-push]
-
+exclude: ^lib/growbox_clay_ui/third_party/clay/include/clay/clay[.]h$
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -26,7 +26,7 @@ repos:
     rev: v19.1.5
     hooks:
       - id: clang-format
-        files: ^(src/|lib/environment_control/src/|test/)
+        files: ^(src/|lib/environment_control/src/|lib/growbox_clay_ui/(src|include|test|tools)/|test/)
         exclude: ^lib/environment_control/src/(generated/|EnvironmentSchema.*\.h|climate/ClimateContract\.h)
 
   - repo: local

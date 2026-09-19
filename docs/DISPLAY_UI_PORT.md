@@ -110,9 +110,9 @@ The semantic presenter remains authoritative for what values/statuses are displa
 - SDL/host-test sources pinned or copied;
 - vendor remains outside all builds.
 
-### Phase 1 — isolated Clay component + host simulator
+### Phase 1 — isolated Clay component + host simulator — DONE
 
-Create the C++20 component without using it from firmware yet.
+The isolated C++20 component and exact 296x128 host simulator are implemented without firmware integration.
 
 Acceptance:
 
@@ -122,6 +122,15 @@ Acceptance:
 - 296x128 host render target exists;
 - renderer/clipping tests pass;
 - no firmware behavior changes.
+
+Verification on `agent/clay-ui-phase1`:
+
+- Clay 0.14 header matches pinned Git blob `58006d208f7e58d646578b42524068f44445a4dc` byte-for-byte;
+- standalone C++20 component and C++17 public-boundary compile checks pass;
+- headless 296x128 1-bpp simulator emits exactly 4736 framebuffer bytes;
+- renderer/clipping and simulator smoke tests pass;
+- existing display host suites and ESP-IDF firmware build remain green;
+- production `src/` is unchanged.
 
 ### Phase 2 — reproduce current four pages in simulator
 

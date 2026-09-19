@@ -7,7 +7,7 @@ Control branch: `agent-control`
 
 ## Current phase
 
-The SCD41/e-ink recovery phase is closed for normal development. The active next stage remains the bounded display UI port: Clay layout, host simulator, menu/navigation and native buttons, while preserving the existing native SSD1680 backend and observer-only architecture.
+The SCD41/e-ink recovery and runtime-hardening work are integrated on `main`. Display UI port Phase 1 is now complete: an isolated C++20 Clay component and exact 296x128 host simulator exist without firmware integration. The active next stage is Phase 2: reproduce the current Environment, Outputs, System and Diagnostics pages in the host simulator while preserving the native SSD1680 backend and observer-only architecture.
 
 Before starting that feature stage, the runtime reliability audit closed three cross-cutting issues: global NVS ownership is now centralized before BLE/output persistence startup; failed output-persistence writes remain retryable with bounded runtime backoff; and the e-ink worker uses a statically allocated FreeRTOS task with stack high-water instrumentation. Host-test build parallelism is also bounded by default to avoid memory-dependent gate failures.
 
@@ -62,7 +62,7 @@ Historical exact-SHA physical evidence and the intermittent-failure reproduction
 
 Current `src` compiles as C++17. The pinned Clay 0.14 header requires C++20.
 
-Preferred implementation is an isolated C++20 `growbox_clay_ui` component with a plain growbox-owned API; `Clay_*` types must not escape into the normal C++17 runtime. The rest of the firmware should not be upgraded to C++20 merely to make the first Clay port easier.
+Phase 1 implements the isolated C++20 `growbox_clay_ui` component with a plain growbox-owned API; `Clay_*` types do not escape into the normal C++17 runtime. The production firmware remains C++17 and does not consume the Clay component yet.
 
 ## Verification state
 
@@ -108,15 +108,14 @@ Immediate continuation order for a new chat:
 
 ## Next work
 
-0. Close the working-branch `clang-format` CI gate and get the complete GitHub Actions run green.
-1. Integrate the verified runtime-hardening branch into `main` once the complete gate is green.
-2. Create the isolated C++20 Clay component and exact 296x128 host simulator without changing firmware behavior.
-3. Reproduce the existing four growbox pages with host tests/golden checks.
-4. Attach Clay behind the existing async display transaction.
-5. Add true dirty-region RAM-window transfer.
-6. Add native ESP-IDF button input with host-tested debounce/long-press behavior.
-7. Add only justified growbox menu/settings flows through existing domain APIs.
-8. Qualify the final exact SHA on hardware when a physical claim is required.
+0. Runtime hardening integration and full CI — DONE.
+1. Isolated C++20 Clay component plus exact 296x128 host simulator — DONE on `agent/clay-ui-phase1`, pending branch CI/integration.
+2. Reproduce the existing four growbox pages with deterministic host/golden checks.
+3. Attach Clay behind the existing async display transaction.
+4. Add true dirty-region RAM-window transfer.
+5. Add native ESP-IDF button input with host-tested debounce/long-press behavior.
+6. Add only justified growbox menu/settings flows through existing domain APIs.
+7. Qualify the final exact SHA on hardware when a physical claim is required.
 
 Do not reopen completed panel pin mapping, SSD1680 backend ownership, rotation, async architecture or the discarded display-brownout hypothesis without new evidence.
 
