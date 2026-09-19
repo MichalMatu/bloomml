@@ -30,9 +30,9 @@ bool CrowPanelDisplayService::begin() noexcept {
   }
 
   stack_min_free_bytes_.store(taskStackBytes(), std::memory_order_relaxed);
-  task_ = xTaskCreateStatic(&CrowPanelDisplayService::taskEntry, "eink_display", taskStackBytes(),
-                            this, tskIDLE_PRIORITY + 1U, task_stack_storage_.data(),
-                            &task_control_);
+  task_ =
+      xTaskCreateStatic(&CrowPanelDisplayService::taskEntry, "eink_display", taskStackBytes(), this,
+                        tskIDLE_PRIORITY + 1U, task_stack_storage_.data(), &task_control_);
   if (task_ == nullptr) {
     vQueueDelete(render_queue_);
     vQueueDelete(completion_queue_);

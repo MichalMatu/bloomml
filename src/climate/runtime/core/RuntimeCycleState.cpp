@@ -23,8 +23,7 @@ bool RuntimePersistenceRetryState::due(std::uint64_t now_ms) const noexcept {
 }
 
 bool RuntimePersistenceRetryState::onFailure(std::uint64_t now_ms) noexcept {
-  const bool log_due = !error_active_ ||
-                       (now_ms - last_error_log_ms_) >= kErrorLogIntervalMs;
+  const bool log_due = !error_active_ || (now_ms - last_error_log_ms_) >= kErrorLogIntervalMs;
 
   if (retry_delay_ms_ == 0U) {
     retry_delay_ms_ = kInitialDelayMs;
