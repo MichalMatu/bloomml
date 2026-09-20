@@ -7,36 +7,38 @@ Control branch: `agent-control`
 
 ## Current phase
 
-Runtime reliability hardening and Display UI Port Phases 1-2 are integrated on `main`.
+Runtime reliability hardening and Display UI Port Phases 1-3 are integrated on `main`.
 
-Current source baseline on 2026-09-20:
-
-- `main`: `33e20713b605d93e97fadd7b2c1af8748b3bf897` (`Pin Clay Phase 2 page golden hashes`);
-- the read-only architecture audit `20260920-architecture-agents-audit-v1` ran on the earlier `ba4eb341139731189ac8706462020faa58bad1ae` baseline and is historical evidence, not the current HEAD;
-- `ClimatePolicy.*` is integrated as the stateless Rule/arbitration/safety boundary;
-- the old Clay-named generic display seam was renamed to neutral `DisplayRender*` terminology before Phase 2;
-- `lib/growbox_display_model/` owns the C++17-compatible semantic `DisplayLine` / `DisplayPageModel` DTO shared by the presenter and isolated Clay component;
-- Display UI Port Phase 2 renders the existing Environment, Outputs, System and Diagnostics models through real Clay 0.14 in the exact 296x128 host framebuffer;
-- deterministic golden frame hashes are pinned for all four nominal pages and the existing five-key `DisplayNavigation` model is exercised by the host integration test;
-- Phase 2 product verification `20260920-clay-phase2-v2` completed `done`: dedicated display suites, full `make test-host`, production ESP-IDF `make build` and `git diff --check` passed; the follow-up golden task `20260920-clay-phase2-goldens-v1` also completed `done`.
-
-The active implementation stage is Display UI Port Phase 3: connect the isolated Clay renderer behind the existing asynchronous display transaction/framebuffer service without changing output/control ownership or success/confirmation semantics.
+The current implementation stage is Display UI Port Phase 4: add true dirty-region SSD1680 RAM-window transfer while preserving the existing Clay layout, single framebuffer, asynchronous display transaction and native hardware ownership.
 
 The live implementation contract is `docs/DISPLAY_UI_PORT.md`.
 
+## Current source baseline
+
+Phase 3 production-path verification was completed on source `76447b963bb1e3f4d9290bfb26380ac30a0a41ab` before documentation/CI closeout. Subsequent `main` commits add the canonical `make build-crowpanel` gate, CI coverage and current documentation; always fetch fresh `main` before new work.
+
+Current architecture state:
+
+- `ClimatePolicy.*` owns stateless Rule generation/arbitration/safety while `ClimateRuntimeController.*` owns stateful runtime/ML/execution reconciliation;
+- `lib/growbox_display_model/` owns the C++17-compatible semantic `DisplayLine` / `DisplayPageModel` DTO;
+- `lib/growbox_clay_ui/` owns the isolated C++20 Clay 0.14 layout/rasterization implementation;
+- production CrowPanel rendering now uses that Clay renderer behind the existing asynchronous display transaction;
+- `CrowPanelSsd1680DisplayBackend` remains sole owner of the one 296x128 / 4736-byte framebuffer and all native SSD1680 hardware access;
+- `CrowPanelDisplayService` owns one persistent Clay scratch arena allocated in PSRAM and the existing display worker/task transaction;
+- navigation remains the growbox `DisplayNavigation`; Clay does not own navigation, sensor/output truth, control or safety state;
+- Phase 3 product verification covers host rendering, transaction failure paths and the canonical real-input CrowPanel/e-ink firmware build.
+
 ## Architecture quality baseline
 
-The repository already has a meaningful runtime split: composition/lifetime wiring, cycle coordination, output ownership, persistence, telemetry, display and RF transport are separated by subsystem.
+The repository has a meaningful runtime split: composition/lifetime wiring, cycle coordination, output ownership, persistence, telemetry, display and RF transport are separated by subsystem.
 
 The follow-up production-path audit showed that the three largest files from the original coarse scan were not production climate-v6 hotspots: root `SafetySupervisor.cpp` is legacy-only, `tools/panel/static/js/form.js` is host tooling, and `src/demo/protocol/ScenarioWireCodec.cpp` is legacy/demo code. Do not prioritize refactors from line count alone.
 
-The first confirmed production cohesion issue was `ClimateRuntimeController.cpp`, which mixed stateless Rule generation/arbitration/safety with stateful runtime, ML and execution reconciliation. That boundary is now split: `ClimatePolicy.*` owns the stateless policy pipeline, while `ClimateRuntimeController.*` owns runtime state/orchestration. Existing climate runtime/parity tests remained green through the extraction.
+The first confirmed production cohesion issue was `ClimateRuntimeController.cpp`, which mixed stateless Rule generation/arbitration/safety with stateful runtime, ML and execution reconciliation. That boundary is now split and covered by existing climate runtime/parity tests.
 
-Display architecture was also clarified before Phase 2. The historical `ClayDisplay*` names in `src/climate/display/` described a generic text/backend seam and did not use Clay 0.14; those names were removed. The semantic page DTO is a neutral C++17-only boundary under `lib/growbox_display_model/`, so `lib/growbox_clay_ui/` does not depend on application-layer `src/` headers to lay out the current pages.
+Display architecture was clarified before Clay integration. The historical Clay-named generic display seam was removed; the neutral semantic page DTO is under `lib/growbox_display_model/`, while real Clay remains isolated in `lib/growbox_clay_ui/`. The Phase 3 bridge did not introduce another framebuffer, worker, navigation owner or hardware backend.
 
-A fresh production rescan after those refactors found no further obvious God object. `DisplayPresenter.cpp`, `OutputLifecycleExecutor.cpp` and `ClimateOutputSupervisorSink.cpp` were reviewed semantically and remain cohesive single-responsibility modules despite their size. Do not split them merely to satisfy line-count heuristics.
-
-Generated code, pinned third-party Clay and large test fixtures are not refactor targets merely because of size. `AGENTS.md` contains the repository-wide architecture-first implementation gate, dependency/ownership rules, anti-God-object rules and ESP32-S3 resource guardrails.
+Generated code, pinned third-party Clay and large test fixtures are not refactor targets merely because of size. `AGENTS.md` contains the architecture-first implementation gate, dependency/ownership rules, anti-God-object rules and ESP32-S3 resource guardrails.
 
 ## Production invariants
 
@@ -52,25 +54,56 @@ Generated code, pinned third-party Clay and large test fixtures are not refactor
 - global NVS lifecycle/recovery is owned by runtime composition, not BLE;
 - failed durable-output writes are retried without falsely advancing persisted state.
 
-## Current e-ink baseline
+## Current e-ink / Clay baseline
 
-The CrowPanel 2.9-inch SSD1680 display path is operational.
+The CrowPanel 2.9-inch SSD1680 display path remains native ESP-IDF and now uses Clay for production page layout/rasterization.
 
 Keep:
 
 - 296x128 monochrome native framebuffer/backend;
+- exactly one 4736-byte framebuffer, owned by `CrowPanelSsd1680DisplayBackend`;
 - native ESP-IDF SPI/GPIO ownership;
-- 180-degree rotation already established;
-- asynchronous display worker;
-- statically allocated display worker task/stack with stack high-water diagnostics;
+- established rotation;
+- asynchronous display worker and static 6144-byte worker stack with stack high-water diagnostics;
 - display success/confirmation transaction semantics;
 - four operator pages: Environment, Outputs, System, Diagnostics;
 - current `DisplaySnapshot` / presenter truth boundary;
-- neutral `DisplayPageModel` semantic contract between page presentation and layout/rendering.
+- neutral `DisplayPageModel` semantic contract;
+- isolated C++20 Clay implementation behind a Clay-free C++17-compatible public boundary;
+- one persistent caller-owned Clay arena allocated in PSRAM by the display service.
 
-The host Clay component now reproduces those four pages with a readable 5x7 monochrome font, Clay text measurement, bounded clipping and deterministic nominal frame hashes. This is still host-side layout evidence: the production SSD1680 service has not yet been switched to Clay.
+The backend exposes mutable framebuffer bytes only while a frame transaction is open. Clay fills that storage but never replaces, owns or retains it. Failed Clay/frame/backend transactions cancel the frame and do not cause `confirmRendered()` to advance observer state.
 
-The current partial-refresh path uses partial waveform handling but still transfers the full framebuffer. True reduced dirty-window transfer remains a later phase in `DISPLAY_UI_PORT.md`.
+Framebuffer polarity is now identical in host and firmware: cleared bit = black, set bit = white (`0 = black`, `1 = white`). PBM export handles its own format inversion.
+
+Production-polarity nominal page hashes:
+
+- Environment / `Growbox status`: `3bb469ff366c69bf` — 2270 black pixels;
+- Outputs: `2e43841abef23957` — 2416 black pixels;
+- System: `262017750c71fa89` — 2453 black pixels;
+- Diagnostics: `c22a38670d9064f1` — 2321 black pixels.
+
+Each nominal page emits 25 Clay render commands in the integration fixture.
+
+The current partial-refresh path still uses partial waveform handling while transferring the full framebuffer. True reduced dirty-window RAM transfer is Phase 4.
+
+## Phase 3 verification state
+
+Local Agent `20260920-clay-phase3-v3` provided broad software regression evidence: formatting, dedicated display/Clay suites, full 50-test `make test-host` and generic ESP-IDF build passed.
+
+The generic firmware build is not sufficient as the production display gate because the default app mode does not compile the CrowPanel real-input display path. That gap is now closed by the canonical `make build-crowpanel` target and a dedicated CI job.
+
+Local Agent `20260920-clay-phase3-crowpanel-build-v4` verified exact source `76447b963bb1e3f4d9290bfb26380ac30a0a41ab` with the canonical `scripts/stage27c_crowpanel.sh` configuration and `GROWBOX_EINK_DISPLAY_ENABLED=1`:
+
+- display/Clay host suites: PASS;
+- CrowPanel N8R8 + Stage27 NimBLE + Stage27C + `climate-v6-real-inputs` + e-ink production build: PASS;
+- `CrowPanelDisplayService.cpp`, native SSD1680 backend and `ClimateV6RealInputRuntime.cpp` were compiled in that build;
+- firmware binary: `0xcc970` bytes;
+- smallest app partition: `0x400000`, with `0x333690` bytes / 80% free;
+- `idf.py size` total image size: 837885 bytes;
+- `git diff --check` and clean working tree: PASS.
+
+This is software/build evidence only. No new physical hardware qualification is claimed for Phase 3.
 
 ## SCD41 state
 
@@ -80,51 +113,13 @@ The production line retains the Sensirion-aligned clean-start sequence:
 
 and one bounded liveness recovery after 30 seconds without a new measurement, at most once per MCU boot. Do not restart broad SCD41 diagnosis unless new evidence shows a regression.
 
-Historical exact-SHA physical evidence and the intermittent-failure reproduction are preserved in `HISTORY.md` / `CHANGELOG.md` and Git history.
+Historical exact-SHA physical evidence and intermittent-failure reproduction remain in `HISTORY.md` / `CHANGELOG.md` and Git history.
 
 ## NVS/output persistence state
 
-Global ESP-IDF NVS ownership is centralized before BLE/output persistence startup. Failed durable-output writes remain retryable with bounded runtime backoff, and fallback snapshot repair is covered by the hardening work already integrated into `main`.
+Global ESP-IDF NVS ownership is centralized before BLE/output persistence startup. Failed durable-output writes remain retryable with bounded runtime backoff, and fallback snapshot repair is covered by the integrated hardening work.
 
 Do not redesign this ownership unless a new regression or requirement demonstrates that the current boundary is insufficient.
-
-## Current Clay boundary
-
-The isolated Clay component lives under `lib/growbox_clay_ui/`.
-
-It now provides:
-
-- an isolated C++20 Clay 0.14 implementation;
-- a growbox-owned public boundary with no exposed `Clay_*` types;
-- an exact 296x128 monochrome host framebuffer;
-- readable 5x7 host text rendering with matching Clay text measurement;
-- semantic `DisplayPageModel` rendering for the four existing operator pages;
-- deterministic component/renderer/clipping/page/golden verification.
-
-The shared semantic page DTO lives separately under `lib/growbox_display_model/` and is C++17-compatible. It contains only bounded page/line data; navigation, warning derivation, sensor/output truth and hardware ownership remain outside that library. Navigation remains the existing `DisplayNavigation` owned by the growbox display layer; Clay owns layout only.
-
-The Clay host renderer explicitly resets the Clay current context around each render transaction so no context pointer outlives its local arena. This became necessary once Phase 2 began rendering multiple frames in one process.
-
-The normal production application remains C++17. Firmware integration of real Clay begins in Phase 3; it must attach behind the existing asynchronous display transaction rather than replacing native SSD1680 ownership.
-
-## Verification state
-
-Historical runtime-hardening verification and physical evidence remain in `HISTORY.md`, `CHANGELOG.md` and exact Local Agent result files.
-
-The initial 2026-09-20 architecture audit was intentionally read-only. Subsequent production-boundary work was verified before integration: `20260920-climate-policy-extraction-v3` covered the climate policy split, `20260920-display-render-seam-rename-v1` covered neutral render-seam naming, and `20260920-display-model-boundary-v4` covered the shared semantic display model.
-
-Display Phase 2 verification is recorded in `20260920-clay-phase2-v2`: all dedicated display suites including the new presenter→navigation→Clay four-page integration test passed, the full 50-test host suite passed, and the production ESP-IDF build passed. Firmware size remained `0x4af90` with 71% of the smallest app partition free. `20260920-clay-phase2-goldens-v1` then verified the pinned nominal frame hashes on exact `main` `33e20713b605d93e97fadd7b2c1af8748b3bf897`.
-
-Nominal Phase 2 frame hashes:
-
-- Environment / `Growbox status`: `2d40c7bccbf2e12b`;
-- Outputs: `b7e3999ea15d8d2b`;
-- System: `430713d76487fc25`;
-- Diagnostics: `3be1346eb2b8c1e5`.
-
-This is software/build evidence only; no new physical hardware qualification is claimed.
-
-For new implementation work, use the smallest relevant gate first and follow `AGENTS.md` / `DISPLAY_UI_PORT.md` for widening verification.
 
 ## Restart point
 
@@ -132,20 +127,20 @@ For a new ChatGPT window:
 
 1. Read `AGENTS.md`, `docs/README.md`, this file, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md` and `docs/DISPLAY_UI_PORT.md`.
 2. Fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any write.
-3. Continue from the first incomplete phase in `docs/DISPLAY_UI_PORT.md`; currently that is Phase 3.
+3. Continue from the first incomplete phase in `docs/DISPLAY_UI_PORT.md`; currently that is Phase 4.
 4. Keep Clay under `lib/growbox_clay_ui/`; do not re-create it under another directory or restart it from donor code.
-5. Use `lib/growbox_display_model/` for the shared semantic page DTO; do not make Clay depend directly on `src/climate/display/DisplayPresenter.h`.
-6. Preserve the native SSD1680 backend, async observer transaction and C++17/C++20 boundary.
-7. Phase 3 must preserve `confirmRendered` and retry semantics: a failed Clay/frame/backend transaction must not advance observer state.
+5. Keep `lib/growbox_display_model/` as the shared behavior-free semantic DTO boundary.
+6. Preserve the backend-owned single framebuffer, native SSD1680 backend, async observer transaction and C++17/C++20 boundary.
+7. For display production claims run `make build-crowpanel`; generic `make build` does not cover the CrowPanel real-input display path.
 8. Apply the architecture completion gate before declaring substantial code changes complete.
 
 ## Next work
 
 0. Runtime hardening integration and full CI — DONE.
-1. Isolated C++20 Clay component plus exact 296x128 host simulator — DONE and integrated on `main`.
-2. Reproduce the existing four growbox pages with deterministic host/golden checks — DONE and integrated on `main`.
-3. Attach Clay behind the existing async display transaction — NEXT.
-4. Add true dirty-region RAM-window transfer.
+1. Isolated C++20 Clay component plus exact 296x128 host simulator — DONE.
+2. Reproduce the existing four growbox pages with deterministic host/golden checks — DONE.
+3. Attach Clay behind the existing async display transaction — DONE.
+4. Add true dirty-region RAM-window transfer — NEXT.
 5. Add native ESP-IDF button input with host-tested debounce/long-press behavior.
 6. Add only justified growbox menu/settings flows through existing domain APIs.
 7. Qualify the final exact SHA on hardware when a physical claim is required.
