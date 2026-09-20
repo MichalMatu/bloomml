@@ -41,7 +41,8 @@ void includeRegion(PageDirtyRegion& bounds, bool& has_bounds,
             static_cast<std::uint16_t>(bottom - top)};
 }
 
-bool stringsDiffer(const auto& left, const auto& right) noexcept {
+template <std::size_t N>
+bool stringsDiffer(const std::array<char, N>& left, const std::array<char, N>& right) noexcept {
   return std::strcmp(left.data(), right.data()) != 0;
 }
 
@@ -62,11 +63,12 @@ bool planPageDirtyRegion(const ::growbox::display_model::DisplayPageModel* previ
                   {kInnerLeftPx, kHeaderTopPx, kInnerWidthPx, kHeaderHeightPx});
   }
 
-  const std::size_t line_count =
-      std::max<std::size_t>(previous->line_count, current.line_count);
+  const std::size_t previous_count = std::min(previous->line_count, previous->lines.size());
+  const std::size_t current_count = std::min(current.line_count, current.lines.size());
+  const std::size_t line_count = std::max(previous_count, current_count);
   for (std::size_t index = 0U; index < line_count; ++index) {
-    const bool previous_present = index < previous->line_count;
-    const bool current_present = index < current.line_count;
+    const bool previous_present = index < previous_count;
+    const bool current_present = index < current_count;
     bool changed = previous_present != current_present;
     if (previous_present && current_present) {
       changed = stringsDiffer(previous->lines[index].label, current.lines[index].label) ||
