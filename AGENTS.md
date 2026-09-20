@@ -208,7 +208,9 @@ For unattended qualification keep physical outputs disabled unless the operator 
 
 `vendor/litegraph_epd_port/` is read-only donor/reference material and must stay excluded from builds.
 
-The integrated isolated Clay host component lives under `lib/growbox_clay_ui/`. It is C++20 internally and exposes growbox-owned Clay-free public types. The normal production application remains C++17. Current next display work is Phase 2 in `docs/DISPLAY_UI_PORT.md`: reproduce the existing Environment, Outputs, System and Diagnostics pages in the host simulator before firmware integration.
+The production-integrated Clay component lives under `lib/growbox_clay_ui/`. It is C++20 internally and exposes only growbox-owned C++17-compatible, Clay-free public types. It now renders the existing semantic `DisplayPageModel` directly into the single framebuffer owned by the native SSD1680 backend, behind the existing asynchronous display transaction. The display service owns one persistent Clay scratch arena in PSRAM; Clay does not own the framebuffer, worker, navigation, refresh confirmation or hardware.
+
+Current next display work is Phase 4 in `docs/DISPLAY_UI_PORT.md`: true dirty-region RAM-window transfer. Do not create a second framebuffer/refresh owner while implementing it.
 
 Do not replace the native SSD1680 backend, copy Arduino hardware ownership into production, or expose `Clay_*` types across the component boundary.
 
@@ -251,7 +253,7 @@ Use the smallest relevant gate first, then widen only as needed.
 - portable/runtime C++: focused regression first, then `make test-host` for affected runtime/display boundaries;
 - Python/ML tooling: focused pytest first, then the relevant broader Python suite;
 - panel UI: `make test-layout`, and `make test-panel` when behavior/API changed;
-- Clay/display: component/simulator tests, display host suite, then ESP-IDF build before firmware integration claims;
+- Clay/display: component/simulator tests and display host suite, then `make build-crowpanel` before production firmware integration claims; generic `make build` is not sufficient because its default app mode does not compile the CrowPanel real-input display path;
 - production firmware boundary/config changes: ESP-IDF build for the affected profile;
 - hardware claims: exact-SHA Local Agent evidence on the authorized device.
 
