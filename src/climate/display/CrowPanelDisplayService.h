@@ -36,6 +36,8 @@ struct CrowPanelDisplayServiceStatus final {
 // all potentially multi-second SSD1680 BUSY waits stay on the worker task.
 class CrowPanelDisplayService final {
 public:
+  static constexpr std::uint32_t kTaskStackBytes = 6'144U;
+
   CrowPanelDisplayService(DisplayTelemetryObserver& observer,
                           CrowPanelSsd1680DisplayBackend& backend,
                           std::uint64_t retry_backoff_ms = 30'000U) noexcept
@@ -49,12 +51,12 @@ public:
   CrowPanelDisplayServiceStatus status() const noexcept;
 
   static constexpr std::uint32_t taskStackBytes() noexcept {
-    return 6'144U;
+    return kTaskStackBytes;
   }
 
 private:
   static constexpr std::size_t kTaskStackElements =
-      (taskStackBytes() + sizeof(StackType_t) - 1U) / sizeof(StackType_t);
+      (kTaskStackBytes + sizeof(StackType_t) - 1U) / sizeof(StackType_t);
 
   static void taskEntry(void* context) noexcept;
   void taskLoop() noexcept;
@@ -92,7 +94,7 @@ private:
   std::atomic<std::uint32_t> render_failures_{0U};
   std::atomic<std::uint32_t> confirm_failures_{0U};
   std::atomic<std::uint32_t> stale_completions_{0U};
-  std::atomic<std::uint32_t> stack_min_free_bytes_{taskStackBytes()};
+  std::atomic<std::uint32_t> stack_min_free_bytes{kTaskStackBytes};
 };
 
 } // namespace growbox::app::climate_io::display
