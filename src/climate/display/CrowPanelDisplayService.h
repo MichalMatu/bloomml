@@ -94,7 +94,7 @@ private:
   std::atomic<std::uint32_t> render_failures_{0U};
   std::atomic<std::uint32_t> confirm_failures_{0U};
   std::atomic<std::uint32_t> stale_completions_{0U};
-  std::atomic<std::uint32_t> stack_min_free_bytes{kTaskStackBytes};
+  std::atomic<std::uint32_t> stack_min_free_bytes_{kTaskStackBytes};
 };
 
 } // namespace growbox::app::climate_io::display
