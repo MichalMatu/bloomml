@@ -48,7 +48,7 @@ bool CrowPanelButtonInput::configValid() const noexcept {
 }
 
 bool CrowPanelButtonInput::begin() noexcept {
-  if (started_) {
+  if (started_.load(std::memory_order_relaxed)) {
     return true;
   }
   if (!configValid()) {
@@ -91,14 +91,16 @@ bool CrowPanelButtonInput::begin() noexcept {
     timer_ = nullptr;
     return false;
   }
+
+  started_.store(true, std::memory_order_relaxed);
   if (esp_timer_start_periodic(timer_, static_cast<std::uint64_t>(config_.sample_period_ms) *
                                            1000U) != ESP_OK) {
+    started_.store(false, std::memory_order_relaxed);
     (void)esp_timer_delete(timer_);
     timer_ = nullptr;
     return false;
   }
 
-  started_ = true;
   return true;
 }
 
@@ -112,7 +114,7 @@ bool CrowPanelButtonInput::poll(DisplayButtonEvent& event) noexcept {
 
 CrowPanelButtonInputStatus CrowPanelButtonInput::status() const noexcept {
   return {
-      started_,
+      started_.load(std::memory_order_relaxed),
       events_emitted_.load(std::memory_order_relaxed),
       long_presses_.load(std::memory_order_relaxed),
       queue_drops_.load(std::memory_order_relaxed),
@@ -126,7 +128,7 @@ void CrowPanelButtonInput::timerEntry(void* context) noexcept {
 }
 
 void CrowPanelButtonInput::sample() noexcept {
-  if (!started_ || queue_ == nullptr) {
+  if (!started_.load(std::memory_order_relaxed) || queue_ == nullptr) {
     return;
   }
 
@@ -150,7 +152,7 @@ void CrowPanelButtonInput::sample() noexcept {
 }
 
 void CrowPanelButtonInput::stop() noexcept {
-  started_ = false;
+  started_.store(false, std::memory_order_relaxed);
   if (timer_ != nullptr) {
     (void)esp_timer_stop(timer_);
     (void)esp_timer_delete(timer_);
