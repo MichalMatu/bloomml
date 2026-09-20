@@ -1,5 +1,6 @@
 #include "growbox_clay_ui/HostSimulator.h"
 
+#include <array>
 #include <cstdio>
 #include <vector>
 
@@ -11,7 +12,7 @@ bool MonochromeFrame::pixel(std::uint16_t x, std::uint16_t y) const noexcept {
   }
   const std::size_t index = static_cast<std::size_t>(y) * kFrameStrideBytes + x / 8U;
   const auto mask = static_cast<std::uint8_t>(0x80U >> (x % 8U));
-  return (bytes[index] & mask) != 0U;
+  return (bytes[index] & mask) == 0U;
 }
 
 bool renderHostPage(const ::growbox::display_model::DisplayPageModel& page, MonochromeFrame& frame,
@@ -44,9 +45,13 @@ bool writePbm(const MonochromeFrame& frame, const char* path) noexcept {
   }
   const int header = std::fprintf(file, "P4\n%u %u\n", static_cast<unsigned>(kDisplayWidth),
                                   static_cast<unsigned>(kDisplayHeight));
-  const std::size_t written = std::fwrite(frame.bytes.data(), 1, frame.bytes.size(), file);
+  std::array<std::uint8_t, kFrameBytes> pbm_bytes{};
+  for (std::size_t index = 0U; index < frame.bytes.size(); ++index) {
+    pbm_bytes[index] = static_cast<std::uint8_t>(~frame.bytes[index]);
+  }
+  const std::size_t written = std::fwrite(pbm_bytes.data(), 1, pbm_bytes.size(), file);
   const int closed = std::fclose(file);
-  return header > 0 && written == frame.bytes.size() && closed == 0;
+  return header > 0 && written == pbm_bytes.size() && closed == 0;
 }
 
 } // namespace growbox::clay_ui
