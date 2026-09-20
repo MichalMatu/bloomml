@@ -41,6 +41,7 @@ public:
 
     last_snapshot_ = projected;
     last_frame_ = frame;
+    last_observed_ms_ = telemetry_snapshot.uptime_ms;
     has_snapshot_ = true;
     has_frame_ = true;
     return true;
@@ -62,7 +63,21 @@ public:
   }
 
   bool handleButtonEvent(const DisplayButtonEvent& event) noexcept {
-    return runtime_.handleButtonEvent(event);
+    const bool changed = runtime_.handleButtonEvent(event);
+    if (!changed || !has_snapshot_) {
+      return changed;
+    }
+
+    DisplayRuntimeFrame frame{};
+    const std::uint64_t now_ms = event.timestamp_ms != 0U ? event.timestamp_ms : last_observed_ms_;
+    if (!runtime_.update(last_snapshot_, now_ms, frame)) {
+      ++runtime_error_count_;
+      return changed;
+    }
+
+    last_frame_ = frame;
+    has_frame_ = true;
+    return changed;
   }
 
   bool handleButton(DisplayButton button) noexcept {
@@ -119,6 +134,7 @@ private:
   DisplayRuntimeController runtime_{};
   DisplaySnapshot last_snapshot_{};
   DisplayRuntimeFrame last_frame_{};
+  std::uint64_t last_observed_ms_{0U};
   std::uint32_t projection_error_count_{0U};
   std::uint32_t runtime_error_count_{0U};
   bool has_snapshot_{false};
