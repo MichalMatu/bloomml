@@ -6,6 +6,7 @@
 
 #include <driver/spi_master.h>
 
+#include <cstddef>
 #include <cstdint>
 
 namespace growbox::app::climate_io::display {
@@ -46,6 +47,17 @@ public:
   bool drawText(const DisplayTextElement& element) noexcept;
   bool endFrame() noexcept;
   void cancelFrame() noexcept;
+
+  // Mutable access is available only while a frame transaction is open. The
+  // backend remains the sole owner of this storage; external renderers may fill
+  // it but cannot replace or retain it.
+  std::uint8_t* framebufferData() noexcept {
+    return frame_open_ ? framebuffer_.data() : nullptr;
+  }
+
+  std::size_t framebufferBytes() const noexcept {
+    return framebuffer_.size();
+  }
 
   bool hardwareReady() const noexcept {
     return controller_initialized_;
