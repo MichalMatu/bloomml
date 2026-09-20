@@ -46,7 +46,7 @@ public:
   bool beginFrame(std::uint16_t width_px, std::uint16_t height_px, bool warning,
                   DisplayRefreshKind refresh_kind) noexcept;
   bool drawText(const DisplayTextElement& element) noexcept;
-  bool setContentRegion(const DisplayRegion& content_region) noexcept;
+  bool setTransferRegion(const DisplayRegion& transfer_region) noexcept;
   bool endFrame() noexcept;
   void cancelFrame() noexcept;
 
@@ -97,7 +97,8 @@ private:
   bool waitWhileBusy(std::uint32_t timeout_ms) noexcept;
   bool sendCommand(std::uint8_t command) noexcept;
   bool sendData(const std::uint8_t* data, std::size_t length) noexcept;
-  bool sendCommandData(std::uint8_t command, const std::uint8_t* data, std::size_t length) noexcept;
+  bool sendCommandData(std::uint8_t command, const std::uint8_t* data,
+                       std::size_t length) noexcept;
   static constexpr Ssd1680NativeWindow fullNativeWindow() noexcept {
     return {0U, static_cast<std::uint8_t>(Ssd1680FrameMapper::kNativeBytesPerRow - 1U), 0U,
             static_cast<std::uint16_t>(Ssd1680FrameMapper::kNativeHeightPx - 1U)};
@@ -117,8 +118,7 @@ private:
   DisplayMonochromeRaster::Buffer framebuffer_{};
   DisplayMonochromeRaster raster_;
   spi_device_handle_t spi_device_{nullptr};
-  DisplayDirtyRegionTracker dirty_region_tracker_{};
-  DisplayRegion staged_content_region_{};
+  DisplayRegion staged_transfer_region_{};
   DisplayRegion last_transfer_region_{};
   Ssd1680NativeWindow last_native_window_{};
   std::size_t last_window_bytes_{0U};
@@ -129,7 +129,7 @@ private:
   bool controller_initialized_{false};
   bool previous_ram_seeded_{false};
   bool frame_open_{false};
-  bool content_region_staged_{false};
+  bool transfer_region_staged_{false};
   bool last_transfer_partial_{false};
 };
 
