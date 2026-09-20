@@ -20,7 +20,9 @@ Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for ac
 ├── vendor/
 │   └── litegraph_epd_port/     # read-only Clay/EPD donor snapshot; not built
 ├── web/                        # browser configurator/chamber UI
-├── lib/environment_control/    # portable climate-v6 controller core
+├── lib/
+│   ├── environment_control/    # portable climate-v6 controller core
+│   └── growbox_clay_ui/        # isolated C++20 Clay host/layout component
 ├── components/                 # ESP-IDF components
 ├── src/
 │   ├── main.cpp                # app-mode dispatcher
@@ -56,13 +58,13 @@ Do not move climate policy into transport, direct configured-output writes into 
 
 Board/runtime defaults live under `config/` and are resolved by CMake. Production C++ consumes generated typed `RuntimeBuildConfig.h`; do not add duplicate fallback tables in source files.
 
-## Display-port placement
+## Clay/display-port placement
 
-The planned Clay integration should not be implemented inside `vendor/`.
-
-Preferred destination is a dedicated `components/growbox_clay_ui/` C++20 component, while the existing `src` application component remains C++17. Shared public structs must stay Clay-free. If a dependency cycle appears, extract the minimal shared display model into a small C++17 component rather than exposing Clay internals.
+The isolated Phase 1 Clay implementation lives in `lib/growbox_clay_ui/` and remains separate from the normal C++17 production application boundary. Its public API must use growbox-owned Clay-free structs; `Clay_*` types stay private to the component.
 
 `vendor/litegraph_epd_port/` remains immutable/reference-only and excluded from builds.
+
+When Phase 2+ needs shared semantic page data, keep that model C++17-compatible and owned by the growbox display/domain boundary. If a dependency cycle appears, extract the smallest shared model instead of moving runtime ownership into the Clay component.
 
 ## Where new work belongs
 
@@ -73,10 +75,14 @@ Preferred destination is a dedicated `components/growbox_clay_ui/` C++20 compone
 | Output ownership/policy | `src/climate/output/` |
 | RF433 transport/protocol | `src/climate/rf433/` |
 | Existing display backend/service | `src/climate/display/` |
-| Future Clay layout engine | `components/growbox_clay_ui/` |
+| Clay layout/host simulator | `lib/growbox_clay_ui/` |
 | Clay donor/reference material | `vendor/litegraph_epd_port/` |
 | Runtime/board configuration | `config/` |
 | Host analysis / ML / sandbox | `tools/` |
 | Frontend/chamber UX | `web/` |
 | Contracts | `schemas/` |
 | Current docs/history/research refs | `docs/` |
+
+## Growth rule
+
+New independent responsibilities should get a focused module under the owning subsystem instead of being appended to a central coordinator/controller for convenience. See `AGENTS.md` for the architecture gate and current oversized-file watchlist.
