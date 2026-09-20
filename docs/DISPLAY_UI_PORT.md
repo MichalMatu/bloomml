@@ -234,20 +234,40 @@ The log's recurring `INFO/WATCHDOG ... heartbeat` lines are application heartbea
 
 Local Agent evidence: `20260920-phase4-hardware-qualification-v1` performed the exact-SHA flash and UART capture; its over-broad first-pass text filter failed on the benign word `WATCHDOG`. `20260920-phase4-hardware-qualification-v2` re-parsed the same captured log with specific crash signatures and passed, preserving the physical partial-refresh evidence above.
 
-### Phase 5 — native buttons — NEXT
+### Phase 5 — native buttons — DONE
 
-Implement a growbox-owned ESP-IDF GPIO input layer using semantic events such as Home, Back, Previous, Next and Ok.
+The growbox now owns a native ESP-IDF button input path for the CrowPanel 2.9-inch board. The donor Arduino driver was not copied; only key semantics and long-press intent were retained.
 
-Do not copy the Arduino polling driver directly. Reuse only event semantics and long-press intent.
+Implemented boundary:
 
-Acceptance:
+- board mapping is Home GPIO2, Back GPIO1, Previous GPIO6, Next GPIO4 and OK GPIO5, active-low with pull-ups;
+- `DisplayButtonStateMachine` is pure and host-testable, with 40 ms stable-edge debounce that restarts the candidate timer on every raw transition;
+- short press is emitted only after a stable release; a 700 ms long press emits once and suppresses the later short-press event;
+- `CrowPanelButtonInput` samples five GPIOs every 20 ms from `esp_timer` and pushes semantic events into a static FreeRTOS queue of depth 8;
+- no dedicated button task or stack was added;
+- the sampler does not own navigation, display refresh, control, outputs or safety;
+- the main runtime task drains semantic events before the 1-second coordinator tick and is the only path that calls `DisplayTelemetryObserver::handleButton()`;
+- long-press events are currently diagnostic/semantic only; Phase 5 intentionally does not invent a menu/settings action for them;
+- timer/runtime lifecycle state is atomic so the ESP timer callback does not race the runtime task.
 
-- host-testable debounce state machine;
-- stable-edge debounce rather than donor post-edge lockout behavior;
-- long-press timing covered by tests;
-- physical GPIO layer does not own navigation state.
+Verification:
 
-### Phase 6 — menu/settings mechanics
+- Local Agent `20260920-phase5-buttons-v3`: focused button tests PASS, full display/Clay suites PASS, full `make test-host` 50/50 PASS, canonical `make build-crowpanel` PASS, `git diff --check` PASS;
+- final lifecycle review `20260920-phase5-buttons-v4`: the same gates PASS after atomic sampler lifecycle hardening;
+- firmware binary was `0xcdb30` bytes with 80% free in the smallest `0x400000` app partition;
+- PR #12 merged as exact source `7533f7f4c2c92675ef0908c91912b89a66f7ee4a`.
+
+Merged exact-SHA hardware startup qualification on authorized `/dev/cu.usbserial-120` kept real outputs, RF loopback and the thermal sequence disabled. Local Agent `20260920-phase5-merged-hardware-smoke-v2` captured the boot from reset and confirmed:
+
+- firmware SHA `7533f7f4c2c92675ef0908c91912b89a66f7ee4a`;
+- `eink_requested=1`, `eink_ready=1`, `eink_buttons_ready=1`;
+- `real_outputs_requested=0`, `real_outputs_ready=0`, `outputs=fake-locked`;
+- physical e-ink refreshes continued to succeed, including partial transfer;
+- no Guru Meditation, brownout, task/interrupt watchdog timeout, assert, abort or backtrace in the captured interval.
+
+No human physical key press occurred during the unattended capture (`button_events=0`). Therefore Phase 5 claims GPIO initialization and software semantics, not manual key-actuation/navigation qualification. Real physical button presses remain explicitly part of Phase 7.
+
+### Phase 6 — menu/settings mechanics — NEXT
 
 Port only generic stack/selection/scroll/confirmation mechanics needed by real growbox operator use cases.
 
@@ -300,7 +320,7 @@ Before implementation:
 1. read `../AGENTS.md`, `README.md`, `CURRENT_STATUS.md`, `ARCHITECTURE.md`, this file and `vendor/litegraph_epd_port/README.md`;
 2. fetch fresh `main` and verify Local Agent is idle before direct writes;
 3. confirm the vendor source pins have not drifted;
-4. continue from the first incomplete phase above; currently Phase 5;
+4. continue from the first incomplete phase above; currently Phase 6;
 5. preserve the shared `growbox_display_model` boundary and existing `DisplayNavigation` ownership;
 6. preserve the backend-owned single framebuffer, async transaction and C++17/C++20 boundary;
 7. do not reopen SSD1680 pin mapping, rotation, async ownership or SCD41 recovery without new evidence.

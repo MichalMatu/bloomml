@@ -7,15 +7,15 @@ Control branch: `agent-control`
 
 ## Current phase
 
-Runtime reliability hardening and Display UI Port Phases 1-4 are integrated on `main`.
+Runtime reliability hardening and Display UI Port Phases 1-5 are integrated on `main`.
 
-Display UI Port Phase 4 is complete, including exact-SHA physical qualification of true reduced SSD1680 dirty-window transfer. The current implementation stage is Phase 5: add growbox-owned native ESP-IDF button input with host-tested debounce/long-press behavior while keeping navigation state outside the GPIO layer.
+Display UI Port Phase 5 is complete: native CrowPanel buttons provide stable-edge debounced semantic press/long-press events while navigation remains owned by the display runtime. The current implementation stage is Phase 6: add only justified growbox menu/settings mechanics through existing domain/application APIs.
 
 The live implementation contract is `docs/DISPLAY_UI_PORT.md`.
 
 ## Current source baseline
 
-Phase 4 code is merged on source `4c32466c6a0af798620faf0e85416ad39ea4f07a` and was physically qualified on that exact SHA. Subsequent documentation-only commits may advance `main`; always fetch fresh `main` before new work.
+Phase 5 code is merged on source `7533f7f4c2c92675ef0908c91912b89a66f7ee4a` and exact-SHA boot qualification confirmed the native button input initialized successfully. Subsequent documentation-only commits may advance `main`; always fetch fresh `main` before new work.
 
 Current architecture state:
 
@@ -28,6 +28,8 @@ Current architecture state:
 - navigation remains the growbox `DisplayNavigation`; Clay does not own navigation, sensor/output truth, control or safety state;
 - Phase 4 adds semantic row-aware dirty planning plus reduced native SSD1680 RAM-window transfer; a one-row update is verified at 1776 bytes/plane versus 4736 bytes full-plane;
 - the exact merged Phase 4 SHA was flashed to `/dev/cu.usbserial-120` with real outputs disabled and produced a real `physical_partial=1` refresh without crash/watchdog/brownout evidence.
+- Phase 5 adds growbox-owned Home/Back/Previous/Next/OK GPIO input through a 20 ms timer sampler, pure 40 ms stable-edge debounce, 700 ms long-press semantics and a bounded static event queue; navigation ownership remains in `DisplayRuntimeController`;
+- exact merged Phase 5 SHA `7533f7f4c2c92675ef0908c91912b89a66f7ee4a` booted on `/dev/cu.usbserial-120` with `eink_ready=1`, `eink_buttons_ready=1` and outputs fake-locked; manual physical button actuation remains a Phase 7 qualification item.
 
 ## Architecture quality baseline
 
@@ -114,6 +116,16 @@ Physical qualification on authorized `/dev/cu.usbserial-120` used e-ink enabled 
 
 The display worker reported `stack_min_free_bytes=2228` during the qualified refresh.
 
+## Phase 5 verification state
+
+Phase 5 merged through PR #12 as exact source `7533f7f4c2c92675ef0908c91912b89a66f7ee4a`.
+
+Software gates passed the focused stable-edge/long-press state-machine tests, all display/Clay suites, full 50/50 `make test-host`, canonical `make build-crowpanel` and `git diff --check`. The final CrowPanel build reported firmware `0xcdb30` bytes with 80% free in the smallest app partition.
+
+The implementation uses Home GPIO2, Back GPIO1, Previous GPIO6, Next GPIO4 and OK GPIO5 as active-low pull-up inputs. A 20 ms `esp_timer` sampler reads the keys and writes semantic events into a static depth-8 queue; it does not own navigation. `DisplayRuntimeController` remains the navigation-state owner, and long-press is currently a semantic event only rather than a control/menu action.
+
+Merged exact-SHA startup qualification on authorized `/dev/cu.usbserial-120` captured boot from reset with outputs/RF/thermal test sequence disabled. It confirmed `eink_ready=1`, `eink_buttons_ready=1`, exact firmware SHA, healthy display refreshes and no panic/brownout/watchdog-timeout/assert/backtrace signature. The unattended capture observed zero physical button interactions, so manual key actuation/navigation remains explicitly for Phase 7.
+
 ## SCD41 state
 
 The production line retains the Sensirion-aligned clean-start sequence:
@@ -136,7 +148,7 @@ For a new ChatGPT window:
 
 1. Read `AGENTS.md`, `docs/README.md`, this file, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md` and `docs/DISPLAY_UI_PORT.md`.
 2. Fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any write.
-3. Continue from the first incomplete phase in `docs/DISPLAY_UI_PORT.md`; currently that is Phase 5.
+3. Continue from the first incomplete phase in `docs/DISPLAY_UI_PORT.md`; currently that is Phase 6.
 4. Keep Clay under `lib/growbox_clay_ui/`; do not re-create it under another directory or restart it from donor code.
 5. Keep `lib/growbox_display_model/` as the shared behavior-free semantic DTO boundary.
 6. Preserve the backend-owned single framebuffer, native SSD1680 backend, async observer transaction and C++17/C++20 boundary.
@@ -150,8 +162,8 @@ For a new ChatGPT window:
 2. Reproduce the existing four growbox pages with deterministic host/golden checks — DONE.
 3. Attach Clay behind the existing async display transaction — DONE.
 4. Add true dirty-region RAM-window transfer — DONE.
-5. Add native ESP-IDF button input with host-tested debounce/long-press behavior — NEXT.
-6. Add only justified growbox menu/settings flows through existing domain APIs.
+5. Add native ESP-IDF button input with host-tested debounce/long-press behavior — DONE.
+6. Add only justified growbox menu/settings flows through existing domain APIs — NEXT.
 7. Qualify the final exact SHA on hardware when a physical claim is required.
 
 Do not reopen completed panel pin mapping, SSD1680 backend ownership, rotation, async architecture, SCD41 recovery or runtime persistence ownership without new evidence.
