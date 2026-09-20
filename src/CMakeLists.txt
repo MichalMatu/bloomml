@@ -41,6 +41,7 @@ idf_component_register(
     "demo"
   REQUIRES
     environment_control
+    growbox_clay_ui
     esp_driver_usb_serial_jtag
     esp_timer
     heap
