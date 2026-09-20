@@ -11,10 +11,12 @@ Runtime reliability hardening and Display UI Port Phase 1 are integrated on `mai
 
 Current source baseline on 2026-09-20:
 
-- `main`: `bcf5e6a51b475363b356d44bfd68830a8159db3e` (`Extract climate policy from runtime controller`);
+- `main`: `3f7713e4141c45baecc10c7911f8e9915682319f` (`Extract shared display page model`);
 - the read-only architecture audit `20260920-architecture-agents-audit-v1` ran on the earlier `ba4eb341139731189ac8706462020faa58bad1ae` baseline and is historical evidence, not the current HEAD;
-- Local Agent task `20260920-climate-policy-extraction-v3` completed `done` before integration; focused climate tests, full `make test-host`, production ESP-IDF `make build`, clang-format 19.1.5 and `git diff --check` passed;
-- Local Agent is idle after integration.
+- `ClimatePolicy.*` is integrated as the stateless Rule/arbitration/safety boundary;
+- the old Clay-named generic display seam was renamed to neutral `DisplayRender*` terminology before Phase 2;
+- `lib/growbox_display_model/` now owns the C++17-compatible semantic `DisplayLine` / `DisplayPageModel` DTO shared by the presenter and isolated Clay component;
+- Local Agent task `20260920-display-model-boundary-v4` completed `done`; dedicated display suites, full `make test-host`, production ESP-IDF `make build` and boundary checks passed.
 
 The active implementation stage is Display UI Port Phase 2: reproduce the current Environment, Outputs, System and Diagnostics pages in the exact 296x128 host simulator while preserving the native SSD1680 backend and observer-only architecture.
 
@@ -27,6 +29,8 @@ The repository already has a meaningful runtime split: composition/lifetime wiri
 The follow-up production-path audit showed that the three largest files from the original coarse scan were not production climate-v6 hotspots: root `SafetySupervisor.cpp` is legacy-only, `tools/panel/static/js/form.js` is host tooling, and `src/demo/protocol/ScenarioWireCodec.cpp` is legacy/demo code. Do not prioritize refactors from line count alone.
 
 The first confirmed production cohesion issue was `ClimateRuntimeController.cpp`, which mixed stateless Rule generation/arbitration/safety with stateful runtime, ML and execution reconciliation. That boundary is now split: `ClimatePolicy.*` owns the stateless policy pipeline, while `ClimateRuntimeController.*` owns runtime state/orchestration. Existing climate runtime/parity tests remained green through the extraction.
+
+Display architecture was also clarified before Phase 2. The historical `ClayDisplay*` names in `src/climate/display/` described a generic text/backend seam and did not use Clay 0.14; those names were removed. The semantic page DTO is now a neutral C++17-only boundary under `lib/growbox_display_model/`, so `lib/growbox_clay_ui/` does not need to depend on application-layer `src/` headers to reproduce the current pages.
 
 Generated code, pinned third-party Clay and large test fixtures are not refactor targets merely because of size. `AGENTS.md` contains the repository-wide architecture-first implementation gate, dependency/ownership rules, anti-God-object rules and ESP32-S3 resource guardrails.
 
@@ -57,7 +61,8 @@ Keep:
 - statically allocated display worker task/stack with stack high-water diagnostics;
 - display success/confirmation transaction semantics;
 - four operator pages: Environment, Outputs, System, Diagnostics;
-- current `DisplaySnapshot` / presenter truth boundary.
+- current `DisplaySnapshot` / presenter truth boundary;
+- neutral `DisplayPageModel` semantic contract between page presentation and layout/rendering.
 
 The current partial-refresh path uses partial waveform handling but still transfers the full framebuffer. True reduced dirty-window transfer remains a later phase in `DISPLAY_UI_PORT.md`.
 
@@ -88,13 +93,15 @@ It provides:
 - an exact 296x128 monochrome host simulator;
 - component/renderer/clipping/smoke verification described in `DISPLAY_UI_PORT.md`.
 
-The normal production application remains C++17. Firmware integration has not started; that belongs to later phases after Phase 2 reproduces the current pages on host.
+The shared semantic page DTO lives separately under `lib/growbox_display_model/` and is C++17-compatible. It contains only bounded page/line data; navigation, warning derivation, sensor/output truth, rendering and hardware ownership remain outside that library.
+
+The normal production application remains C++17. Firmware integration of real Clay has not started; Phase 2 should first reproduce the four existing pages on host using the shared semantic model.
 
 ## Verification state
 
 Historical runtime-hardening verification and physical evidence remain in `HISTORY.md`, `CHANGELOG.md` and exact Local Agent result files.
 
-The initial 2026-09-20 architecture audit was intentionally read-only. The subsequent production-path correction and `ClimatePolicy` extraction were verified by Local Agent task `20260920-climate-policy-extraction-v3`: focused climate suites, full host C++ suites and the production ESP-IDF build passed before merge. This is software/build evidence only; no new physical hardware qualification is claimed.
+The initial 2026-09-20 architecture audit was intentionally read-only. Subsequent production-boundary work was verified before merge: `20260920-climate-policy-extraction-v3` covered the climate policy split, `20260920-display-render-seam-rename-v1` covered neutral render-seam naming, and `20260920-display-model-boundary-v4` covered the shared semantic display model. The final display-model gate passed all dedicated display suites, the 50-test host suite and the production ESP-IDF build. Firmware size remained `0x4af90` with 71% of the smallest app partition free. This is software/build evidence only; no new physical hardware qualification is claimed.
 
 For new implementation work, use the smallest relevant gate first and follow `AGENTS.md` / `DISPLAY_UI_PORT.md` for widening verification.
 
@@ -106,8 +113,9 @@ For a new ChatGPT window:
 2. Fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any write.
 3. Continue from the first incomplete phase in `docs/DISPLAY_UI_PORT.md`; currently that is Phase 2.
 4. Keep Phase 1 under `lib/growbox_clay_ui/`; do not re-create it under another directory or restart it from donor code.
-5. Preserve the native SSD1680 backend, async observer transaction and C++17/C++20 boundary.
-6. Apply the architecture completion gate before declaring substantial code changes complete.
+5. Use `lib/growbox_display_model/` for the shared semantic page DTO; do not make Clay depend directly on `src/climate/display/DisplayPresenter.h`.
+6. Preserve the native SSD1680 backend, async observer transaction and C++17/C++20 boundary.
+7. Apply the architecture completion gate before declaring substantial code changes complete.
 
 ## Next work
 
