@@ -17,8 +17,8 @@ struct DisplayButtonTiming final {
 // press so one physical gesture produces exactly one semantic event.
 class DisplayButtonStateMachine final {
 public:
-  explicit DisplayButtonStateMachine(const DisplayButtonTiming& timing = {}) noexcept
-      : timing_(timing) {}
+  DisplayButtonStateMachine() noexcept = default;
+  explicit DisplayButtonStateMachine(const DisplayButtonTiming& timing) noexcept : timing_(timing) {}
 
   void reset(bool raw_pressed, std::uint64_t now_ms) noexcept;
 
