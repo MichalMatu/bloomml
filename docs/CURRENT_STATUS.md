@@ -149,7 +149,7 @@ Do not reopen completed panel pin mapping, SSD1680 backend ownership, rotation, 
 
 ## Hardware boundary
 
-Authorized growbox serial device: `/dev/cu.usbserial-1130`.
+Authorized growbox serial device: `/dev/cu.usbserial-120`.
 
 Never use `/dev/cu.usbserial-10`. Do not use `/dev/cu.usbserial-1120` without explicit authorization.
 

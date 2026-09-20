@@ -184,7 +184,7 @@ If the change introduces an architectural problem, fix that problem before decla
 
 ## Hardware boundaries
 
-Authorized growbox serial device: `/dev/cu.usbserial-1130`.
+Authorized growbox serial device: `/dev/cu.usbserial-120`.
 
 Never open, probe, monitor, reset or flash `/dev/cu.usbserial-10`.
 Do not use `/dev/cu.usbserial-1120` without explicit authorization.
