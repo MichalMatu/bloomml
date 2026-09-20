@@ -8,6 +8,7 @@ add_library(
   STATIC
     src/ClayCore.cpp
     src/ClayRenderer.cpp
+    src/PageRenderer.cpp
     src/HostSimulator.cpp
 )
 
