@@ -6,7 +6,7 @@ Updated: 2026-09-20
 
 The product is a native ESP-IDF ESP32-S3 growbox controller using real sensors, deterministic Rule control, RF433 outputs, durable telemetry, e-ink operator visibility and an ML shadow/research path.
 
-Broad architecture cleanup, the SCD41/e-ink recovery closeout, runtime persistence hardening and Clay display Phases 1-3 are integrated. Prefer bounded changes that preserve ownership, safety and ESP32-S3 resource limits.
+Broad architecture cleanup, the SCD41/e-ink recovery closeout, runtime persistence hardening and Clay display Phases 1-6 are integrated. Prefer bounded changes that preserve ownership, safety and ESP32-S3 resource limits.
 
 ## Active work
 
@@ -19,10 +19,10 @@ Current position:
 1. isolated C++20 Clay component and exact 296x128 host simulator — DONE;
 2. reproduce current Environment / Outputs / System / Diagnostics pages on host — DONE;
 3. connect Clay behind the existing async display transaction and backend-owned framebuffer — DONE;
-4. implement true dirty-region RAM-window partial transfer — NEXT;
-5. add native ESP-IDF buttons with host-tested debounce/long-press logic;
-6. add only justified growbox menu/settings flows;
-7. exact-SHA physical qualification when needed.
+4. implement true dirty-region RAM-window partial transfer — DONE;
+5. add native ESP-IDF buttons with host-tested debounce/long-press logic — DONE;
+6. add the justified read-only growbox page chooser without inventing write-side settings — DONE;
+7. exact-SHA physical qualification — PARTIAL: autonomous boot/display/resource evidence is green; manual key/visual checks and SCD41-with-device-present remain.
 
 Do not replace the native SSD1680 backend, create another framebuffer/refresh owner or make UI another output owner. Production display integration must be verified with `make build-crowpanel`; the generic default firmware build does not compile the CrowPanel real-input display path.
 
@@ -59,6 +59,7 @@ Before substantial implementation, identify the owning module, state owner, depe
 - isolated Clay component and exact host simulator;
 - semantic four-page Clay reproduction and deterministic golden coverage;
 - Clay production integration behind the existing async transaction and single backend-owned framebuffer;
+- true dirty-window partial transfer, native semantic buttons and the bounded read-only page chooser;
 - Rule-authoritative production ownership;
 - output truth separation and `OutputSupervisor` ownership.
 
