@@ -1,12 +1,12 @@
 # Growbox ML project roadmap
 
-Updated: 2026-09-14
+Updated: 2026-09-20
 
 ## Direction
 
 The product is a native ESP-IDF ESP32-S3 growbox controller using real sensors, deterministic Rule control, RF433 outputs, durable telemetry, e-ink operator visibility and an ML shadow/research path.
 
-Broad architecture cleanup and the SCD41/e-ink recovery closeout are finished. Prefer bounded changes that preserve ownership, safety and ESP32-S3 resource limits.
+Broad architecture cleanup, the SCD41/e-ink recovery closeout, runtime persistence hardening and Clay Phase 1 are integrated. Prefer bounded changes that preserve ownership, safety and ESP32-S3 resource limits.
 
 ## Active work
 
@@ -14,10 +14,10 @@ Broad architecture cleanup and the SCD41/e-ink recovery closeout are finished. P
 
 Use `DISPLAY_UI_PORT.md` as the implementation contract.
 
-Order:
+Current position:
 
-1. isolated C++20 Clay component and 296x128 host simulator;
-2. reproduce current four pages on host;
+1. isolated C++20 Clay component and exact 296x128 host simulator — DONE and integrated on `main`;
+2. reproduce current Environment / Outputs / System / Diagnostics pages on host — NEXT;
 3. connect Clay behind the existing async display transaction;
 4. implement true dirty-region RAM-window partial transfer;
 5. add native ESP-IDF buttons with host-tested debounce/long-press logic;
@@ -46,11 +46,17 @@ Improve datasets, replay metrics and Rule-vs-ML comparison. ML stays non-authori
 
 Add integrations only when a concrete growbox use case justifies implementation and maintenance cost.
 
+## Architecture quality rule
+
+Before substantial implementation, identify the owning module, state owner, dependency direction, side effects, ESP32-S3 resource impact and focused verification. Do not grow central coordinators/controllers merely because they already see the required state. The repository-wide implementation gate and oversized-file watchlist live in `../AGENTS.md`.
+
 ## Closed work that should not be reopened by default
 
 - SCD41 clean-start/liveness recovery;
 - CrowPanel SSD1680 pin map and native backend ownership;
 - display rotation and async worker architecture;
+- runtime NVS/output-persistence hardening;
+- isolated Clay Phase 1 component and exact host simulator;
 - Rule-authoritative production ownership;
 - output truth separation and `OutputSupervisor` ownership.
 
