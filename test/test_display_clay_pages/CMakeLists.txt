@@ -10,6 +10,7 @@ add_executable(
   "${PROJECT_ROOT}/src/climate/runtime/schedule/EuropeWarsawTime.cpp"
   "${PROJECT_ROOT}/lib/growbox_clay_ui/src/ClayCore.cpp"
   "${PROJECT_ROOT}/lib/growbox_clay_ui/src/ClayRenderer.cpp"
+  "${PROJECT_ROOT}/lib/growbox_clay_ui/src/PageRenderer.cpp"
   "${PROJECT_ROOT}/lib/growbox_clay_ui/src/HostSimulator.cpp"
 )
 
