@@ -86,6 +86,8 @@ private:
   std::uint8_t* clay_arena_{nullptr};
   std::size_t clay_arena_required_bytes_{0U};
   std::size_t clay_arena_bytes_{0U};
+  DisplayPageModel last_physical_page_model_{};
+  bool has_last_physical_page_model_{false};
   bool started_{false};
 
   std::atomic<std::uint32_t> submitted_{0U};

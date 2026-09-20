@@ -1,6 +1,7 @@
 #include "climate/display/CrowPanelDisplayService.h"
 
 #include "climate/display/DisplayClayRenderCoordinator.h"
+#include "growbox_clay_ui/PageDirtyRegion.h"
 #include "growbox_clay_ui/PageRenderer.h"
 
 #include <esp_heap_caps.h>
@@ -112,24 +113,52 @@ void CrowPanelDisplayService::taskLoop() noexcept {
       continue;
     }
 
+    DisplayRegion transfer_region{0U, 0U, ::growbox::clay_ui::kDisplayWidth,
+                                  ::growbox::clay_ui::kDisplayHeight};
+    if (work_item.frame.refresh_kind == DisplayRefreshKind::Partial &&
+        has_last_physical_page_model_) {
+      ::growbox::clay_ui::PageDirtyRegion dirty{};
+      if (::growbox::clay_ui::planPageDirtyRegion(&last_physical_page_model_,
+                                                  work_item.frame.page_model, dirty)) {
+        transfer_region = {dirty.x_px, dirty.y_px, dirty.width_px, dirty.height_px};
+      }
+    }
+
     ::growbox::clay_ui::RenderSummary render_summary{};
-    const bool success = renderClayDisplayFrame(work_item.frame, clay_arena_, clay_arena_bytes_,
-                                                backend_, &render_summary);
+    const bool success = renderClayDisplayFrame(work_item.frame, transfer_region, clay_arena_,
+                                                clay_arena_bytes_, backend_, &render_summary);
     observeStackWatermark();
     const std::uint32_t stack_min_free_bytes =
         stack_min_free_bytes_.load(std::memory_order_relaxed);
     if (success) {
+      last_physical_page_model_ = work_item.frame.page_model;
+      has_last_physical_page_model_ = true;
       const std::uint32_t successes =
           render_successes_.fetch_add(1U, std::memory_order_relaxed) + 1U;
+      const DisplayRegion transfer_region = backend_.lastTransferRegion();
+      const Ssd1680NativeWindow native_window = backend_.lastNativeWindow();
       ESP_LOGI(kTag,
                "Physical Clay refresh completed generation=%llu kind=%u reason=%u successes=%lu "
-               "commands=%lu black_pixels=%lu stack_min_free_bytes=%lu",
+               "commands=%lu black_pixels=%lu dirty=%u,%u,%u,%u native=%u-%u,%u-%u "
+               "window_bytes=%lu ram_payload_bytes=%lu physical_partial=%u "
+               "stack_min_free_bytes=%lu",
                static_cast<unsigned long long>(work_item.generation),
                static_cast<unsigned>(work_item.frame.refresh_kind),
                static_cast<unsigned>(work_item.frame.refresh_reason),
                static_cast<unsigned long>(successes),
                static_cast<unsigned long>(render_summary.render_commands),
                static_cast<unsigned long>(render_summary.black_pixels),
+               static_cast<unsigned>(transfer_region.x_px),
+               static_cast<unsigned>(transfer_region.y_px),
+               static_cast<unsigned>(transfer_region.width_px),
+               static_cast<unsigned>(transfer_region.height_px),
+               static_cast<unsigned>(native_window.x_start_byte),
+               static_cast<unsigned>(native_window.x_end_byte),
+               static_cast<unsigned>(native_window.y_start_px),
+               static_cast<unsigned>(native_window.y_end_px),
+               static_cast<unsigned long>(backend_.lastWindowBytes()),
+               static_cast<unsigned long>(backend_.lastRamPayloadBytes()),
+               backend_.lastTransferPartial() ? 1U : 0U,
                static_cast<unsigned long>(stack_min_free_bytes));
     } else {
       const std::uint32_t failures = render_failures_.fetch_add(1U, std::memory_order_relaxed) + 1U;

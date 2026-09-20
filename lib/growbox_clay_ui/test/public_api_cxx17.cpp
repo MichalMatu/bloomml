@@ -1,4 +1,5 @@
 #include "growbox_clay_ui/HostSimulator.h"
+#include "growbox_clay_ui/PageDirtyRegion.h"
 #include "growbox_display_model/DisplayPageModel.h"
 
 static_assert(growbox::clay_ui::kDisplayWidth == 296);

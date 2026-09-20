@@ -99,6 +99,7 @@ elseif(GROWBOX_APP_MODE STREQUAL "climate-v6-real-inputs")
     PRIVATE
       "climate/ClimateV6RealInputRuntime.cpp"
       "climate/display/DisplayPresenter.cpp"
+      "climate/display/DisplayDirtyRegion.cpp"
       "climate/display/DisplayMonochromeRaster.cpp"
       "climate/display/Ssd1680FrameMapper.cpp"
       "climate/display/CrowPanelSsd1680DisplayBackend.cpp"

@@ -7,6 +7,7 @@
 #include <clay/clay.h>
 
 #include "ClayRenderer.h"
+#include "PageLayoutGeometry.h"
 
 namespace growbox::clay_ui {
 namespace {
@@ -281,15 +282,21 @@ void declarePageLayout(const ::growbox::display_model::DisplayPageModel& page) {
   CLAY(CLAY_ID("GrowboxPageRoot"),
        {.layout = {.sizing = {CLAY_SIZING_FIXED(static_cast<float>(kDisplayWidth)),
                               CLAY_SIZING_FIXED(static_cast<float>(kDisplayHeight))},
-                   .padding = {6U, 6U, 5U, 5U},
-                   .childGap = 2U,
+                   .padding = {internal::page_layout::kHorizontalPaddingPx,
+                               internal::page_layout::kHorizontalPaddingPx,
+                               internal::page_layout::kVerticalPaddingPx,
+                               internal::page_layout::kVerticalPaddingPx},
+                   .childGap = internal::page_layout::kChildGapPx,
                    .layoutDirection = CLAY_TOP_TO_BOTTOM},
         .backgroundColor = white}) {
     CLAY(CLAY_ID("GrowboxPageHeader"),
-         {.layout = {.sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_FIXED(14.0F)},
+         {.layout = {.sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_FIXED(static_cast<float>(
+                                                        internal::page_layout::kHeaderHeightPx))},
                      .layoutDirection = CLAY_LEFT_TO_RIGHT}}) {
       CLAY(CLAY_ID("GrowboxPageTitle"),
-           {.layout = {.sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_FIXED(14.0F)}}}) {
+           {.layout = {
+                .sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_FIXED(static_cast<float>(
+                                                   internal::page_layout::kHeaderHeightPx))}}}) {
         CLAY_TEXT(title, CLAY_TEXT_CONFIG({.textColor = black,
                                            .fontId = 0U,
                                            .fontSize = kTitleFontSize,
@@ -297,7 +304,10 @@ void declarePageLayout(const ::growbox::display_model::DisplayPageModel& page) {
       }
       if (page.warning) {
         CLAY(CLAY_ID("GrowboxPageWarning"),
-             {.layout = {.sizing = {CLAY_SIZING_FIXED(12.0F), CLAY_SIZING_FIXED(14.0F)},
+             {.layout = {.sizing = {CLAY_SIZING_FIXED(
+                                        static_cast<float>(internal::page_layout::kWarningWidthPx)),
+                                    CLAY_SIZING_FIXED(static_cast<float>(
+                                        internal::page_layout::kHeaderHeightPx))},
                          .childAlignment = {CLAY_ALIGN_X_RIGHT, CLAY_ALIGN_Y_CENTER}}}) {
           CLAY_TEXT(CLAY_STRING("!"), CLAY_TEXT_CONFIG({.textColor = black,
                                                         .fontId = 0U,
@@ -308,11 +318,13 @@ void declarePageLayout(const ::growbox::display_model::DisplayPageModel& page) {
     }
 
     CLAY(CLAY_ID("GrowboxPageSeparator"),
-         {.layout = {.sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_FIXED(1.0F)}},
+         {.layout = {.sizing = {CLAY_SIZING_GROW(),
+                                CLAY_SIZING_FIXED(static_cast<float>(
+                                    internal::page_layout::kSeparatorHeightPx))}},
           .backgroundColor = black}) {}
 
     CLAY(CLAY_ID("GrowboxPageRows"), {.layout = {.sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_GROW()},
-                                                 .childGap = 1U,
+                                                 .childGap = internal::page_layout::kRowsGapPx,
                                                  .layoutDirection = CLAY_TOP_TO_BOTTOM},
                                       .clip = {.vertical = true}}) {
       for (std::size_t index = 0U; index < page.line_count; ++index) {
@@ -320,19 +332,25 @@ void declarePageLayout(const ::growbox::display_model::DisplayPageModel& page) {
         const Clay_String label = clayString(line.label.data());
         const Clay_String value = clayString(line.value.data());
         CLAY(CLAY_IDI("GrowboxPageRow", static_cast<std::uint32_t>(index)),
-             {.layout = {.sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_FIXED(9.0F)},
-                         .childGap = 4U,
+             {.layout = {.sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_FIXED(static_cast<float>(
+                                                            internal::page_layout::kRowHeightPx))},
+                         .childGap = internal::page_layout::kColumnGapPx,
                          .childAlignment = {CLAY_ALIGN_X_LEFT, CLAY_ALIGN_Y_CENTER},
                          .layoutDirection = CLAY_LEFT_TO_RIGHT}}) {
           CLAY(CLAY_IDI("GrowboxPageLabel", static_cast<std::uint32_t>(index)),
-               {.layout = {.sizing = {CLAY_SIZING_FIXED(72.0F), CLAY_SIZING_FIXED(8.0F)}}}) {
+               {.layout = {.sizing = {CLAY_SIZING_FIXED(
+                                          static_cast<float>(internal::page_layout::kLabelWidthPx)),
+                                      CLAY_SIZING_FIXED(static_cast<float>(
+                                          internal::page_layout::kTextBoxHeightPx))}}}) {
             CLAY_TEXT(label, CLAY_TEXT_CONFIG({.textColor = black,
                                                .fontId = 0U,
                                                .fontSize = kNormalFontSize,
                                                .wrapMode = CLAY_TEXT_WRAP_NONE}));
           }
           CLAY(CLAY_IDI("GrowboxPageValue", static_cast<std::uint32_t>(index)),
-               {.layout = {.sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_FIXED(8.0F)}}}) {
+               {.layout = {.sizing = {CLAY_SIZING_GROW(),
+                                      CLAY_SIZING_FIXED(static_cast<float>(
+                                          internal::page_layout::kTextBoxHeightPx))}}}) {
             CLAY_TEXT(value, CLAY_TEXT_CONFIG({.textColor = black,
                                                .fontId = 0U,
                                                .fontSize = kNormalFontSize,

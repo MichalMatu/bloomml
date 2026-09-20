@@ -6,6 +6,7 @@ get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
 add_executable(
   display_raster_tests
   "${CMAKE_CURRENT_LIST_DIR}/test_main.cpp"
+  "${PROJECT_ROOT}/src/climate/display/DisplayDirtyRegion.cpp"
   "${PROJECT_ROOT}/src/climate/display/DisplayMonochromeRaster.cpp"
   "${PROJECT_ROOT}/src/climate/display/Ssd1680FrameMapper.cpp"
 )

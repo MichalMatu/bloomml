@@ -1,5 +1,6 @@
 #pragma once
 
+#include "climate/display/DisplayDirtyRegion.h"
 #include "climate/display/DisplayMonochromeRaster.h"
 #include "climate/display/DisplayRuntime.h"
 #include "climate/display/Ssd1680FrameMapper.h"
@@ -45,6 +46,7 @@ public:
   bool beginFrame(std::uint16_t width_px, std::uint16_t height_px, bool warning,
                   DisplayRefreshKind refresh_kind) noexcept;
   bool drawText(const DisplayTextElement& element) noexcept;
+  bool setTransferRegion(const DisplayRegion& transfer_region) noexcept;
   bool endFrame() noexcept;
   void cancelFrame() noexcept;
 
@@ -65,10 +67,26 @@ public:
   bool previousRamSeeded() const noexcept {
     return previous_ram_seeded_;
   }
+  const DisplayRegion& lastTransferRegion() const noexcept {
+    return last_transfer_region_;
+  }
+  const Ssd1680NativeWindow& lastNativeWindow() const noexcept {
+    return last_native_window_;
+  }
+  std::size_t lastWindowBytes() const noexcept {
+    return last_window_bytes_;
+  }
+  std::size_t lastRamPayloadBytes() const noexcept {
+    return last_ram_payload_bytes_;
+  }
+  bool lastTransferPartial() const noexcept {
+    return last_transfer_partial_;
+  }
 
 private:
   static constexpr spi_host_device_t kSpiHost = SPI2_HOST;
   static constexpr std::size_t kTransferChunkBytes = 64U;
+  static constexpr std::uint16_t kPartialRefreshPaddingPx = 16U;
 
   bool configValid() const noexcept;
   bool ensureHardwareReady() noexcept;
@@ -80,22 +98,38 @@ private:
   bool sendCommand(std::uint8_t command) noexcept;
   bool sendData(const std::uint8_t* data, std::size_t length) noexcept;
   bool sendCommandData(std::uint8_t command, const std::uint8_t* data, std::size_t length) noexcept;
+  static constexpr Ssd1680NativeWindow fullNativeWindow() noexcept {
+    return {0U, static_cast<std::uint8_t>(Ssd1680FrameMapper::kNativeBytesPerRow - 1U), 0U,
+            static_cast<std::uint16_t>(Ssd1680FrameMapper::kNativeHeightPx - 1U)};
+  }
+  bool setRamWindow(const Ssd1680NativeWindow& window) noexcept;
+  bool setRamCounters(const Ssd1680NativeWindow& window) noexcept;
   bool setFullRamWindow() noexcept;
   bool setRamCountersToOrigin() noexcept;
-  bool writeMappedRam(std::uint8_t command) noexcept;
+  bool writeMappedRam(std::uint8_t command, const Ssd1680NativeWindow& window) noexcept;
   bool activate(DisplayRefreshKind kind) noexcept;
+  void recordSuccessfulTransfer(const DisplayRegion& transfer_region,
+                                const Ssd1680NativeWindow& window,
+                                DisplayRefreshKind kind) noexcept;
   void releaseHardware() noexcept;
 
   CrowPanelSsd1680Config config_{};
   DisplayMonochromeRaster::Buffer framebuffer_{};
   DisplayMonochromeRaster raster_;
   spi_device_handle_t spi_device_{nullptr};
+  DisplayRegion staged_transfer_region_{};
+  DisplayRegion last_transfer_region_{};
+  Ssd1680NativeWindow last_native_window_{};
+  std::size_t last_window_bytes_{0U};
+  std::size_t last_ram_payload_bytes_{0U};
   DisplayRefreshKind planned_refresh_{DisplayRefreshKind::None};
   bool gpio_initialized_{false};
   bool spi_bus_initialized_{false};
   bool controller_initialized_{false};
   bool previous_ram_seeded_{false};
   bool frame_open_{false};
+  bool transfer_region_staged_{false};
+  bool last_transfer_partial_{false};
 };
 
 } // namespace growbox::app::climate_io::display

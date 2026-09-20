@@ -1,3 +1,4 @@
+#include "climate/display/DisplayDirtyRegion.h"
 #include "climate/display/DisplayMonochromeRaster.h"
 #include "climate/display/Ssd1680FrameMapper.h"
 
@@ -23,11 +24,89 @@ void setLogicalBlack(display::DisplayMonochromeRaster::Buffer& buffer, std::uint
   buffer[index] = static_cast<std::uint8_t>(buffer[index] & static_cast<std::uint8_t>(~mask));
 }
 
+void assertRegion(const display::DisplayRegion& region, std::uint16_t x, std::uint16_t y,
+                  std::uint16_t width, std::uint16_t height) {
+  assert(region.x_px == x);
+  assert(region.y_px == y);
+  assert(region.width_px == width);
+  assert(region.height_px == height);
+}
+
+void testDirtyRegionGeometry() {
+  constexpr std::uint16_t width = display::DisplayMonochromeRaster::kWidthPx;
+  constexpr std::uint16_t height = display::DisplayMonochromeRaster::kHeightPx;
+
+  assertRegion(display::clampDisplayRegion({290U, 120U, 20U, 20U}, width, height), 290U, 120U, 6U,
+               8U);
+  assertRegion(display::expandDisplayRegion({4U, 3U, 10U, 5U}, 16U, width, height), 0U, 0U, 30U,
+               24U);
+  assertRegion(display::expandDisplayRegion({290U, 120U, 6U, 8U}, 16U, width, height), 274U, 104U,
+               22U, 24U);
+
+  const display::DisplayRegion previous{20U, 40U, 20U, 10U};
+  const display::DisplayRegion current{100U, 40U, 20U, 10U};
+  assertRegion(display::planDisplayDirtyRegion(current, previous, 16U, width, height), 4U, 24U,
+               132U, 42U);
+  assertRegion(display::planDisplayDirtyRegion({}, previous, 16U, width, height), 4U, 24U, 52U,
+               42U);
+  assert(display::displayRegionEmpty(display::planDisplayDirtyRegion({}, {}, 16U, width, height)));
+}
+
+void testNativeWindowMapping() {
+  display::Ssd1680NativeWindow window{};
+  const display::DisplayRegion full{0U, 0U, display::DisplayMonochromeRaster::kWidthPx,
+                                    display::DisplayMonochromeRaster::kHeightPx};
+  assert(display::Ssd1680FrameMapper::nativeWindowForLogicalRegion(
+      full, display::Ssd1680Rotation::Clockwise90, window));
+  assert(window.x_start_byte == 0U && window.x_end_byte == 15U);
+  assert(window.y_start_px == 0U && window.y_end_px == 295U);
+  assert(window.transferBytes() == display::Ssd1680FrameMapper::kNativeBufferBytes);
+
+  assert(display::Ssd1680FrameMapper::nativeWindowForLogicalRegion(
+      full, display::Ssd1680Rotation::CounterClockwise90, window));
+  assert(window.x_start_byte == 0U && window.x_end_byte == 15U);
+  assert(window.y_start_px == 0U && window.y_end_px == 295U);
+
+  const display::DisplayRegion logical{10U, 20U, 30U, 40U};
+  assert(display::Ssd1680FrameMapper::nativeWindowForLogicalRegion(
+      logical, display::Ssd1680Rotation::Clockwise90, window));
+  assert(window.x_start_byte == 8U && window.x_end_byte == 13U);
+  assert(window.y_start_px == 10U && window.y_end_px == 39U);
+  assert(window.transferBytes() == 180U);
+
+  assert(display::Ssd1680FrameMapper::nativeWindowForLogicalRegion(
+      logical, display::Ssd1680Rotation::CounterClockwise90, window));
+  assert(window.x_start_byte == 2U && window.x_end_byte == 7U);
+  assert(window.y_start_px == 256U && window.y_end_px == 285U);
+  assert(window.transferBytes() == 180U);
+
+  assert(display::Ssd1680FrameMapper::nativeWindowForLogicalRegion(
+      {0U, 0U, 1U, 1U}, display::Ssd1680Rotation::Clockwise90, window));
+  assert(window.x_start_byte == 15U && window.x_end_byte == 15U);
+  assert(window.y_start_px == 0U && window.y_end_px == 0U);
+  assert(window.transferBytes() == 1U);
+
+  assert(!display::Ssd1680FrameMapper::nativeWindowForLogicalRegion(
+      {}, display::Ssd1680Rotation::Clockwise90, window));
+
+  const display::DisplayRegion changed_row{6U, 44U, 284U, 9U};
+  const display::DisplayRegion padded_row =
+      display::expandDisplayRegion(changed_row, 16U, display::DisplayMonochromeRaster::kWidthPx,
+                                   display::DisplayMonochromeRaster::kHeightPx);
+  assert(display::Ssd1680FrameMapper::nativeWindowForLogicalRegion(
+      padded_row, display::Ssd1680Rotation::Clockwise90, window));
+  assert(window.transferBytes() == 1'776U);
+  assert(window.transferBytes() < display::Ssd1680FrameMapper::kNativeBufferBytes);
+}
+
 } // namespace
 
 int main() {
   static_assert(display::DisplayMonochromeRaster::kBufferBytes == 4'736U);
   static_assert(display::Ssd1680FrameMapper::kNativeBufferBytes == 4'736U);
+
+  testDirtyRegionGeometry();
+  testNativeWindowMapping();
 
   display::DisplayMonochromeRaster::Buffer buffer{};
   display::DisplayMonochromeRaster raster(buffer);
