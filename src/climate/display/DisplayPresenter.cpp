@@ -352,6 +352,16 @@ void buildDiagnosticsPage(const DisplaySnapshot& snapshot, const DisplayPresente
 
 } // namespace
 
+bool DisplayNavigation::select(DisplayPage page) noexcept {
+  const auto index = static_cast<std::uint8_t>(page);
+  if (index > static_cast<std::uint8_t>(DisplayPage::Diagnostics)) {
+    return false;
+  }
+  const DisplayPage before = page_;
+  page_ = page;
+  return page_ != before;
+}
+
 bool DisplayNavigation::handle(DisplayButton button) noexcept {
   const DisplayPage before = page_;
   switch (button) {

@@ -7,6 +7,7 @@ add_executable(
   display_observer_tests
   "${CMAKE_CURRENT_LIST_DIR}/test_main.cpp"
   "${PROJECT_ROOT}/src/climate/display/DisplayPresenter.cpp"
+  "${PROJECT_ROOT}/src/climate/display/DisplayMenu.cpp"
   "${PROJECT_ROOT}/src/climate/runtime/schedule/EuropeWarsawTime.cpp"
 )
 

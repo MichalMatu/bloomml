@@ -32,6 +32,7 @@ public:
     return page_;
   }
 
+  bool select(DisplayPage page) noexcept;
   bool handle(DisplayButton button) noexcept;
 
 private:
