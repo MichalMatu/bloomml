@@ -5,6 +5,7 @@ idf_component_register(
   SRCS
     "${GROWBOX_CLAY_UI_DIR}/src/ClayCore.cpp"
     "${GROWBOX_CLAY_UI_DIR}/src/ClayRenderer.cpp"
+    "${GROWBOX_CLAY_UI_DIR}/src/PageDirtyRegion.cpp"
     "${GROWBOX_CLAY_UI_DIR}/src/PageRenderer.cpp"
   INCLUDE_DIRS
     "${GROWBOX_CLAY_UI_DIR}/include"
