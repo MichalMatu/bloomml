@@ -105,39 +105,42 @@ runtime/output/sensor truth
  lib/growbox_display_model
      DisplayPageModel
           |
-          +----------------------+
-          |                      |
-          v                      v
- current DisplayRender*      growbox_clay_ui
- seam / framebuffer          Clay 0.14 layout
-          |                      |
-          +----------+-----------+
-                     v
-             async display service
-                     |
-                     v
-              native SSD1680 backend
+          v
+ lib/growbox_clay_ui (C++20)
+  Clay layout + monochrome raster
+          |
+          | writes only during open frame transaction
+          v
+ backend-owned 296x128 framebuffer
+          |
+          v
+ async DisplayAsyncTransaction/service
+          |
+          v
+ native SSD1680 backend / SPI / GPIO
 ```
 
-`lib/growbox_display_model/` is a neutral C++17 data boundary only. It currently owns bounded page/line DTOs and must not acquire navigation, warning derivation, refresh cadence, rendering, hardware access, sensor truth or output/control ownership.
+`lib/growbox_display_model/` is a neutral C++17 data boundary only. It owns bounded page/line DTOs and must not acquire navigation, warning derivation, refresh cadence, rendering, hardware access, sensor truth or output/control ownership.
 
-The existing `DisplayRender*` seam in `src/climate/display/` is generic rendering/backend plumbing. Historical `ClayDisplay*` names were removed because that seam does not itself use Clay 0.14. The real Clay implementation remains isolated under `lib/growbox_clay_ui/`.
+`lib/growbox_clay_ui/` owns Clay layout, clipping, text measurement and monochrome rasterization. It is isolated as C++20 because the pinned Clay 0.14 header requires C++20. Its public boundary is growbox-owned and C++17-compatible; no `Clay_*` type crosses into normal `src/` headers.
 
-Slow e-ink waits and transfers remain outside the control hot path. Observer state advances only after successful rendering according to the existing transaction contract.
+The production application remains C++17. `CrowPanelDisplayService` owns the existing async worker and one persistent Clay scratch arena allocated in PSRAM. `CrowPanelSsd1680DisplayBackend` remains the sole owner of the fixed 4736-byte framebuffer and all panel hardware. The backend exposes mutable framebuffer storage only while a frame transaction is open; Clay may fill it but may not retain or replace it.
 
-The next Clay stage must preserve that ownership. Clay may own layout/clipping/menu visual state but must not own sensor truth, output truth, RF transport or safety state.
+`DisplayAsyncTransaction`, generation matching, refresh confirmation and retry behavior remain in the growbox display layer. Slow e-ink waits and transfers remain outside the control hot path. Observer state advances only after a successful render/backend completion reaches `confirmRendered()`.
 
-### C++ boundary for Clay
+Navigation remains `DisplayNavigation`; Clay does not own sensor/output truth, control policy, safety state, RF transport or hardware.
 
-Current application code is C++17. The pinned Clay 0.14 donor header requires C++20. The architecture therefore keeps the real Clay implementation as a separate C++20 component and shares only growbox-owned C++17-compatible data. Public boundaries expose no `Clay_*` types.
+The current partial-refresh waveform path still transfers the whole framebuffer. The next display stage, Phase 4, narrows SSD1680 RAM-window transfer using dirty-region planning. That work must preserve the same single framebuffer and refresh ownership; it must not introduce a second render/hardware pipeline.
 
-Phase 2 should consume `growbox::display_model::DisplayPageModel` directly or through an equally narrow adapter. It must not make `lib/growbox_clay_ui/` depend on `src/climate/display/DisplayPresenter.h` or other application/runtime headers. See `DISPLAY_UI_PORT.md`.
+Production display changes must be verified with `make build-crowpanel`, which composes the CrowPanel N8R8, Stage27 NimBLE, Stage27C, `climate-v6-real-inputs` and e-ink configuration. Generic `make build` is not evidence that the production CrowPanel display path compiles.
 
 ## Configuration source of truth
 
 Resolved runtime/build configuration is owned by CMake profiles under `config/` and exposed through generated `runtime/RuntimeBuildConfig.h`.
 
 Production C++ must not reintroduce fallback `GROWBOX_*` default tables. Preprocessor definitions are retained only where compile-time preprocessing is actually required.
+
+The canonical CrowPanel production build composes `config/idf/sdkconfig.defaults`, `sdkconfig.defaults.n8r8`, `sdkconfig.defaults.stage27` and `sdkconfig.defaults.stage27c` through `scripts/stage27c_crowpanel.sh`. The Stage27 overlay is required for the NimBLE host used by real BLE inputs.
 
 ## Climate-v6 controller core
 
@@ -162,7 +165,8 @@ Legacy controller/demo code remains available only through explicit `legacy` app
 - host C++ suites;
 - Python scientific/replay tests where relevant;
 - simulator/golden checks for UI work;
-- ESP-IDF production builds/static analysis;
+- canonical `make build-crowpanel` for production CrowPanel display work;
+- other ESP-IDF profile builds/static analysis as appropriate;
 - GitHub CI;
 - hardware qualification only when a fresh physical executable claim is required.
 
