@@ -6,7 +6,7 @@ Native ESP-IDF controller for an ESP32-S3 growbox with deterministic climate con
 
 The CrowPanel 2.9-inch SSD1680 display and SCD41 runtime path are operational enough for normal development; the SCD41 recovery closeout is no longer the active blocker.
 
-The active next stage is a bounded display UI port: isolated Clay layout, 296x128 host simulator, menu/navigation and native buttons while preserving the existing native SSD1680 backend, async worker and observer-only ownership.
+Clay display Phases 1-3 are integrated: the isolated C++20 Clay 0.14 renderer now lays out the four production operator pages and writes directly into the existing single framebuffer owned by the native SSD1680 backend, behind the existing asynchronous display transaction. The next display stage is true dirty-region RAM-window partial transfer, followed later by native buttons/menu mechanics.
 
 Canonical branch: `main`.
 
@@ -31,11 +31,26 @@ Production control remains conservative:
 
 Portable climate logic lives under `lib/environment_control/`. Native ESP-IDF runtime/application code lives under `src/`. Browser UX lives under `web/`; simulation/ML tooling lives under `tools/ml/`.
 
-## Display port preparation
+## Display / Clay architecture
 
-`vendor/litegraph_epd_port/` contains curated reference material from `MichalMatu/esp32s3_LiteGraph` for later Clay/menu/button/simulator work. It is excluded from all builds.
+`vendor/litegraph_epd_port/` contains curated reference material from `MichalMatu/esp32s3_LiteGraph`. It is excluded from all builds.
 
-Current production application code is C++17; pinned Clay 0.14 requires C++20. The intended first integration is a separate C++20 component with no public `Clay_*` types, not a broad firmware language-standard migration.
+Production application code remains C++17; pinned Clay 0.14 requires C++20 and is isolated under `lib/growbox_clay_ui/` with a Clay-free C++17-compatible public boundary. `lib/growbox_display_model/` contains the behavior-free semantic page DTO shared with the presenter.
+
+Production ownership is unchanged by Clay integration:
+
+- `CrowPanelDisplayService` owns the asynchronous worker and one persistent Clay scratch arena in PSRAM;
+- `CrowPanelSsd1680DisplayBackend` owns the only 296x128 / 4736-byte framebuffer plus SPI/GPIO/controller access;
+- Clay owns layout/rasterization only and receives temporary framebuffer access during an open transaction;
+- navigation, refresh confirmation/retry, control and safety remain outside Clay.
+
+For production display compilation use:
+
+```bash
+make build-crowpanel
+```
+
+That target builds the actual CrowPanel N8R8 + Stage27 NimBLE + Stage27C + `climate-v6-real-inputs` + e-ink path. Generic `make build` uses a different default app mode and is not sufficient evidence for CrowPanel display integration.
 
 ## Hardware
 
@@ -57,6 +72,7 @@ Hardware references:
 - ESP-IDF 5.5.4
 - ESP32-S3
 - production application component: C++17
+- isolated Clay 0.14 component: C++20
 - CMake / CTest host tests
 - deterministic safety/output supervision
 - native SCD41/BLE/RTC/RF433 paths
@@ -69,6 +85,8 @@ Hardware references:
 components/                 ESP-IDF/local components
 config/                     board/runtime profiles
 lib/environment_control/    portable climate controller
+lib/growbox_display_model/  semantic display DTO
+lib/growbox_clay_ui/        isolated Clay layout/raster component
 schemas/                    production + research contracts
 src/                        native ESP-IDF application/runtime
 test/                       C++ host tests
@@ -85,7 +103,7 @@ See `docs/PROJECT_LAYOUT.md` for placement rules.
 
 Repository-only work should use `docs/SANDBOX_EXECUTION_FLOW.md`; Mac/USB/serial/flashing and physical-board evidence use Local Agent according to `AGENTS.md`.
 
-A successful host/simulator/firmware build is software evidence, not physical qualification.
+For Clay/display production changes use host/display tests and `make build-crowpanel`. A successful host/simulator/firmware build is software evidence, not physical qualification.
 
 ## Documentation policy
 
