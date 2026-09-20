@@ -22,6 +22,7 @@ Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for ac
 ├── web/                        # browser configurator/chamber UI
 ├── lib/
 │   ├── environment_control/    # portable climate-v6 controller core
+│   ├── growbox_display_model/  # neutral C++17 semantic display page DTO
 │   └── growbox_clay_ui/        # isolated C++20 Clay host/layout component
 ├── components/                 # ESP-IDF components
 ├── src/
@@ -29,7 +30,7 @@ Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for ac
 │   ├── legacy/                 # explicit legacy mode only
 │   └── climate/
 │       ├── application/
-│       ├── display/            # current presenter/raster/SSD1680/service
+│       ├── display/            # presenter/render seam/raster/SSD1680/service
 │       ├── input/
 │       ├── native/
 │       ├── output/
@@ -64,9 +65,11 @@ Board/runtime defaults live under `config/` and are resolved by CMake. Productio
 
 The isolated Phase 1 Clay implementation lives in `lib/growbox_clay_ui/` and remains separate from the normal C++17 production application boundary. Its public API must use growbox-owned Clay-free structs; `Clay_*` types stay private to the component.
 
+The shared semantic page contract now lives in `lib/growbox_display_model/`. It is deliberately header-only and C++17-compatible, and currently contains only `DisplayLine` / `DisplayPageModel`. It must not acquire navigation, snapshot derivation, refresh policy, rendering, hardware or control responsibilities.
+
 `vendor/litegraph_epd_port/` remains immutable/reference-only and excluded from builds.
 
-When Phase 2+ needs shared semantic page data, keep that model C++17-compatible and owned by the growbox display/domain boundary. If a dependency cycle appears, extract the smallest shared model instead of moving runtime ownership into the Clay component.
+Phase 2 should consume the shared semantic model rather than depending from `lib/growbox_clay_ui/` back into `src/climate/display/`. If another dependency cycle appears, extract only the smallest stable shared data contract instead of moving runtime ownership into the Clay component.
 
 ## Where new work belongs
 
@@ -76,7 +79,8 @@ When Phase 2+ needs shared semantic page data, keep that model C++17-compatible 
 | Hardware/runtime orchestration | `src/climate/runtime/`, `src/climate/input/`, `src/climate/native/` |
 | Output ownership/policy | `src/climate/output/` |
 | RF433 transport/protocol | `src/climate/rf433/` |
-| Existing display backend/service | `src/climate/display/` |
+| Existing display presenter/backend/service | `src/climate/display/` |
+| Shared semantic display page DTO | `lib/growbox_display_model/` |
 | Clay layout/host simulator | `lib/growbox_clay_ui/` |
 | Clay donor/reference material | `vendor/litegraph_epd_port/` |
 | Runtime/board configuration | `config/` |
