@@ -38,4 +38,35 @@ struct DisplayRegion final {
                                                    std::uint16_t display_width_px,
                                                    std::uint16_t display_height_px) noexcept;
 
+// Tracks only physically confirmed content bounds. Planning is side-effect free:
+// a failed refresh therefore cannot advance the previous-content state used by
+// the next retry.
+class DisplayDirtyRegionTracker final {
+public:
+  [[nodiscard]] DisplayRegion plan(const DisplayRegion& current_content,
+                                   std::uint16_t padding_px,
+                                   std::uint16_t display_width_px,
+                                   std::uint16_t display_height_px) const noexcept {
+    return planDisplayDirtyRegion(current_content, previous_content_, padding_px,
+                                  display_width_px, display_height_px);
+  }
+
+  void confirm(const DisplayRegion& current_content, std::uint16_t display_width_px,
+               std::uint16_t display_height_px) noexcept {
+    previous_content_ =
+        clampDisplayRegion(current_content, display_width_px, display_height_px);
+  }
+
+  void reset() noexcept {
+    previous_content_ = {};
+  }
+
+  [[nodiscard]] const DisplayRegion& previousContent() const noexcept {
+    return previous_content_;
+  }
+
+private:
+  DisplayRegion previous_content_{};
+};
+
 } // namespace growbox::app::climate_io::display
