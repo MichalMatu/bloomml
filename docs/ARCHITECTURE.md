@@ -102,17 +102,26 @@ runtime/output/sensor truth
     DisplayPresenter
           |
           v
- semantic page/layout data
+ lib/growbox_display_model
+     DisplayPageModel
           |
-          v
- renderer / framebuffer
-          |
-          v
- async display service
-          |
-          v
- native SSD1680 backend
+          +----------------------+
+          |                      |
+          v                      v
+ current DisplayRender*      growbox_clay_ui
+ seam / framebuffer          Clay 0.14 layout
+          |                      |
+          +----------+-----------+
+                     v
+             async display service
+                     |
+                     v
+              native SSD1680 backend
 ```
+
+`lib/growbox_display_model/` is a neutral C++17 data boundary only. It currently owns bounded page/line DTOs and must not acquire navigation, warning derivation, refresh cadence, rendering, hardware access, sensor truth or output/control ownership.
+
+The existing `DisplayRender*` seam in `src/climate/display/` is generic rendering/backend plumbing. Historical `ClayDisplay*` names were removed because that seam does not itself use Clay 0.14. The real Clay implementation remains isolated under `lib/growbox_clay_ui/`.
 
 Slow e-ink waits and transfers remain outside the control hot path. Observer state advances only after successful rendering according to the existing transaction contract.
 
@@ -120,7 +129,9 @@ The next Clay stage must preserve that ownership. Clay may own layout/clipping/m
 
 ### C++ boundary for Clay
 
-Current application code is C++17. The pinned Clay 0.14 donor header requires C++20. The preferred architecture is a separate C++20 component with growbox-owned C++17-compatible input/output structs and no public `Clay_*` types. See `DISPLAY_UI_PORT.md`.
+Current application code is C++17. The pinned Clay 0.14 donor header requires C++20. The architecture therefore keeps the real Clay implementation as a separate C++20 component and shares only growbox-owned C++17-compatible data. Public boundaries expose no `Clay_*` types.
+
+Phase 2 should consume `growbox::display_model::DisplayPageModel` directly or through an equally narrow adapter. It must not make `lib/growbox_clay_ui/` depend on `src/climate/display/DisplayPresenter.h` or other application/runtime headers. See `DISPLAY_UI_PORT.md`.
 
 ## Configuration source of truth
 
