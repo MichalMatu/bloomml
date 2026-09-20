@@ -56,15 +56,15 @@ bool CrowPanelButtonInput::begin() noexcept {
     return false;
   }
 
-  gpio_config_t gpio_config{};
+  gpio_config_t gpio_cfg{};
   for (const int pin : pins_) {
-    gpio_config.pin_bit_mask |= (1ULL << static_cast<unsigned>(pin));
+    gpio_cfg.pin_bit_mask |= (1ULL << static_cast<unsigned>(pin));
   }
-  gpio_config.mode = GPIO_MODE_INPUT;
-  gpio_config.pull_up_en = GPIO_PULLUP_ENABLE;
-  gpio_config.pull_down_en = GPIO_PULLDOWN_DISABLE;
-  gpio_config.intr_type = GPIO_INTR_DISABLE;
-  if (gpio_config(&gpio_config) != ESP_OK) {
+  gpio_cfg.mode = GPIO_MODE_INPUT;
+  gpio_cfg.pull_up_en = GPIO_PULLUP_ENABLE;
+  gpio_cfg.pull_down_en = GPIO_PULLDOWN_DISABLE;
+  gpio_cfg.intr_type = GPIO_INTR_DISABLE;
+  if (gpio_config(&gpio_cfg) != ESP_OK) {
     return false;
   }
 
