@@ -1,3 +1,4 @@
+#include "climate/display/DisplayClayRenderCoordinator.h"
 #include "climate/display/DisplayPresenter.h"
 #include "growbox_clay_ui/HostSimulator.h"
 
@@ -6,6 +7,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <vector>
 
 namespace display = growbox::app::climate_io::display;
 namespace output = growbox::app::output;
@@ -20,14 +22,69 @@ constexpr std::array<std::uint64_t, 4U> kGoldenPageHashes{
     0x3be1346eb2b8c1e5ULL,
 };
 
-std::uint64_t frameHash(const growbox::clay_ui::MonochromeFrame& frame) {
+std::uint64_t byteHash(const std::uint8_t* data, std::size_t size) {
   std::uint64_t hash = 1469598103934665603ULL;
-  for (const std::uint8_t byte : frame.bytes) {
-    hash ^= byte;
+  for (std::size_t index = 0U; index < size; ++index) {
+    hash ^= data[index];
     hash *= 1099511628211ULL;
   }
   return hash;
 }
+
+std::uint64_t frameHash(const growbox::clay_ui::MonochromeFrame& frame) {
+  return byteHash(frame.bytes.data(), frame.bytes.size());
+}
+
+class FakeFramebufferBackend final {
+public:
+  bool beginFrame(std::uint16_t width_px, std::uint16_t height_px, bool warning,
+                  display::DisplayRefreshKind refresh_kind) noexcept {
+    ++begin_count;
+    last_warning = warning;
+    last_refresh_kind = refresh_kind;
+    if (!begin_result || open || width_px != growbox::clay_ui::kDisplayWidth ||
+        height_px != growbox::clay_ui::kDisplayHeight ||
+        refresh_kind == display::DisplayRefreshKind::None) {
+      return false;
+    }
+    open = true;
+    return true;
+  }
+
+  std::uint8_t* framebufferData() noexcept {
+    return open && expose_framebuffer ? framebuffer.data() : nullptr;
+  }
+
+  std::size_t framebufferBytes() const noexcept {
+    return reported_framebuffer_bytes;
+  }
+
+  bool endFrame() noexcept {
+    ++end_count;
+    if (!open || !end_result) {
+      return false;
+    }
+    open = false;
+    return true;
+  }
+
+  void cancelFrame() noexcept {
+    ++cancel_count;
+    open = false;
+  }
+
+  std::array<std::uint8_t, growbox::clay_ui::kFrameBytes> framebuffer{};
+  std::size_t reported_framebuffer_bytes{growbox::clay_ui::kFrameBytes};
+  std::size_t begin_count{0U};
+  std::size_t end_count{0U};
+  std::size_t cancel_count{0U};
+  display::DisplayRefreshKind last_refresh_kind{display::DisplayRefreshKind::None};
+  bool begin_result{true};
+  bool end_result{true};
+  bool expose_framebuffer{true};
+  bool last_warning{false};
+  bool open{false};
+};
 
 display::DisplaySnapshot nominalSnapshot() {
   display::DisplaySnapshot snapshot{};
@@ -143,10 +200,75 @@ void testWarningStateIsVisibleInClayFrame() {
   assert(frameHash(warning) != nominal);
 }
 
+void testProductionClayBridgeUsesBackendOwnedFramebuffer() {
+  const auto snapshot = nominalSnapshot();
+  display::DisplayRuntimeFrame frame{};
+  frame.page = display::DisplayPage::Environment;
+  frame.refresh_kind = display::DisplayRefreshKind::Full;
+  frame.refresh_reason = display::DisplayRefreshReason::Initial;
+  assert(display::buildDisplayPage(snapshot, frame.page, frame.page_model));
+
+  std::vector<std::uint8_t> arena(growbox::clay_ui::pageRendererArenaBytes());
+  FakeFramebufferBackend backend{};
+  growbox::clay_ui::RenderSummary summary{};
+  assert(display::renderClayDisplayFrame(frame, arena.data(), arena.size(), backend, &summary));
+  assert(backend.begin_count == 1U);
+  assert(backend.end_count == 1U);
+  assert(backend.cancel_count == 0U);
+  assert(!backend.open);
+  assert(backend.last_refresh_kind == display::DisplayRefreshKind::Full);
+  assert(!backend.last_warning);
+  assert(summary.render_commands == 25U);
+  assert(byteHash(backend.framebuffer.data(), backend.framebuffer.size()) == kGoldenPageHashes[0]);
+}
+
+void testProductionClayBridgeCancelsIncompleteFrames() {
+  const auto snapshot = nominalSnapshot();
+  display::DisplayRuntimeFrame frame{};
+  frame.page = display::DisplayPage::Environment;
+  frame.refresh_kind = display::DisplayRefreshKind::Partial;
+  frame.refresh_reason = display::DisplayRefreshReason::ContentChanged;
+  assert(display::buildDisplayPage(snapshot, frame.page, frame.page_model));
+
+  const std::size_t required_arena = growbox::clay_ui::pageRendererArenaBytes();
+  std::vector<std::uint8_t> arena(required_arena);
+
+  FakeFramebufferBackend short_buffer{};
+  short_buffer.reported_framebuffer_bytes = growbox::clay_ui::kFrameBytes - 1U;
+  assert(!display::renderClayDisplayFrame(frame, arena.data(), arena.size(), short_buffer));
+  assert(short_buffer.begin_count == 1U);
+  assert(short_buffer.end_count == 0U);
+  assert(short_buffer.cancel_count == 1U);
+  assert(!short_buffer.open);
+
+  FakeFramebufferBackend short_arena{};
+  assert(!display::renderClayDisplayFrame(frame, arena.data(), required_arena - 1U, short_arena));
+  assert(short_arena.begin_count == 1U);
+  assert(short_arena.end_count == 0U);
+  assert(short_arena.cancel_count == 1U);
+  assert(!short_arena.open);
+
+  FakeFramebufferBackend end_failure{};
+  end_failure.end_result = false;
+  assert(!display::renderClayDisplayFrame(frame, arena.data(), arena.size(), end_failure));
+  assert(end_failure.begin_count == 1U);
+  assert(end_failure.end_count == 1U);
+  assert(end_failure.cancel_count == 1U);
+  assert(!end_failure.open);
+
+  FakeFramebufferBackend no_refresh{};
+  frame.refresh_kind = display::DisplayRefreshKind::None;
+  assert(!display::renderClayDisplayFrame(frame, arena.data(), arena.size(), no_refresh));
+  assert(no_refresh.begin_count == 0U);
+  assert(no_refresh.cancel_count == 0U);
+}
+
 } // namespace
 
 int main() {
   testPresenterNavigationAndFourClayPages();
   testWarningStateIsVisibleInClayFrame();
+  testProductionClayBridgeUsesBackendOwnedFramebuffer();
+  testProductionClayBridgeCancelsIncompleteFrames();
   return 0;
 }
