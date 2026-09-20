@@ -9,6 +9,7 @@ HOST_BUILD_DIR ?= build/host-tests
 HOST_BUILD_JOBS ?= 2
 N8_BUILD_DIR ?= build/idf-n8
 N32R16V_BUILD_DIR ?= build/idf-n32r16v
+CROWPANEL_BUILD_DIR ?= build/idf-stage27c-crowpanel
 # ESP-IDF defaults live under config/idf/ (local sdkconfig stays at repo root).
 SDKCONFIG_DEFAULTS ?= config/idf/sdkconfig.defaults;config/idf/sdkconfig.defaults.n16r8
 IDF_BUILD_ARGS := -D "SDKCONFIG_DEFAULTS=$(SDKCONFIG_DEFAULTS)" -D GROWBOX_BOARD_PROFILE=esp32s3-devkitc1-n16r8
@@ -25,7 +26,7 @@ endif
         train-quick train-full probe-sim \
         test-board test-board-exhaustive test-board-validity-matrix board-e2e \
         test test-python test-host test-panel test-layout test-visual panel-screenshots \
-        panel ports idf-gate-build build build-n8 build-n32r16v rebuild clean-idf \
+        panel ports idf-gate-build build build-n8 build-n32r16v build-crowpanel rebuild clean-idf \
         flash monitor monitor-reset flash-monitor menuconfig clean
 
 help: ## Lista komend make (domyślny cel)
@@ -61,6 +62,7 @@ help: ## Lista komend make (domyślny cel)
 	@printf '  Inne profile firmware:\n'
 	@printf '    make build-n8       — build bez PSRAM (DevKitC N8)\n'
 	@printf '    make build-n32r16v  — moduł N32R16V (32 MB flash + PSRAM)\n'
+	@printf '    make build-crowpanel — CrowPanel N8R8 real-input + e-ink production build\n'
 	@printf '    make idf-gate-build — szybki build gate CI (N8)\n\n'
 	@printf '  Sprzątanie:\n'
 	@printf '    make clean-idf      — usuń tylko build/idf\n'
@@ -181,6 +183,10 @@ build-n32r16v: ensure-idf
 	$(RUN_IDF) -B $(N32R16V_BUILD_DIR) \
 		-D "SDKCONFIG_DEFAULTS=config/idf/sdkconfig.defaults.n32r16v" \
 		-D GROWBOX_BOARD_PROFILE=esp32s3-devkitc1-n32r16v build
+
+build-crowpanel: ensure-idf
+	GROWBOX_EINK_DISPLAY_ENABLED=1 STAGE27C_BUILD_DIR=$(CROWPANEL_BUILD_DIR) \
+		bash scripts/stage27c_crowpanel.sh build
 
 rebuild: clean-idf build
 
