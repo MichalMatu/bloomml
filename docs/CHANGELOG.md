@@ -4,6 +4,17 @@ Only milestones that still help understand the current codebase are kept here. D
 
 ## Unreleased
 
+### Clay production display integration — 2026-09-20
+
+- Completed Display UI Port Phase 3: the isolated Clay 0.14 renderer now drives the production four-page CrowPanel layout behind the existing asynchronous display transaction.
+- Preserved the native SSD1680 backend as sole owner of the 296x128 / 4736-byte framebuffer and all panel hardware; no second framebuffer, worker, navigation owner or control path was introduced.
+- Added one persistent Clay scratch arena allocated in PSRAM by the display service; firmware rendering reuses it instead of allocating per refresh.
+- Preserved generation matching, `confirmRendered()` and retry/failure semantics; failed Clay/backend frames are cancelled without falsely advancing observer state.
+- Unified host and firmware framebuffer polarity with the production raster convention (`0 = black`, `1 = white`) and re-pinned deterministic four-page hashes without changing black-pixel counts/layout.
+- Added `make build-crowpanel` as the canonical CrowPanel N8R8 + Stage27 NimBLE + Stage27C + real-input + e-ink production build and added a dedicated CI job for that path.
+- Exact Phase 3 production-path build evidence: `76447b963bb1e3f4d9290bfb26380ac30a0a41ab`, Local Agent `20260920-clay-phase3-crowpanel-build-v4`, binary `0xcc970`, 80% of the 4 MiB app partition free.
+- This milestone is software/build evidence only; no new physical CrowPanel qualification is claimed.
+
 ### Documentation/vendor preparation — 2026-09-14
 
 - Re-audited live documentation against the current `main` line and removed the stale SCD41-as-active-blocker narrative.
