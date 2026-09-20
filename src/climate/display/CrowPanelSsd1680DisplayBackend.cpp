@@ -116,13 +116,33 @@ bool CrowPanelSsd1680DisplayBackend::endFrame() noexcept {
     transfer_region =
         expandDisplayRegion(staged_transfer_region_, kPartialRefreshPaddingPx,
                             DisplayMonochromeRaster::kWidthPx, DisplayMonochromeRaster::kHeightPx);
-    if (!Ssd1680FrameMapper::nativeWindowForLogicalRegion(transfer_region, config_.rotation,
-                                                          native_window) ||
-        !writeMappedRam(kCmdWriteCurrentRam, native_window) ||
-        !activate(DisplayRefreshKind::Partial) ||
-        !writeMappedRam(kCmdWritePreviousRam, native_window)) {
+    const bool partial_ok = Ssd1680FrameMapper::nativeWindowForLogicalRegion(
+                                transfer_region, config_.rotation, native_window) &&
+                            writeMappedRam(kCmdWriteCurrentRam, native_window) &&
+                            activate(DisplayRefreshKind::Partial) &&
+                            writeMappedRam(kCmdWritePreviousRam, native_window);
+    if (!partial_ok) {
       releaseHardware();
-      return false;
+      if (!ensureHardwareReady()) {
+        releaseHardware();
+        return false;
+      }
+
+      transfer_region = {0U, 0U, DisplayMonochromeRaster::kWidthPx,
+                         DisplayMonochromeRaster::kHeightPx};
+      native_window = fullNativeWindow();
+      if (!writeMappedRam(kCmdWritePreviousRam, native_window) ||
+          !writeMappedRam(kCmdWriteCurrentRam, native_window) ||
+          !activate(DisplayRefreshKind::Full)) {
+        releaseHardware();
+        return false;
+      }
+      previous_ram_seeded_ = true;
+      recordSuccessfulTransfer(transfer_region, native_window, DisplayRefreshKind::Full);
+      frame_open_ = false;
+      transfer_region_staged_ = false;
+      planned_refresh_ = DisplayRefreshKind::None;
+      return true;
     }
   }
 

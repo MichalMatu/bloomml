@@ -185,9 +185,9 @@ void testObserverProjectsAuthoritativeTelemetryIntoDisplayRuntime() {
   assert(!observer.lastFrame().refreshRequired());
   assert(observer.lastSnapshot().temperature_c.value == 24.0F);
 
-  assert(observer.handleButton(display::DisplayButton::Next));
-  telemetry_snapshot.uptime_ms = 124'001U;
-  assert(observer.observe(telemetry_snapshot, storage_status));
+  assert(observer.handleButtonEvent(
+      {display::DisplayButton::Next, display::DisplayButtonGesture::Press, 124'001U}));
+  assert(observer.hasPendingRefresh());
   assert(observer.lastFrame().refresh_kind == display::DisplayRefreshKind::Partial);
   assert(observer.lastFrame().refresh_reason == display::DisplayRefreshReason::Navigation);
   assert(observer.lastFrame().page == display::DisplayPage::Outputs);
@@ -204,14 +204,12 @@ void testObserverCarriesShortFirmwareShaIntoSystemAndDiagnostics() {
   assert(std::strcmp(observer.lastSnapshot().firmware_sha.data(), "0123456789") == 0);
   assert(observer.confirmRendered(123'000U));
 
-  assert(observer.handleButton(display::DisplayButton::Next));
-  telemetry_snapshot.uptime_ms = 123'001U;
-  assert(observer.observe(telemetry_snapshot, storage_status));
+  assert(observer.handleButtonEvent(
+      {display::DisplayButton::Next, display::DisplayButtonGesture::Press, 123'001U}));
   assert(observer.confirmRendered(123'001U));
 
-  assert(observer.handleButton(display::DisplayButton::Next));
-  telemetry_snapshot.uptime_ms = 123'002U;
-  assert(observer.observe(telemetry_snapshot, storage_status));
+  assert(observer.handleButtonEvent(
+      {display::DisplayButton::Next, display::DisplayButtonGesture::Press, 123'002U}));
   const auto& system = observer.lastFrame().page_model;
   assert(observer.lastFrame().page == display::DisplayPage::System);
   assert(std::strcmp(system.title.data(), "System") == 0);
@@ -220,9 +218,8 @@ void testObserverCarriesShortFirmwareShaIntoSystemAndDiagnostics() {
   assert(std::strcmp(firmware_line->value.data(), "0123456789") == 0);
   assert(observer.confirmRendered(123'002U));
 
-  assert(observer.handleButton(display::DisplayButton::Next));
-  telemetry_snapshot.uptime_ms = 123'003U;
-  assert(observer.observe(telemetry_snapshot, storage_status));
+  assert(observer.handleButtonEvent(
+      {display::DisplayButton::Next, display::DisplayButtonGesture::Press, 123'003U}));
   const auto& diagnostics = observer.lastFrame().page_model;
   assert(observer.lastFrame().page == display::DisplayPage::Diagnostics);
   assert(std::strcmp(diagnostics.title.data(), "Diagnostics") == 0);
@@ -230,6 +227,29 @@ void testObserverCarriesShortFirmwareShaIntoSystemAndDiagnostics() {
   assert(findLine(diagnostics, "Climate") != nullptr);
   assert(findLine(diagnostics, "SCD41") != nullptr);
   assert(observer.confirmRendered(123'003U));
+}
+
+void testObserverPlansMenuImmediatelyFromCachedSnapshot() {
+  display::DisplayTelemetryObserver observer{endpointRoles()};
+  const auto telemetry_snapshot = nominalTelemetry(300'000U);
+  const auto storage_status = nominalStorage();
+  assert(observer.observe(telemetry_snapshot, storage_status));
+  assert(observer.confirmRendered(300'000U));
+
+  assert(observer.handleButtonEvent(
+      {display::DisplayButton::Ok, display::DisplayButtonGesture::LongPress, 300'100U}));
+  assert(observer.menuActive());
+  assert(observer.hasPendingRefresh());
+  assert(observer.lastFrame().view_mode == display::DisplayViewMode::Menu);
+  assert(observer.lastFrame().refresh_reason == display::DisplayRefreshReason::Navigation);
+  assert(std::strcmp(observer.lastFrame().page_model.title.data(), "Pages") == 0);
+  assert(observer.confirmRendered(300'100U));
+
+  assert(observer.handleButtonEvent(
+      {display::DisplayButton::Next, display::DisplayButtonGesture::Press, 300'200U}));
+  assert(observer.hasPendingRefresh());
+  assert(observer.lastFrame().view_mode == display::DisplayViewMode::Menu);
+  assert(std::strcmp(observer.lastFrame().page_model.lines[1].label.data(), ">") == 0);
 }
 
 void testClayCoordinatorAcknowledgesOnlySuccessfulBackendRender() {
@@ -302,6 +322,7 @@ void testObserverFailsClosedOnInvalidEndpointRoles() {
 int main() {
   testObserverProjectsAuthoritativeTelemetryIntoDisplayRuntime();
   testObserverCarriesShortFirmwareShaIntoSystemAndDiagnostics();
+  testObserverPlansMenuImmediatelyFromCachedSnapshot();
   testClayCoordinatorAcknowledgesOnlySuccessfulBackendRender();
   testObserverFailsClosedOnInvalidEndpointRoles();
   return 0;
