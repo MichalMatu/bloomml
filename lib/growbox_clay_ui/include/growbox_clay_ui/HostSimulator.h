@@ -1,5 +1,7 @@
 #pragma once
 
+#include "growbox_display_model/DisplayPageModel.h"
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -26,6 +28,9 @@ struct RenderSummary {
 
 [[nodiscard]] bool renderHostSmoke(MonochromeFrame& frame,
                                    RenderSummary* summary = nullptr) noexcept;
+[[nodiscard]] bool renderHostPage(const ::growbox::display_model::DisplayPageModel& page,
+                                  MonochromeFrame& frame,
+                                  RenderSummary* summary = nullptr) noexcept;
 [[nodiscard]] bool writePbm(const MonochromeFrame& frame, const char* path) noexcept;
 
 } // namespace growbox::clay_ui

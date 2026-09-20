@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstdio>
+#include <cstring>
 #include <vector>
 
 #include <clay/clay.h>
@@ -33,6 +34,28 @@ struct MockTarget final : ClayRenderTarget {
 
 Clay_BoundingBox box(float x, float y, float w, float h) {
   return Clay_BoundingBox{x, y, w, h};
+}
+
+std::uint64_t frameHash(const growbox::clay_ui::MonochromeFrame& frame) {
+  std::uint64_t hash = 1469598103934665603ULL;
+  for (const std::uint8_t byte : frame.bytes) {
+    hash ^= byte;
+    hash *= 1099511628211ULL;
+  }
+  return hash;
+}
+
+growbox::display_model::DisplayPageModel samplePage() {
+  growbox::display_model::DisplayPageModel page{};
+  std::snprintf(page.title.data(), page.title.size(), "Environment");
+  page.line_count = 3U;
+  std::snprintf(page.lines[0].label.data(), page.lines[0].label.size(), "Temp");
+  std::snprintf(page.lines[0].value.data(), page.lines[0].value.size(), "23.4 C");
+  std::snprintf(page.lines[1].label.data(), page.lines[1].label.size(), "RH");
+  std::snprintf(page.lines[1].value.data(), page.lines[1].value.size(), "61.2 %%");
+  std::snprintf(page.lines[2].label.data(), page.lines[2].label.size(), "Mode");
+  std::snprintf(page.lines[2].value.data(), page.lines[2].value.size(), "AUTO");
+  return page;
 }
 
 void testGeometry() {
@@ -84,16 +107,47 @@ void testHostSimulator() {
   assert(frame.bytes.size() == 4736U);
 }
 
+void testSemanticPageRenderingIsDeterministic() {
+  const auto page = samplePage();
+  growbox::clay_ui::MonochromeFrame first{};
+  growbox::clay_ui::MonochromeFrame second{};
+  growbox::clay_ui::RenderSummary summary{};
+  assert(growbox::clay_ui::renderHostPage(page, first, &summary));
+  assert(growbox::clay_ui::renderHostPage(page, second));
+  assert(first.bytes == second.bytes);
+  assert(summary.render_commands >= page.line_count * 2U);
+  assert(summary.black_pixels > 0U);
+
+  auto warning_page = page;
+  warning_page.warning = true;
+  growbox::clay_ui::MonochromeFrame warning{};
+  assert(growbox::clay_ui::renderHostPage(warning_page, warning));
+  assert(frameHash(first) != frameHash(warning));
+}
+
+void testInvalidSemanticPageFailsClosed() {
+  growbox::display_model::DisplayPageModel page{};
+  growbox::clay_ui::MonochromeFrame frame{};
+  assert(!growbox::clay_ui::renderHostPage(page, frame));
+
+  page = samplePage();
+  page.line_count = page.lines.size() + 1U;
+  assert(!growbox::clay_ui::renderHostPage(page, frame));
+}
+
 } // namespace
 
 int main() {
-  std::puts("growbox Clay phase1: geometry");
+  std::puts("growbox Clay phase2: geometry");
   testGeometry();
-  std::puts("growbox Clay phase1: clip stack");
+  std::puts("growbox Clay phase2: clip stack");
   testClipStackIntersection();
-  std::puts("growbox Clay phase1: renderer clipping");
+  std::puts("growbox Clay phase2: renderer clipping");
   testRendererClipsRectangle();
-  std::puts("growbox Clay phase1: 296x128 host simulator");
+  std::puts("growbox Clay phase2: 296x128 host simulator");
   testHostSimulator();
+  std::puts("growbox Clay phase2: semantic page rendering");
+  testSemanticPageRenderingIsDeterministic();
+  testInvalidSemanticPageFailsClosed();
   return 0;
 }
