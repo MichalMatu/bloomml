@@ -31,6 +31,7 @@ add_executable(
   climate_v6_tests
   "${PROJECT_ROOT}/test/test_climate_v6/test_main.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateFeatureEncoder.cpp"
+  "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimatePolicy.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateRuntimeController.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateTrendEstimator.cpp"
 )
@@ -42,6 +43,7 @@ add_executable(
   climate_runtime_parity_tests
   "${PROJECT_ROOT}/test/test_climate_runtime_parity/test_main.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateFeatureEncoder.cpp"
+  "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimatePolicy.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateRuntimeController.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateTrendEstimator.cpp"
 )
@@ -59,6 +61,7 @@ add_executable(
   "${PROJECT_ROOT}/test/test_climate_control_loop/test_main.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateControlLoop.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateFeatureEncoder.cpp"
+  "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimatePolicy.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateRuntimeController.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateTrendEstimator.cpp"
 )
@@ -71,6 +74,7 @@ add_executable(
   "${PROJECT_ROOT}/test/test_climate_virtual_hil/test_main.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateControlLoop.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateFeatureEncoder.cpp"
+  "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimatePolicy.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateRuntimeController.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateTrendEstimator.cpp"
 )
@@ -99,6 +103,7 @@ add_executable(
   "${PROJECT_ROOT}/src/climate/application/ClimateIoAdapters.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateControlLoop.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateFeatureEncoder.cpp"
+  "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimatePolicy.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateRuntimeController.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateTrendEstimator.cpp"
 )
@@ -119,6 +124,7 @@ add_executable(
   "${PROJECT_ROOT}/src/climate/ClimateDeterministicFake.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateControlLoop.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateFeatureEncoder.cpp"
+  "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimatePolicy.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateRuntimeController.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateTrendEstimator.cpp"
 )
@@ -152,6 +158,7 @@ add_executable(
   "${PROJECT_ROOT}/src/climate/application/ClimateIoAdapters.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateControlLoop.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateFeatureEncoder.cpp"
+  "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimatePolicy.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateRuntimeController.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateTrendEstimator.cpp"
 )
@@ -172,6 +179,7 @@ add_executable(
   "${PROJECT_ROOT}/src/climate/application/ClimateIoAdapters.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateControlLoop.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateFeatureEncoder.cpp"
+  "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimatePolicy.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateRuntimeController.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateTrendEstimator.cpp"
 )
@@ -556,6 +564,7 @@ add_executable(
   "${PROJECT_ROOT}/src/climate/input/ble/BthomeV2Decoder.cpp"
   "${PROJECT_ROOT}/src/climate/input/ble/Tp357Decoder.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateFeatureEncoder.cpp"
+  "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimatePolicy.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateRuntimeController.cpp"
   "${PROJECT_ROOT}/lib/environment_control/src/climate/ClimateTrendEstimator.cpp"
 )

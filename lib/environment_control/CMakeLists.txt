@@ -8,6 +8,7 @@ endif()
 set(GROWBOX_ENVIRONMENT_CONTROL_SRCS
   "src/climate/ClimateControlLoop.cpp"
   "src/climate/ClimateFeatureEncoder.cpp"
+  "src/climate/ClimatePolicy.cpp"
   "src/climate/ClimateRuntimeController.cpp"
   "src/climate/ClimateTrendEstimator.cpp"
 )
