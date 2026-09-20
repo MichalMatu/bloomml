@@ -1,5 +1,6 @@
 #pragma once
 
+#include "climate/display/DisplayDirtyRegion.h"
 #include "climate/display/DisplayRuntime.h"
 #include "growbox_clay_ui/PageRenderer.h"
 
@@ -23,16 +24,21 @@ bool renderClayDisplayFrame(const DisplayRuntimeFrame& frame, void* clay_arena,
     return false;
   }
 
+  ::growbox::clay_ui::RenderSummary local_summary{};
+  auto* active_summary = summary != nullptr ? summary : &local_summary;
   std::uint8_t* framebuffer = backend.framebufferData();
   if (framebuffer == nullptr || backend.framebufferBytes() < ::growbox::clay_ui::kFrameBytes ||
       !::growbox::clay_ui::renderPageToMonochrome(frame.page_model, framebuffer,
                                                   backend.framebufferBytes(), clay_arena,
-                                                  clay_arena_bytes, summary)) {
+                                                  clay_arena_bytes, active_summary)) {
     backend.cancelFrame();
     return false;
   }
 
-  if (!backend.endFrame()) {
+  const auto& content = active_summary->content_region;
+  const DisplayRegion content_region{content.x_px, content.y_px, content.width_px,
+                                     content.height_px};
+  if (!backend.setContentRegion(content_region) || !backend.endFrame()) {
     backend.cancelFrame();
     return false;
   }
