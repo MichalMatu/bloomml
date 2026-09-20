@@ -70,7 +70,7 @@ private:
   std::array<std::uint8_t, kQueueDepth * sizeof(DisplayButtonEvent)> queue_storage_{};
   QueueHandle_t queue_{nullptr};
   esp_timer_handle_t timer_{nullptr};
-  bool started_{false};
+  std::atomic<bool> started_{false};
 
   std::atomic<std::uint32_t> events_emitted_{0U};
   std::atomic<std::uint32_t> long_presses_{0U};
