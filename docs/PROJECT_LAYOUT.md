@@ -23,14 +23,14 @@ Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for ac
 ├── lib/
 │   ├── environment_control/    # portable climate-v6 controller core
 │   ├── growbox_display_model/  # neutral C++17 semantic display page DTO
-│   └── growbox_clay_ui/        # isolated C++20 Clay host/layout component
-├── components/                 # ESP-IDF components
+│   └── growbox_clay_ui/        # isolated C++20 Clay layout/raster component
+├── components/                 # ESP-IDF components, including growbox_clay_ui wrapper
 ├── src/
 │   ├── main.cpp                # app-mode dispatcher
 │   ├── legacy/                 # explicit legacy mode only
 │   └── climate/
 │       ├── application/
-│       ├── display/            # presenter/render seam/raster/SSD1680/service
+│       ├── display/            # presenter/async transaction/SSD1680/service
 │       ├── input/
 │       ├── native/
 │       ├── output/
@@ -53,7 +53,7 @@ Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for ac
 - `runtime/telemetry/*`: telemetry;
 - `output/*`: configured-output ownership/policy/execution;
 - `rf433/*`: policy-free RF transport;
-- `display/*`: observer-only e-ink presentation/render/service.
+- `display/*`: observer-only e-ink presentation, async transaction/service and native SSD1680 ownership.
 
 Do not move climate policy into transport, direct configured-output writes into runtime/console code, or control ownership into display/UI code.
 
@@ -61,15 +61,21 @@ Do not move climate policy into transport, direct configured-output writes into 
 
 Board/runtime defaults live under `config/` and are resolved by CMake. Production C++ consumes generated typed `RuntimeBuildConfig.h`; do not add duplicate fallback tables in source files.
 
+The canonical production CrowPanel display build is `make build-crowpanel`, which delegates to `scripts/stage27c_crowpanel.sh` and composes the N8R8, Stage27 NimBLE and Stage27C overlays. Generic `make build` is not the production display compile gate.
+
 ## Clay/display-port placement
 
-The isolated Phase 1 Clay implementation lives in `lib/growbox_clay_ui/` and remains separate from the normal C++17 production application boundary. Its public API must use growbox-owned Clay-free structs; `Clay_*` types stay private to the component.
+The production-integrated Clay implementation lives in `lib/growbox_clay_ui/` and remains separate from the normal C++17 application boundary. Its public API uses growbox-owned Clay-free structs; `Clay_*` types stay private to the C++20 component.
 
-The shared semantic page contract now lives in `lib/growbox_display_model/`. It is deliberately header-only and C++17-compatible, and currently contains only `DisplayLine` / `DisplayPageModel`. It must not acquire navigation, snapshot derivation, refresh policy, rendering, hardware or control responsibilities.
+The shared semantic page contract lives in `lib/growbox_display_model/`. It is deliberately header-only and C++17-compatible, and currently contains only `DisplayLine` / `DisplayPageModel`. It must not acquire navigation, snapshot derivation, refresh policy, rendering, hardware or control responsibilities.
+
+`components/growbox_clay_ui/` is only the ESP-IDF build adapter around `lib/growbox_clay_ui/`; it is not another UI/domain owner.
+
+Production rendering flows from the semantic page model through Clay into the single framebuffer owned by `CrowPanelSsd1680DisplayBackend`. `CrowPanelDisplayService` owns the async worker and the persistent Clay PSRAM arena. Do not add a second framebuffer, worker, refresh transaction or navigation owner.
 
 `vendor/litegraph_epd_port/` remains immutable/reference-only and excluded from builds.
 
-Phase 2 should consume the shared semantic model rather than depending from `lib/growbox_clay_ui/` back into `src/climate/display/`. If another dependency cycle appears, extract only the smallest stable shared data contract instead of moving runtime ownership into the Clay component.
+Phase 4 dirty-region work belongs at the rendering/refresh-planning boundary. If it requires a new shared type, extract only the smallest stable data contract; do not introduce a reverse dependency from `lib/growbox_clay_ui/` into application/runtime ownership.
 
 ## Where new work belongs
 
@@ -79,9 +85,10 @@ Phase 2 should consume the shared semantic model rather than depending from `lib
 | Hardware/runtime orchestration | `src/climate/runtime/`, `src/climate/input/`, `src/climate/native/` |
 | Output ownership/policy | `src/climate/output/` |
 | RF433 transport/protocol | `src/climate/rf433/` |
-| Existing display presenter/backend/service | `src/climate/display/` |
+| Display presenter/transaction/backend/service | `src/climate/display/` |
 | Shared semantic display page DTO | `lib/growbox_display_model/` |
-| Clay layout/host simulator | `lib/growbox_clay_ui/` |
+| Clay layout/raster/host simulator | `lib/growbox_clay_ui/` |
+| ESP-IDF Clay build adapter | `components/growbox_clay_ui/` |
 | Clay donor/reference material | `vendor/litegraph_epd_port/` |
 | Runtime/board configuration | `config/` |
 | Host analysis / ML / sandbox | `tools/` |
