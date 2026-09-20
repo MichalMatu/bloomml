@@ -13,7 +13,9 @@ add_library(
 
 target_include_directories(
   growbox_clay_ui
-  PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include"
+  PUBLIC
+    "${CMAKE_CURRENT_LIST_DIR}/include"
+    "${CMAKE_CURRENT_LIST_DIR}/../growbox_display_model/include"
   PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/src"
 )
@@ -36,7 +38,12 @@ target_compile_features(growbox_clay_ui_tests PRIVATE cxx_std_20)
 target_compile_options(growbox_clay_ui_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
 
 add_library(growbox_clay_public_api_cxx17 OBJECT test/public_api_cxx17.cpp)
-target_include_directories(growbox_clay_public_api_cxx17 PRIVATE "${CMAKE_CURRENT_LIST_DIR}/include")
+target_include_directories(
+  growbox_clay_public_api_cxx17
+  PRIVATE
+    "${CMAKE_CURRENT_LIST_DIR}/include"
+    "${CMAKE_CURRENT_LIST_DIR}/../growbox_display_model/include"
+)
 target_compile_features(growbox_clay_public_api_cxx17 PRIVATE cxx_std_17)
 target_compile_options(growbox_clay_public_api_cxx17 PRIVATE -Wall -Wextra -Wpedantic -Werror)
 
