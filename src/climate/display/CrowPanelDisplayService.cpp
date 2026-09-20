@@ -1,6 +1,6 @@
 #include "climate/display/CrowPanelDisplayService.h"
 
-#include "climate/display/DisplayClayCoordinator.h"
+#include "climate/display/DisplayRenderCoordinator.h"
 
 #include <esp_log.h>
 #include <esp_timer.h>
@@ -86,7 +86,7 @@ void CrowPanelDisplayService::taskLoop() noexcept {
       continue;
     }
 
-    const bool success = renderDisplayFrameToClay(work_item.frame, geometry_, theme_, backend_);
+    const bool success = renderDisplayFrame(work_item.frame, geometry_, theme_, backend_);
     observeStackWatermark();
     const std::uint32_t stack_min_free_bytes =
         stack_min_free_bytes_.load(std::memory_order_relaxed);

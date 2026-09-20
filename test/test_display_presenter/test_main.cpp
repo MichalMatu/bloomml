@@ -1,5 +1,5 @@
-#include "climate/display/ClayDisplayAdapter.h"
 #include "climate/display/DisplayPresenter.h"
+#include "climate/display/DisplayRenderAdapter.h"
 #include "climate/display/DisplayRenderList.h"
 #include "climate/display/DisplaySurface.h"
 #include "climate/display/DisplayTextSimulator.h"
@@ -38,7 +38,7 @@ public:
     return true;
   }
 
-  bool drawText(const display::ClayDisplayTextElement& element) noexcept {
+  bool drawText(const display::DisplayTextElement& element) noexcept {
     if (!frame_open || element.text == nullptr) {
       return false;
     }
@@ -98,10 +98,10 @@ public:
   bool saw_title{false};
   bool saw_label{false};
   bool saw_value{false};
-  display::ClayDisplayTextStyle warning_style{};
-  display::ClayDisplayTextStyle title_style{};
-  display::ClayDisplayTextStyle label_style{};
-  display::ClayDisplayTextStyle value_style{};
+  display::DisplayTextStyle warning_style{};
+  display::DisplayTextStyle title_style{};
+  display::DisplayTextStyle label_style{};
+  display::DisplayTextStyle value_style{};
 };
 
 display::DisplaySnapshot nominalSnapshot() {
@@ -333,14 +333,14 @@ void testClayAdapterMapsRenderRolesAndFailsClosedBeforeFrame() {
   display::DisplayRenderListSurface surface{geometry, render_list};
   assert(display::renderDisplayPage(page, surface));
 
-  display::ClayDisplayTheme theme{};
+  display::DisplayTheme theme{};
   theme.title = {1U, 16U, true};
   theme.warning = {2U, 16U, true};
   theme.label = {3U, 10U, false};
   theme.value = {4U, 10U, false};
 
   FakeClaySink sink{};
-  assert(display::renderDisplayListToClay(render_list, geometry, theme, sink));
+  assert(display::renderDisplayList(render_list, geometry, theme, sink));
   assert(sink.begin_count == 1U);
   assert(sink.text_count == render_list.command_count);
   assert(sink.width == geometry.width_px);
@@ -364,7 +364,7 @@ void testClayAdapterMapsRenderRolesAndFailsClosedBeforeFrame() {
   auto invalid_list = render_list;
   invalid_list.commands[0].max_width_px = geometry.width_px;
   FakeClaySink invalid_sink{};
-  assert(!display::renderDisplayListToClay(invalid_list, geometry, theme, invalid_sink));
+  assert(!display::renderDisplayList(invalid_list, geometry, theme, invalid_sink));
   assert(invalid_sink.begin_count == 0U);
   assert(invalid_sink.text_count == 0U);
   assert(invalid_sink.cancel_count == 0U);
@@ -372,29 +372,28 @@ void testClayAdapterMapsRenderRolesAndFailsClosedBeforeFrame() {
   auto invalid_theme = theme;
   invalid_theme.value.font_size_px = 0U;
   FakeClaySink invalid_theme_sink{};
-  assert(
-      !display::renderDisplayListToClay(render_list, geometry, invalid_theme, invalid_theme_sink));
+  assert(!display::renderDisplayList(render_list, geometry, invalid_theme, invalid_theme_sink));
   assert(invalid_theme_sink.begin_count == 0U);
   assert(invalid_theme_sink.cancel_count == 0U);
 
   FakeClaySink draw_failure_sink{};
   draw_failure_sink.draw_result = false;
-  assert(!display::renderDisplayListToClay(render_list, geometry, theme, draw_failure_sink));
+  assert(!display::renderDisplayList(render_list, geometry, theme, draw_failure_sink));
   assert(draw_failure_sink.begin_count == 1U);
   assert(draw_failure_sink.cancel_count == 1U);
   assert(!draw_failure_sink.frame_open);
   draw_failure_sink.draw_result = true;
-  assert(display::renderDisplayListToClay(render_list, geometry, theme, draw_failure_sink));
+  assert(display::renderDisplayList(render_list, geometry, theme, draw_failure_sink));
   assert(draw_failure_sink.begin_count == 2U);
 
   FakeClaySink end_failure_sink{};
   end_failure_sink.end_result = false;
-  assert(!display::renderDisplayListToClay(render_list, geometry, theme, end_failure_sink));
+  assert(!display::renderDisplayList(render_list, geometry, theme, end_failure_sink));
   assert(end_failure_sink.end_count == 1U);
   assert(end_failure_sink.cancel_count == 1U);
   assert(!end_failure_sink.frame_open);
   end_failure_sink.end_result = true;
-  assert(display::renderDisplayListToClay(render_list, geometry, theme, end_failure_sink));
+  assert(display::renderDisplayList(render_list, geometry, theme, end_failure_sink));
   assert(end_failure_sink.begin_count == 2U);
 }
 

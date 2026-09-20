@@ -43,7 +43,7 @@ public:
 
   bool beginFrame(std::uint16_t width_px, std::uint16_t height_px, bool warning,
                   DisplayRefreshKind refresh_kind) noexcept;
-  bool drawText(const ClayDisplayTextElement& element) noexcept;
+  bool drawText(const DisplayTextElement& element) noexcept;
   bool endFrame() noexcept;
   void cancelFrame() noexcept;
 

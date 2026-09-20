@@ -1,6 +1,6 @@
 #pragma once
 
-#include "climate/display/ClayDisplayAdapter.h"
+#include "climate/display/DisplayRenderAdapter.h"
 
 #include <array>
 #include <cstddef>
@@ -22,7 +22,7 @@ public:
   explicit DisplayMonochromeRaster(Buffer& buffer) noexcept : buffer_(buffer) {}
 
   void clearWhite() noexcept;
-  bool drawText(const ClayDisplayTextElement& element) noexcept;
+  bool drawText(const DisplayTextElement& element) noexcept;
 
   bool isBlack(std::uint16_t x_px, std::uint16_t y_px) const noexcept;
   const Buffer& buffer() const noexcept {
