@@ -25,9 +25,9 @@ bool renderClayDisplayFrame(const DisplayRuntimeFrame& frame, void* clay_arena,
 
   std::uint8_t* framebuffer = backend.framebufferData();
   if (framebuffer == nullptr || backend.framebufferBytes() < ::growbox::clay_ui::kFrameBytes ||
-      !::growbox::clay_ui::renderPageToMonochrome(
-          frame.page_model, framebuffer, backend.framebufferBytes(), clay_arena, clay_arena_bytes,
-          summary)) {
+      !::growbox::clay_ui::renderPageToMonochrome(frame.page_model, framebuffer,
+                                                   backend.framebufferBytes(), clay_arena,
+                                                   clay_arena_bytes, summary)) {
     backend.cancelFrame();
     return false;
   }
