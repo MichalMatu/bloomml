@@ -4,6 +4,7 @@
 #include "climate/application/ClimateCompositeInput.h"
 #include "climate/display/CrowPanelDisplayService.h"
 #include "climate/display/DisplayTelemetryObserver.h"
+#include "climate/display/input/CrowPanelButtonInput.h"
 #include "climate/input/ble/BleClimateScanner.h"
 #include "climate/input/i2c/NativeI2cBus.h"
 #include "climate/input/rtc/Ds3231ClockSource.h"
@@ -137,7 +138,9 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
 
   display::DisplayTelemetryObserver* display_observer = nullptr;
   display::CrowPanelDisplayService* display_service = nullptr;
+  display::CrowPanelButtonInput* display_buttons = nullptr;
   bool display_ready = false;
+  bool display_buttons_ready = false;
   if constexpr (runtime_config::kEinkDisplayEnabled) {
     static display::DisplayTelemetryObserver enabled_display_observer(
         {stage28d::kExhaustFanEndpoint, stage28d::kScheduledLightEndpoint,
@@ -151,10 +154,21 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
     });
     static display::CrowPanelDisplayService enabled_display_service(enabled_display_observer,
                                                                     display_backend);
+    static display::CrowPanelButtonInput enabled_display_buttons({
+        {runtime_config::kEinkKeyHomeGpio, runtime_config::kEinkKeyBackGpio,
+         runtime_config::kEinkKeyPreviousGpio, runtime_config::kEinkKeyNextGpio,
+         runtime_config::kEinkKeyOkGpio},
+    });
     display_ready = enabled_display_service.begin();
     if (display_ready) {
       display_observer = &enabled_display_observer;
       display_service = &enabled_display_service;
+      display_buttons_ready = enabled_display_buttons.begin();
+      if (display_buttons_ready) {
+        display_buttons = &enabled_display_buttons;
+      } else {
+        ESP_LOGE(kTag, "E-ink button input failed to start; navigation buttons disabled");
+      }
     } else {
       ESP_LOGE(kTag, "E-ink display worker failed to start; display remains disabled");
     }
@@ -168,14 +182,15 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
            "Stage27 real-input runtime: nvs=%d nvs_recovered=%d i2c=%d scd41=%d ds3231=%d "
            "ble=%d sd=%d flash_fallback=%d storage_logger=%d rf433_loopback=%d "
            "rf433_tx_gpio=%d rf433_rx_gpio=%d service_console=%d eink_requested=%d "
-           "eink_ready=%d real_outputs_requested=%d real_outputs_ready=%d thermal_test=%d "
+           "eink_ready=%d eink_buttons_ready=%d real_outputs_requested=%d real_outputs_ready=%d "
+           "thermal_test=%d "
            "outputs=%s",
            nvs_ready, nvs_owner.erasedOnRecovery(), i2c_ready, scd41_ready, rtc_ready, ble_ready,
            storage_config.sd_enabled, storage_config.flash_fallback_enabled, storage_logger_ready,
            rf_ready, runtime_config::kRf433TxGpio, runtime_config::kRf433RxGpio,
            service_console_ready, runtime_config::kEinkDisplayEnabled, display_ready,
-           runtime_config::kRealOutputsEnabled, execution_status.output_ready,
-           runtime_config::kThermalTestSequenceEnabled,
+           display_buttons_ready, runtime_config::kRealOutputsEnabled,
+           execution_status.output_ready, runtime_config::kThermalTestSequenceEnabled,
            execution_status.output_ready ? "real-bounded" : "fake-locked");
   GROWBOX_STAGE28E_LOG_INFO(runtime::DiagnosticLogModule::Sys,
                             "boot firmware_sha=%s reset_reason=%d started_us=%llu outputs=%s",
@@ -197,6 +212,21 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
 
   while (true) {
     const std::uint64_t loop_started_us = static_cast<std::uint64_t>(esp_timer_get_time());
+    if (display_buttons != nullptr && display_observer != nullptr) {
+      display::DisplayButtonEvent event{};
+      while (display_buttons->poll(event)) {
+        if (event.gesture == display::DisplayButtonGesture::Press) {
+          const bool navigation_changed = display_observer->handleButton(event.button);
+          ESP_LOGI(kTag, "E-ink button press button=%u navigation_changed=%d page=%u",
+                   static_cast<unsigned>(event.button), navigation_changed,
+                   static_cast<unsigned>(display_observer->page()));
+        } else {
+          ESP_LOGI(kTag, "E-ink button long_press button=%u timestamp_ms=%llu",
+                   static_cast<unsigned>(event.button),
+                   static_cast<unsigned long long>(event.timestamp_ms));
+        }
+      }
+    }
     coordinator.tick(loop_started_us);
     if (display_service != nullptr) {
       display_service->tick(loop_started_us / 1000U);

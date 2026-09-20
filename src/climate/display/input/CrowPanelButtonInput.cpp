@@ -16,9 +16,8 @@ std::uint64_t monotonicMs() noexcept {
 } // namespace
 
 CrowPanelButtonInput::CrowPanelButtonInput(CrowPanelButtonInputConfig config) noexcept
-    : config_(config),
-      pins_{config.pins.home, config.pins.back, config.pins.previous, config.pins.next,
-            config.pins.ok},
+    : config_(config), pins_{config.pins.home, config.pins.back, config.pins.previous,
+                             config.pins.next, config.pins.ok},
       buttons_{DisplayButton::Home, DisplayButton::Back, DisplayButton::Previous,
                DisplayButton::Next, DisplayButton::Ok},
       states_{DisplayButtonStateMachine(config.timing), DisplayButtonStateMachine(config.timing),
@@ -92,8 +91,8 @@ bool CrowPanelButtonInput::begin() noexcept {
     timer_ = nullptr;
     return false;
   }
-  if (esp_timer_start_periodic(timer_, static_cast<std::uint64_t>(config_.sample_period_ms) * 1000U) !=
-      ESP_OK) {
+  if (esp_timer_start_periodic(timer_, static_cast<std::uint64_t>(config_.sample_period_ms) *
+                                           1000U) != ESP_OK) {
     (void)esp_timer_delete(timer_);
     timer_ = nullptr;
     return false;

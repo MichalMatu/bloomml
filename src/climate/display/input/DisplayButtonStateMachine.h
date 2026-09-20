@@ -18,7 +18,8 @@ struct DisplayButtonTiming final {
 class DisplayButtonStateMachine final {
 public:
   DisplayButtonStateMachine() noexcept = default;
-  explicit DisplayButtonStateMachine(const DisplayButtonTiming& timing) noexcept : timing_(timing) {}
+  explicit DisplayButtonStateMachine(const DisplayButtonTiming& timing) noexcept
+      : timing_(timing) {}
 
   void reset(bool raw_pressed, std::uint64_t now_ms) noexcept;
 

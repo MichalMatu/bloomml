@@ -16,8 +16,7 @@ bool DisplayButtonStateMachine::elapsedAtLeast(std::uint64_t now_ms, std::uint64
   return now_ms >= since_ms && now_ms - since_ms >= duration_ms;
 }
 
-bool DisplayButtonStateMachine::update(DisplayButton button, bool raw_pressed,
-                                       std::uint64_t now_ms,
+bool DisplayButtonStateMachine::update(DisplayButton button, bool raw_pressed, std::uint64_t now_ms,
                                        DisplayButtonEvent& output) noexcept {
   output = {};
   if (!initialized_) {
