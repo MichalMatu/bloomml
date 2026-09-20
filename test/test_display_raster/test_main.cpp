@@ -95,7 +95,7 @@ void testNativeWindowMapping() {
                                    display::DisplayMonochromeRaster::kHeightPx);
   assert(display::Ssd1680FrameMapper::nativeWindowForLogicalRegion(
       padded_row, display::Ssd1680Rotation::Clockwise90, window));
-  assert(window.transferBytes() > 0U);
+  assert(window.transferBytes() == 1'776U);
   assert(window.transferBytes() < display::Ssd1680FrameMapper::kNativeBufferBytes);
 }
 
