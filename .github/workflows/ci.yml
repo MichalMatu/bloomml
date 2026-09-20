@@ -89,6 +89,21 @@ jobs:
             idf.py -B build/idf-ci -D GROWBOX_BOARD_PROFILE=esp32s3-devkitc1-n8 build
             IDF_TOOLCHAIN=clang idf.py -B build/idf-clang-check -D GROWBOX_BOARD_PROFILE=esp32s3-devkitc1-n8 clang-check --exit-code src
 
+  crowpanel-idf-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Build CrowPanel real-input e-ink firmware with ESP-IDF 5.5.4
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5.4
+          target: esp32s3
+          path: .
+          command: make CROWPANEL_BUILD_DIR=build/idf-crowpanel-ci build-crowpanel
+
   web-tests:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
