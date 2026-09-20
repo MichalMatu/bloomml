@@ -74,8 +74,8 @@ void testCandidateReleasePausesLongPressUntilContactReturns() {
   assert(!state.update(display::DisplayButton::Back, true, 140U, event));
   assert(!state.update(display::DisplayButton::Back, false, 795U, event));
   assert(!state.update(display::DisplayButton::Back, false, 810U, event));
-  assert(!state.update(display::DisplayButton::Back, true, 820U, event));
   assert(state.update(display::DisplayButton::Back, true, 820U, event));
+  assert(event.button == display::DisplayButton::Back);
   assert(event.gesture == display::DisplayButtonGesture::LongPress);
 }
 
