@@ -11,3 +11,11 @@ growbox_cache_default(GROWBOX_EINK_DC_GPIO STRING "46" "CrowPanel e-ink data/com
 growbox_cache_default(GROWBOX_EINK_RST_GPIO STRING "47" "CrowPanel e-ink reset GPIO")
 growbox_cache_default(GROWBOX_EINK_BUSY_GPIO STRING "48" "CrowPanel e-ink busy GPIO")
 growbox_cache_default(GROWBOX_EINK_POWER_GPIO STRING "7" "CrowPanel e-ink power-enable GPIO")
+
+# On-board active-low navigation keys. These pins are dedicated input controls
+# on the pinned CrowPanel 2.9 hardware profile.
+growbox_cache_default(GROWBOX_EINK_KEY_HOME_GPIO STRING "2" "CrowPanel Home key GPIO")
+growbox_cache_default(GROWBOX_EINK_KEY_BACK_GPIO STRING "1" "CrowPanel Back key GPIO")
+growbox_cache_default(GROWBOX_EINK_KEY_PREVIOUS_GPIO STRING "6" "CrowPanel Previous key GPIO")
+growbox_cache_default(GROWBOX_EINK_KEY_NEXT_GPIO STRING "4" "CrowPanel Next key GPIO")
+growbox_cache_default(GROWBOX_EINK_KEY_OK_GPIO STRING "5" "CrowPanel OK key GPIO")

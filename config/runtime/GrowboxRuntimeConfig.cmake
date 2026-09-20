@@ -77,6 +77,11 @@ growbox_cache_default(GROWBOX_EINK_DC_GPIO STRING "-1" "E-ink display data/comma
 growbox_cache_default(GROWBOX_EINK_RST_GPIO STRING "-1" "E-ink display reset GPIO")
 growbox_cache_default(GROWBOX_EINK_BUSY_GPIO STRING "-1" "E-ink display busy GPIO")
 growbox_cache_default(GROWBOX_EINK_POWER_GPIO STRING "-1" "E-ink display power-enable GPIO")
+growbox_cache_default(GROWBOX_EINK_KEY_HOME_GPIO STRING "-1" "E-ink Home key GPIO")
+growbox_cache_default(GROWBOX_EINK_KEY_BACK_GPIO STRING "-1" "E-ink Back key GPIO")
+growbox_cache_default(GROWBOX_EINK_KEY_PREVIOUS_GPIO STRING "-1" "E-ink Previous key GPIO")
+growbox_cache_default(GROWBOX_EINK_KEY_NEXT_GPIO STRING "-1" "E-ink Next key GPIO")
+growbox_cache_default(GROWBOX_EINK_KEY_OK_GPIO STRING "-1" "E-ink OK key GPIO")
 growbox_cache_default(GROWBOX_STAGE28_SERVICE_CONSOLE_ENABLED STRING "1"
                       "Enable Stage28 primary-serial service console")
 growbox_cache_default(GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED STRING "0"
@@ -188,6 +193,47 @@ if(GROWBOX_APP_CLIMATE_V6_REAL_INPUTS)
         foreach(_growbox_sd_pin IN LISTS _growbox_sd_pins)
           growbox_require_distinct_gpio(${_growbox_eink_pin} ${_growbox_sd_pin}
                                         "e-ink display and SD enabled together")
+        endforeach()
+      endif()
+    endforeach()
+
+    set(_growbox_eink_key_pins
+        GROWBOX_EINK_KEY_HOME_GPIO GROWBOX_EINK_KEY_BACK_GPIO GROWBOX_EINK_KEY_PREVIOUS_GPIO
+        GROWBOX_EINK_KEY_NEXT_GPIO GROWBOX_EINK_KEY_OK_GPIO)
+    foreach(_growbox_key_pin IN LISTS _growbox_eink_key_pins)
+      growbox_require_assigned_gpio(${_growbox_key_pin} "e-ink display buttons enabled")
+      foreach(_growbox_eink_pin IN LISTS _growbox_eink_pins)
+        growbox_require_distinct_gpio(${_growbox_key_pin} ${_growbox_eink_pin}
+                                      "e-ink buttons and display enabled together")
+      endforeach()
+      foreach(_growbox_i2c_pin IN ITEMS GROWBOX_I2C_SDA_GPIO GROWBOX_I2C_SCL_GPIO)
+        growbox_require_distinct_gpio(${_growbox_key_pin} ${_growbox_i2c_pin}
+                                      "e-ink buttons and I2C enabled together")
+      endforeach()
+      if(GROWBOX_RF433_LOOPBACK_ENABLED)
+        foreach(_growbox_rf_pin IN ITEMS GROWBOX_RF433_TX_GPIO GROWBOX_RF433_RX_GPIO)
+          growbox_require_distinct_gpio(${_growbox_key_pin} ${_growbox_rf_pin}
+                                        "e-ink buttons and RF433 enabled together")
+        endforeach()
+      endif()
+      if(GROWBOX_STAGE27_SD_ENABLED)
+        foreach(_growbox_sd_pin IN LISTS _growbox_sd_pins)
+          growbox_require_distinct_gpio(${_growbox_key_pin} ${_growbox_sd_pin}
+                                        "e-ink buttons and SD enabled together")
+        endforeach()
+      endif()
+    endforeach()
+
+    list(LENGTH _growbox_eink_key_pins _growbox_key_pin_count)
+    math(EXPR _growbox_key_last_index "${_growbox_key_pin_count} - 1")
+    foreach(_growbox_key_left_index RANGE 0 ${_growbox_key_last_index})
+      math(EXPR _growbox_key_right_start "${_growbox_key_left_index} + 1")
+      if(_growbox_key_right_start LESS _growbox_key_pin_count)
+        foreach(_growbox_key_right_index RANGE ${_growbox_key_right_start} ${_growbox_key_last_index})
+          list(GET _growbox_eink_key_pins ${_growbox_key_left_index} _growbox_key_left_pin)
+          list(GET _growbox_eink_key_pins ${_growbox_key_right_index} _growbox_key_right_pin)
+          growbox_require_distinct_gpio(${_growbox_key_left_pin} ${_growbox_key_right_pin}
+                                        "e-ink button pins")
         endforeach()
       endif()
     endforeach()

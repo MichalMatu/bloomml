@@ -31,6 +31,11 @@ inline constexpr int kEinkDcGpio = @GROWBOX_EINK_DC_GPIO@;
 inline constexpr int kEinkRstGpio = @GROWBOX_EINK_RST_GPIO@;
 inline constexpr int kEinkBusyGpio = @GROWBOX_EINK_BUSY_GPIO@;
 inline constexpr int kEinkPowerGpio = @GROWBOX_EINK_POWER_GPIO@;
+inline constexpr int kEinkKeyHomeGpio = @GROWBOX_EINK_KEY_HOME_GPIO@;
+inline constexpr int kEinkKeyBackGpio = @GROWBOX_EINK_KEY_BACK_GPIO@;
+inline constexpr int kEinkKeyPreviousGpio = @GROWBOX_EINK_KEY_PREVIOUS_GPIO@;
+inline constexpr int kEinkKeyNextGpio = @GROWBOX_EINK_KEY_NEXT_GPIO@;
+inline constexpr int kEinkKeyOkGpio = @GROWBOX_EINK_KEY_OK_GPIO@;
 
 inline constexpr bool kServiceConsoleEnabled = @GROWBOX_STAGE28_SERVICE_CONSOLE_ENABLED@ != 0;
 inline constexpr bool kRealOutputsEnabled = @GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED@ != 0;

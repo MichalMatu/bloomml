@@ -1,5 +1,6 @@
 #pragma once
 
+#include "climate/display/DisplayInputEvent.h"
 #include "climate/display/DisplaySnapshot.h"
 #include "growbox_display_model/DisplayPageModel.h"
 
@@ -16,7 +17,6 @@ enum class DisplayPage : std::uint8_t {
   System = 2U,
   Diagnostics = 3U,
 };
-enum class DisplayButton : std::uint8_t { Home = 0U, Back, Previous, Next, Ok };
 
 enum class DisplayWarning : std::uint8_t {
   Sensor = 1U << 0U,
