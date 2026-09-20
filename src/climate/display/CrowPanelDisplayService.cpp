@@ -1,9 +1,13 @@
 #include "climate/display/CrowPanelDisplayService.h"
 
-#include "climate/display/DisplayRenderCoordinator.h"
+#include "climate/display/DisplayClayRenderCoordinator.h"
+#include "growbox_clay_ui/PageRenderer.h"
 
+#include <esp_heap_caps.h>
 #include <esp_log.h>
 #include <esp_timer.h>
+
+#include <limits>
 
 namespace growbox::app::climate_io::display {
 namespace {
@@ -17,6 +21,23 @@ bool CrowPanelDisplayService::begin() noexcept {
     return true;
   }
 
+  clay_arena_required_bytes_ = ::growbox::clay_ui::pageRendererArenaBytes();
+  if (clay_arena_required_bytes_ == 0U ||
+      clay_arena_required_bytes_ > std::numeric_limits<std::uint32_t>::max()) {
+    ESP_LOGE(kTag, "Invalid Clay arena requirement bytes=%llu",
+             static_cast<unsigned long long>(clay_arena_required_bytes_));
+    return false;
+  }
+
+  clay_arena_ = static_cast<std::uint8_t*>(
+      heap_caps_malloc(clay_arena_required_bytes_, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+  if (clay_arena_ == nullptr) {
+    ESP_LOGE(kTag, "Failed to allocate Clay arena in PSRAM bytes=%lu",
+             static_cast<unsigned long>(clay_arena_required_bytes_));
+    return false;
+  }
+  clay_arena_bytes_ = clay_arena_required_bytes_;
+
   render_queue_ = xQueueCreateStatic(1U, sizeof(DisplayRenderWorkItem),
                                      render_queue_storage_.data(), &render_queue_control_);
   completion_queue_ =
@@ -25,6 +46,7 @@ bool CrowPanelDisplayService::begin() noexcept {
   if (render_queue_ == nullptr || completion_queue_ == nullptr) {
     render_queue_ = nullptr;
     completion_queue_ = nullptr;
+    releaseClayArena();
     ESP_LOGE(kTag, "Failed to create static display queues");
     return false;
   }
@@ -38,13 +60,15 @@ bool CrowPanelDisplayService::begin() noexcept {
     vQueueDelete(completion_queue_);
     render_queue_ = nullptr;
     completion_queue_ = nullptr;
+    releaseClayArena();
     ESP_LOGE(kTag, "Failed to create static display worker task");
     return false;
   }
 
   started_ = true;
-  ESP_LOGI(kTag, "Display worker started static_stack_bytes=%u",
-           static_cast<unsigned>(taskStackBytes()));
+  ESP_LOGI(kTag, "Display worker started static_stack_bytes=%u clay_arena_psram_bytes=%lu",
+           static_cast<unsigned>(taskStackBytes()),
+           static_cast<unsigned long>(clay_arena_bytes_));
   return true;
 }
 
@@ -60,6 +84,9 @@ CrowPanelDisplayServiceStatus CrowPanelDisplayService::status() const noexcept {
   CrowPanelDisplayServiceStatus result{};
   result.started = started_;
   result.render_in_flight = transaction_.inFlight();
+  result.clay_arena_in_psram = clay_arena_ != nullptr;
+  result.clay_arena_required_bytes = static_cast<std::uint32_t>(clay_arena_required_bytes_);
+  result.clay_arena_allocated_bytes = static_cast<std::uint32_t>(clay_arena_bytes_);
   result.submitted = submitted_.load(std::memory_order_relaxed);
   result.submit_failures = submit_failures_.load(std::memory_order_relaxed);
   result.render_successes = render_successes_.load(std::memory_order_relaxed);
@@ -86,7 +113,9 @@ void CrowPanelDisplayService::taskLoop() noexcept {
       continue;
     }
 
-    const bool success = renderDisplayFrame(work_item.frame, geometry_, theme_, backend_);
+    ::growbox::clay_ui::RenderSummary render_summary{};
+    const bool success = renderClayDisplayFrame(work_item.frame, clay_arena_, clay_arena_bytes_,
+                                                backend_, &render_summary);
     observeStackWatermark();
     const std::uint32_t stack_min_free_bytes =
         stack_min_free_bytes_.load(std::memory_order_relaxed);
@@ -94,17 +123,19 @@ void CrowPanelDisplayService::taskLoop() noexcept {
       const std::uint32_t successes =
           render_successes_.fetch_add(1U, std::memory_order_relaxed) + 1U;
       ESP_LOGI(kTag,
-               "Physical refresh completed generation=%llu kind=%u reason=%u successes=%lu "
-               "stack_min_free_bytes=%lu",
+               "Physical Clay refresh completed generation=%llu kind=%u reason=%u successes=%lu "
+               "commands=%lu black_pixels=%lu stack_min_free_bytes=%lu",
                static_cast<unsigned long long>(work_item.generation),
                static_cast<unsigned>(work_item.frame.refresh_kind),
                static_cast<unsigned>(work_item.frame.refresh_reason),
                static_cast<unsigned long>(successes),
+               static_cast<unsigned long>(render_summary.render_commands),
+               static_cast<unsigned long>(render_summary.black_pixels),
                static_cast<unsigned long>(stack_min_free_bytes));
     } else {
       const std::uint32_t failures = render_failures_.fetch_add(1U, std::memory_order_relaxed) + 1U;
       ESP_LOGE(kTag,
-               "Physical refresh failed generation=%llu kind=%u reason=%u failures=%lu "
+               "Physical Clay refresh failed generation=%llu kind=%u reason=%u failures=%lu "
                "stack_min_free_bytes=%lu",
                static_cast<unsigned long long>(work_item.generation),
                static_cast<unsigned>(work_item.frame.refresh_kind),
@@ -162,6 +193,14 @@ void CrowPanelDisplayService::submitPending(std::uint64_t now_ms) noexcept {
     return;
   }
   submitted_.fetch_add(1U, std::memory_order_relaxed);
+}
+
+void CrowPanelDisplayService::releaseClayArena() noexcept {
+  if (clay_arena_ != nullptr) {
+    heap_caps_free(clay_arena_);
+  }
+  clay_arena_ = nullptr;
+  clay_arena_bytes_ = 0U;
 }
 
 } // namespace growbox::app::climate_io::display
