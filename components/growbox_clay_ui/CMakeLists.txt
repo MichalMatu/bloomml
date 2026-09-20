@@ -11,8 +11,11 @@ idf_component_register(
     "${GROWBOX_DISPLAY_MODEL_DIR}/include"
   PRIV_INCLUDE_DIRS
     "${GROWBOX_CLAY_UI_DIR}/src"
-    "${GROWBOX_CLAY_UI_DIR}/third_party/clay/include"
 )
 
+target_include_directories(
+  ${COMPONENT_LIB}
+  SYSTEM PRIVATE "${GROWBOX_CLAY_UI_DIR}/third_party/clay/include"
+)
 target_compile_features(${COMPONENT_LIB} PRIVATE cxx_std_20)
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wall -Wextra -Wpedantic)
