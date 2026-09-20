@@ -130,7 +130,9 @@ The production application remains C++17. `CrowPanelDisplayService` owns the exi
 
 Navigation remains `DisplayNavigation`; Clay does not own sensor/output truth, control policy, safety state, RF transport or hardware.
 
-The current partial-refresh waveform path still transfers the whole framebuffer. The next display stage, Phase 4, narrows SSD1680 RAM-window transfer using dirty-region planning. That work must preserve the same single framebuffer and refresh ownership; it must not introduce a second render/hardware pipeline.
+Phase 4 narrowed partial refreshes to the mapped dirty SSD1680 RAM window while preserving the single backend-owned framebuffer and refresh owner. The dirty baseline advances only after a physically successful render, and hardware/controller reinitialization falls back to a full refresh.
+
+Native button input remains a semantic observer-side input path. Phase 6 adds only a read-only four-page chooser: temporary menu selection is owned by `DisplayMenuState`, while committed page ownership remains `DisplayNavigation` / `DisplayRuntimeController`. No menu path owns control policy, outputs, persistence, RF transport or safety state.
 
 Production display changes must be verified with `make build-crowpanel`, which composes the CrowPanel N8R8, Stage27 NimBLE, Stage27C, `climate-v6-real-inputs` and e-ink configuration. Generic `make build` is not evidence that the production CrowPanel display path compiles.
 

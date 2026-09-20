@@ -1,6 +1,6 @@
 # Display UI / Clay port contract
 
-Status: active; Phase 4 is the next implementation stage.
+Status: active; Phases 0-6 are complete. Phase 7 has autonomous exact-SHA hardware evidence; manual operator checks remain.
 
 Documentation re-audit baseline: `growbox-ml-controller@6d083e5b00a29b20a8a9bb6f2bb83a395634aff5`.
 Donor snapshot: `esp32s3_LiteGraph@5b8c758c365547ddeaab65bbe9f849bdd071695d` under `vendor/litegraph_epd_port/`.
@@ -267,27 +267,55 @@ Merged exact-SHA hardware startup qualification on authorized `/dev/cu.usbserial
 
 No human physical key press occurred during the unattended capture (`button_events=0`). Therefore Phase 5 claims GPIO initialization and software semantics, not manual key-actuation/navigation qualification. Real physical button presses remain explicitly part of Phase 7.
 
-### Phase 6 — menu/settings mechanics — NEXT
+### Phase 6 — menu/settings mechanics — DONE (bounded read-only scope)
 
-Port only generic stack/selection/scroll/confirmation mechanics needed by real growbox operator use cases.
+The justified growbox operator scope is a read-only page chooser rather than a donor-style settings subsystem. A write-side settings framework was intentionally not introduced because no existing growbox application/domain mutation required it.
 
-Any setting/action that can affect control must call the existing growbox domain/application API. UI must never become an output transport or safety owner.
+Implemented boundary:
 
-### Phase 7 — hardware qualification
+- long-press OK opens a four-item Environment / Outputs / System / Diagnostics chooser;
+- Previous / Next moves only the temporary selection; short OK commits through the existing `DisplayNavigation`; Back cancels and Home closes the chooser and returns to Environment;
+- `DisplayMenuState` owns only chooser visibility/selection; committed page state remains owned by `DisplayRuntimeController` / `DisplayNavigation`;
+- menu rendering still produces the existing neutral `DisplayPageModel`; Clay gains no navigation, control, persistence or hardware ownership;
+- warning identity is copied from the underlying authoritative page so safety/clock/storage/supervisor warnings remain visible;
+- menu changes invalidate stale planned frames while the existing async render confirmation contract remains authoritative;
+- no settings write, output action, RF transport call or safety mutation was added.
 
-After software gates are green, qualify the exact candidate SHA on `/dev/cu.usbserial-120` with outputs fenced unless the operator explicitly authorizes actuation.
+Verification:
 
-Verify:
+- Local Agent `20260920-phase6-menu-shell-v1` on exact head `47d37b5e660ddda21da15707d2d8e5381a72c9ed`: clang-format PASS, focused menu tests PASS, full display/Clay suites PASS, full `make test-host` PASS, canonical `make build-crowpanel` PASS and `git diff --check` PASS;
+- firmware size was `0xcdea0`, with 80% free in the smallest `0x400000` app partition;
+- PR #13 passed GitHub CI including host/clang-tidy and CrowPanel ESP-IDF build, then merged as `b64a7f294da716b59d7ca2a819f938f52ba726b0`.
 
-- full/partial refresh;
-- navigation/buttons;
-- page correctness;
-- no display-induced SCD41/control-loop regression;
-- no panic/watchdog/brownout;
-- heap/PSRAM stability;
-- display worker stack high-water mark;
-- ghosting and periodic full-refresh policy;
-- retry/failure behavior.
+Phase 6 is complete at this bounded scope. Future writable settings require a concrete operator use case and an existing/explicit application-domain API; they are not implied by the donor UI.
+
+### Phase 7 — hardware qualification — PARTIAL
+
+The autonomous hardware subset has been qualified on exact merged SHA `b64a7f294da716b59d7ca2a819f938f52ba726b0` using only authorized `/dev/cu.usbserial-120`. Real outputs, RF loopback/remote capture and the thermal test sequence were disabled.
+
+Local Agent `20260921-phase7-hardware-qualification-v1` successfully identified the ESP32-S3 with 8 MB PSRAM, built/flashed the exact SHA, and captured 180 seconds of UART. Its final gate intentionally failed because it originally required a live SCD41 sample; the physical probe showed `scd41_0x62=ESP_ERR_NOT_FOUND`. Local Agent `20260921-phase7-hardware-qualification-v2` re-parsed that same physical capture with device-presence-aware acceptance criteria and passed.
+
+Qualified observations from the capture:
+
+- startup: `eink_requested=1`, `eink_ready=1`, `eink_buttons_ready=1`, `real_outputs_requested=0`, `real_outputs_ready=0`, `outputs=fake-locked`;
+- display worker: static stack 6144 bytes and persistent Clay PSRAM arena 169792 bytes;
+- 18 telemetry records were present; RTC was available/trusted and BLE environment samples were present;
+- four successful physical Clay refreshes were observed: two full transfers at 4736 bytes/plane and two reduced partial transfers at 1776 bytes/plane (`dirty=0,48,296,41`, native `6-11,0-295`);
+- display worker minimum free stack was 2228 bytes;
+- internal free heap remained about 204280 -> 201488 bytes with observed minimum 201488 in the parsed records; PSRAM free remained about 8200868 -> 8188272 bytes with observed minimum 8188272;
+- repeated `heap_integrity_ok` records were present; no heap-integrity failure, render failure, confirmation failure or display queue failure was observed;
+- no Guru Meditation, brownout, task/interrupt watchdog timeout, assert, abort or backtrace signature was present;
+- no physical output actuation was enabled.
+
+Not yet qualified:
+
+- SCD41-specific/control-loop behavior on this run, because the SCD41 device was physically absent/not found;
+- manual physical button actuation/navigation, because the unattended capture observed zero button events;
+- visual page correctness/ghosting by human inspection;
+- the periodic full-refresh cadence after 20 partial refreshes, because the capture contained only two partial refreshes;
+- injected physical backend failure/retry behavior (the software transaction/failure path remains covered by host tests).
+
+These remaining checks must not be replaced by synthetic button injection or inferred from host/build success.
 
 ## Diagnostics/resource requirements
 
@@ -320,7 +348,7 @@ Before implementation:
 1. read `../AGENTS.md`, `README.md`, `CURRENT_STATUS.md`, `ARCHITECTURE.md`, this file and `vendor/litegraph_epd_port/README.md`;
 2. fetch fresh `main` and verify Local Agent is idle before direct writes;
 3. confirm the vendor source pins have not drifted;
-4. continue from the first incomplete phase above; currently Phase 6;
+4. continue from the first incomplete qualification item above; currently the remaining manual Phase 7 checks;
 5. preserve the shared `growbox_display_model` boundary and existing `DisplayNavigation` ownership;
 6. preserve the backend-owned single framebuffer, async transaction and C++17/C++20 boundary;
 7. do not reopen SSD1680 pin mapping, rotation, async ownership or SCD41 recovery without new evidence.
