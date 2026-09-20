@@ -15,6 +15,7 @@ target_include_directories(
   display_presenter_tests
   PRIVATE
     "${PROJECT_ROOT}/src"
+    "${PROJECT_ROOT}/lib/growbox_display_model/include"
     "${PROJECT_ROOT}/lib/environment_control/src"
 )
 
