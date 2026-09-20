@@ -155,6 +155,10 @@ configure_file(
   @ONLY
 )
 target_include_directories(${COMPONENT_LIB} PRIVATE "${GROWBOX_GENERATED_INCLUDE_DIR}")
+target_include_directories(
+  ${COMPONENT_LIB}
+  PRIVATE "${GROWBOX_PROJECT_ROOT}/lib/growbox_display_model/include"
+)
 
 # Keep only switches that are intentionally consumed by the preprocessor. Runtime values are
 # available exclusively through the generated RuntimeBuildConfig.h typed interface.
