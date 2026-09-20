@@ -1,21 +1,13 @@
 #include "growbox_clay_ui/PageDirtyRegion.h"
 
+#include "PageLayoutGeometry.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
 
 namespace growbox::clay_ui {
 namespace {
-
-constexpr std::uint16_t kDisplayWidth = 296U;
-constexpr std::uint16_t kDisplayHeight = 128U;
-constexpr std::uint16_t kInnerLeftPx = 6U;
-constexpr std::uint16_t kInnerWidthPx = 284U;
-constexpr std::uint16_t kHeaderTopPx = 5U;
-constexpr std::uint16_t kHeaderHeightPx = 14U;
-constexpr std::uint16_t kRowsTopPx = 24U;
-constexpr std::uint16_t kRowHeightPx = 9U;
-constexpr std::uint16_t kRowStepPx = 10U;
 
 void includeRegion(PageDirtyRegion& bounds, bool& has_bounds,
                    const PageDirtyRegion& region) noexcept {
@@ -58,7 +50,9 @@ bool planPageDirtyRegion(const ::growbox::display_model::DisplayPageModel* previ
 
   bool has_bounds = false;
   if (stringsDiffer(previous->title, current.title) || previous->warning != current.warning) {
-    includeRegion(output, has_bounds, {kInnerLeftPx, kHeaderTopPx, kInnerWidthPx, kHeaderHeightPx});
+    includeRegion(output, has_bounds,
+                  {internal::page_layout::kInnerLeftPx, internal::page_layout::kHeaderTopPx,
+                   internal::page_layout::kInnerWidthPx, internal::page_layout::kHeaderHeightPx});
   }
 
   const std::size_t previous_count = std::min(previous->line_count, previous->lines.size());
@@ -76,8 +70,11 @@ bool planPageDirtyRegion(const ::growbox::display_model::DisplayPageModel* previ
       continue;
     }
 
-    const std::uint16_t row_y = static_cast<std::uint16_t>(kRowsTopPx + index * kRowStepPx);
-    includeRegion(output, has_bounds, {kInnerLeftPx, row_y, kInnerWidthPx, kRowHeightPx});
+    const std::uint16_t row_y = static_cast<std::uint16_t>(
+        internal::page_layout::kRowsTopPx + index * internal::page_layout::kRowStepPx);
+    includeRegion(output, has_bounds,
+                  {internal::page_layout::kInnerLeftPx, row_y, internal::page_layout::kInnerWidthPx,
+                   internal::page_layout::kRowHeightPx});
   }
 
   return has_bounds;
