@@ -16,10 +16,10 @@ namespace storage = growbox::app::climate_io::storage;
 namespace {
 
 constexpr std::array<std::uint64_t, 4U> kGoldenPageHashes{
-    0x2d40c7bccbf2e12bULL,
-    0xb7e3999ea15d8d2bULL,
-    0x430713d76487fc25ULL,
-    0x3be1346eb2b8c1e5ULL,
+    0x3bb469ff366c69bfULL,
+    0x2e43841abef23957ULL,
+    0x262017750c71fa89ULL,
+    0xc22a38670d9064f1ULL,
 };
 
 std::uint64_t byteHash(const std::uint8_t* data, std::size_t size) {
