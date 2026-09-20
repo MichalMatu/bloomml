@@ -43,6 +43,8 @@ Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for ac
 
 ## Runtime boundary map
 
+- `lib/environment_control/src/climate/ClimatePolicy.*`: stateless Rule/arbitration/safety policy;
+- `lib/environment_control/src/climate/ClimateRuntimeController.*`: stateful trends/ML/execution reconciliation;
 - `ClimateV6RealInputRuntime.cpp`: bootstrap only;
 - `runtime/core/RealInputRuntimeComposition.*`: ownership/lifetime wiring;
 - `runtime/core/RealInputRuntimeCoordinator.*`: cycle orchestration;

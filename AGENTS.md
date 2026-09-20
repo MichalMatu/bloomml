@@ -109,11 +109,13 @@ Treat these as architecture warnings, not automatic failures:
 - constructor requiring more than 7 collaborators;
 - one module exposing unrelated groups of methods.
 
-Existing oversized files are not permission to keep growing them. Current watchlist from the 2026-09-20 architecture audit:
+Existing oversized files are not permission to keep growing them, but size alone is not a refactor priority. The 2026-09-20 follow-up audit corrected the original size-only watchlist:
 
-- `lib/environment_control/src/SafetySupervisor.cpp` — safety policy only; new independent safety domains should be extracted into focused helpers/policies rather than appended indefinitely;
-- `tools/panel/static/js/form.js` — form binding/orchestration only; new panel behavior should prefer focused JS modules;
-- `src/demo/protocol/ScenarioWireCodec.cpp` — wire codec only; do not add simulation/control ownership.
+- `lib/environment_control/src/SafetySupervisor.cpp` is legacy-only; preserve it unless legacy work requires a bounded change;
+- `tools/panel/static/js/form.js` is host/panel tooling, not production firmware authority;
+- `src/demo/protocol/ScenarioWireCodec.cpp` is legacy/demo protocol code, not the climate-v6 production path.
+
+The first confirmed production cohesion issue was `lib/environment_control/src/climate/ClimateRuntimeController.cpp`: stateless Rule generation, arbitration and safety policy were extracted into `ClimatePolicy.*` on 2026-09-20. Keep that boundary: `ClimatePolicy` owns stateless policy evaluation; `ClimateRuntimeController` owns stateful trend/effective-action estimation, ML orchestration and execution reconciliation.
 
 Generated files, pinned third-party/vendor code and large test fixtures are exempt from size heuristics. Do not hand-refactor generated or pinned vendor code to satisfy style metrics.
 

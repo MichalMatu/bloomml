@@ -130,7 +130,9 @@ Production C++ must not reintroduce fallback `GROWBOX_*` default tables. Preproc
 
 ## Climate-v6 controller core
 
-`schemas/environment-controller.v6.json` and generated `ClimateContract.h` define the production climate-v6 controller contract. The portable core lives under `lib/environment_control/src/climate/` and contains feature encoding, Rule/ML evaluation, trend estimation and the portable control loop.
+`schemas/environment-controller.v6.json` and generated `ClimateContract.h` define the production climate-v6 controller contract. The portable core lives under `lib/environment_control/src/climate/`.
+
+Within that core, `ClimatePolicy.*` owns stateless Rule request generation, capability arbitration, safety evaluation and request normalization. `ClimateRuntimeController.*` owns stateful trend/effective-action estimation, ML mode orchestration and reconciliation from execution truth. Keep these responsibilities separate; new Rule/safety policy should not be appended back into the runtime controller for convenience.
 
 Production real-input composition is statically configured for Rule authority with unqualified ML active control disabled.
 

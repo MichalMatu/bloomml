@@ -9,12 +9,12 @@ Control branch: `agent-control`
 
 Runtime reliability hardening and Display UI Port Phase 1 are integrated on `main`.
 
-Fresh audit baseline on 2026-09-20:
+Current source baseline on 2026-09-20:
 
-- `main`: `ba4eb341139731189ac8706462020faa58bad1ae` (`Add isolated Clay UI host component`);
-- runtime-hardening integration parent: `0b605d4c9f3f17f99b799a5248e5b4cfb3d740f6`;
-- Local Agent architecture audit `20260920-architecture-agents-audit-v1`: terminal `done`, exact baseline `ba4eb341139731189ac8706462020faa58bad1ae`;
-- Local Agent was idle after the audit.
+- `main`: `bcf5e6a51b475363b356d44bfd68830a8159db3e` (`Extract climate policy from runtime controller`);
+- the read-only architecture audit `20260920-architecture-agents-audit-v1` ran on the earlier `ba4eb341139731189ac8706462020faa58bad1ae` baseline and is historical evidence, not the current HEAD;
+- Local Agent task `20260920-climate-policy-extraction-v3` completed `done` before integration; focused climate tests, full `make test-host`, production ESP-IDF `make build`, clang-format 19.1.5 and `git diff --check` passed;
+- Local Agent is idle after integration.
 
 The active implementation stage is Display UI Port Phase 2: reproduce the current Environment, Outputs, System and Diagnostics pages in the exact 296x128 host simulator while preserving the native SSD1680 backend and observer-only architecture.
 
@@ -24,15 +24,11 @@ The live implementation contract is `docs/DISPLAY_UI_PORT.md`.
 
 The repository already has a meaningful runtime split: composition/lifetime wiring, cycle coordination, output ownership, persistence, telemetry, display and RF transport are separated by subsystem.
 
-The 2026-09-20 read-only architecture audit found no new obvious production mega-function in first-party C++ through the coarse long-function scan, but it identified growth-risk files that should not keep accumulating unrelated responsibility:
+The follow-up production-path audit showed that the three largest files from the original coarse scan were not production climate-v6 hotspots: root `SafetySupervisor.cpp` is legacy-only, `tools/panel/static/js/form.js` is host tooling, and `src/demo/protocol/ScenarioWireCodec.cpp` is legacy/demo code. Do not prioritize refactors from line count alone.
 
-- `lib/environment_control/src/SafetySupervisor.cpp` — about 759 lines;
-- `tools/panel/static/js/form.js` — about 1103 lines;
-- `src/demo/protocol/ScenarioWireCodec.cpp` — about 1054 lines.
+The first confirmed production cohesion issue was `ClimateRuntimeController.cpp`, which mixed stateless Rule generation/arbitration/safety with stateful runtime, ML and execution reconciliation. That boundary is now split: `ClimatePolicy.*` owns the stateless policy pipeline, while `ClimateRuntimeController.*` owns runtime state/orchestration. Existing climate runtime/parity tests remained green through the extraction.
 
-Generated code, pinned third-party Clay and large test fixtures are not refactor targets merely because of size.
-
-`AGENTS.md` contains the repository-wide architecture-first implementation gate, dependency/ownership rules, anti-God-object rules and ESP32-S3 resource guardrails. New independent responsibilities should be placed in focused modules rather than appended to central coordinators/controllers for convenience.
+Generated code, pinned third-party Clay and large test fixtures are not refactor targets merely because of size. `AGENTS.md` contains the repository-wide architecture-first implementation gate, dependency/ownership rules, anti-God-object rules and ESP32-S3 resource guardrails.
 
 ## Production invariants
 
@@ -98,7 +94,7 @@ The normal production application remains C++17. Firmware integration has not st
 
 Historical runtime-hardening verification and physical evidence remain in `HISTORY.md`, `CHANGELOG.md` and exact Local Agent result files.
 
-The 2026-09-20 architecture audit was intentionally read-only. It confirmed the exact current `main` baseline and inspected repository structure/file-growth risk; it did not claim a fresh firmware build or hardware qualification.
+The initial 2026-09-20 architecture audit was intentionally read-only. The subsequent production-path correction and `ClimatePolicy` extraction were verified by Local Agent task `20260920-climate-policy-extraction-v3`: focused climate suites, full host C++ suites and the production ESP-IDF build passed before merge. This is software/build evidence only; no new physical hardware qualification is claimed.
 
 For new implementation work, use the smallest relevant gate first and follow `AGENTS.md` / `DISPLAY_UI_PORT.md` for widening verification.
 
