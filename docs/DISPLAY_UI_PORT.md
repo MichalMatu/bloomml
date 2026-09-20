@@ -1,6 +1,6 @@
 # Display UI / Clay port contract
 
-Status: active next implementation stage.
+Status: active; Phase 3 is the next implementation stage.
 
 Documentation re-audit baseline: `growbox-ml-controller@6d083e5b00a29b20a8a9bb6f2bb83a395634aff5`.
 Donor snapshot: `esp32s3_LiteGraph@5b8c758c365547ddeaab65bbe9f849bdd071695d` under `vendor/litegraph_epd_port/`.
@@ -81,14 +81,14 @@ Rules:
 - keep the rest of the firmware C++17 during the first port;
 - use native ESP-IDF `heap_caps_*` for Clay arena allocation rather than donor Arduino/PSRAM helpers.
 
-If ESP-IDF component dependency direction makes this boundary cyclic, first extract the minimal shared display model into a small C++17 component. Do not solve a dependency problem by leaking Clay types into the runtime.
+The minimal shared semantic model has been extracted to `lib/growbox_display_model/`. Keep it behavior-free: it is a C++17 DTO boundary, not a new UI framework or state owner.
 
 ## Target render path
 
 ```text
 runtime truth
    -> DisplaySnapshot
-   -> DisplayPresenter / semantic page model
+   -> DisplayPresenter / DisplayPageModel
    -> growbox Clay layouts
    -> Clay_RenderCommandArray (inside C++20 component)
    -> monochrome renderer
@@ -123,28 +123,51 @@ Acceptance:
 - renderer/clipping tests pass;
 - no firmware behavior changes.
 
-Verification on `agent/clay-ui-phase1`:
+Verification:
 
 - Clay 0.14 header matches pinned Git blob `58006d208f7e58d646578b42524068f44445a4dc` byte-for-byte;
 - standalone C++20 component and C++17 public-boundary compile checks pass;
 - headless 296x128 1-bpp simulator emits exactly 4736 framebuffer bytes;
 - renderer/clipping and simulator smoke tests pass;
-- existing display host suites and ESP-IDF firmware build remain green;
-- production `src/` is unchanged.
+- existing display host suites and ESP-IDF firmware build remain green.
 
-### Phase 2 — reproduce current four pages in simulator
+### Phase 2 — reproduce current four pages in simulator — DONE
 
-Rebuild Environment / Outputs / System / Diagnostics using current growbox semantic page data.
+Environment / Outputs / System / Diagnostics are rendered from the current growbox semantic `DisplayPageModel` through real Clay 0.14 in the exact 296x128 host framebuffer.
 
-Acceptance:
+Implemented boundary:
 
-- same authoritative values/status meanings as current presenter;
-- no LiteGraph-specific domain concepts;
-- deterministic screenshots/golden or equivalent headless checks;
-- navigation model exercised on host;
-- current page set remains usable before adding settings/menu complexity.
+- `DisplayPresenter` remains the authority for page content and warning meaning;
+- `lib/growbox_display_model/` carries only the bounded semantic page DTO;
+- `growbox_clay_ui::renderHostPage()` consumes that DTO without depending on application-layer `src/` headers;
+- existing `DisplayNavigation` remains the navigation owner and is exercised by the Phase 2 host integration test;
+- the host monochrome text path uses a readable 5x7 glyph renderer with a matching Clay text-measurement callback;
+- each render transaction clears `Clay_GetCurrentContext()` before and after using its local arena, preventing a Clay context from outliving arena memory during repeated page rendering.
 
-### Phase 3 — connect Clay renderer to existing framebuffer/service
+Acceptance evidence:
+
+- same authoritative values/status meanings as current presenter: PASS via presenter-built models used directly by the integration test;
+- no LiteGraph-specific domain concepts: PASS;
+- deterministic golden/equivalent headless checks: PASS via exact 4736-byte frame hashes;
+- navigation model exercised on host: PASS for Next/Previous/Home/Ok/Back behavior;
+- current page set usable before settings/menu complexity: PASS with readable host text and all ten semantic rows rendered.
+
+Nominal golden hashes on exact `main` `33e20713b605d93e97fadd7b2c1af8748b3bf897`:
+
+- Environment / `Growbox status`: `2d40c7bccbf2e12b`;
+- Outputs: `b7e3999ea15d8d2b`;
+- System: `430713d76487fc25`;
+- Diagnostics: `3be1346eb2b8c1e5`.
+
+Verification:
+
+- Local Agent `20260920-clay-phase2-v2`: dedicated display/Clay suites PASS, full `make test-host` PASS, production ESP-IDF `make build` PASS, `git diff --check` PASS;
+- firmware binary remained `0x4af90`, with 71% of the smallest app partition free;
+- Local Agent `20260920-clay-phase2-goldens-v1`: pinned golden hashes and full dedicated display host gate PASS on exact `main` `33e20713b605d93e97fadd7b2c1af8748b3bf897`.
+
+No physical-display claim is made by Phase 2.
+
+### Phase 3 — connect Clay renderer to existing framebuffer/service — NEXT
 
 Replace only the current text-layout layer behind the existing observer transaction.
 
@@ -155,6 +178,8 @@ Acceptance:
 - failure/retry does not advance observer state falsely;
 - no control-loop blocking regression;
 - full refresh still works before partial-region optimization is enabled.
+
+Implementation rule for this phase: reuse the Phase 2 semantic Clay layout and the existing `DisplayRuntimeFrame`/async transaction. Do not introduce a second navigation owner, a second framebuffer owner or direct Clay-to-SSD1680 hardware ownership.
 
 ### Phase 4 — real dirty-region partial transfer
 
@@ -243,5 +268,6 @@ Before implementation:
 1. read `../AGENTS.md`, `README.md`, `CURRENT_STATUS.md`, `ARCHITECTURE.md`, this file and `vendor/litegraph_epd_port/README.md`;
 2. fetch fresh `main` and verify Local Agent is idle before direct writes;
 3. confirm the vendor source pins have not drifted;
-4. continue from the first incomplete phase above;
-5. do not reopen SSD1680 pin mapping, rotation, async ownership or SCD41 recovery without new evidence.
+4. continue from the first incomplete phase above; currently Phase 3;
+5. preserve the shared `growbox_display_model` boundary and existing `DisplayNavigation` ownership;
+6. do not reopen SSD1680 pin mapping, rotation, async ownership or SCD41 recovery without new evidence.
