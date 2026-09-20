@@ -7,15 +7,15 @@ Control branch: `agent-control`
 
 ## Current phase
 
-Runtime reliability hardening and Display UI Port Phases 1-3 are integrated on `main`.
+Runtime reliability hardening and Display UI Port Phases 1-4 are integrated on `main`.
 
-The current implementation stage is Display UI Port Phase 4: add true dirty-region SSD1680 RAM-window transfer while preserving the existing Clay layout, single framebuffer, asynchronous display transaction and native hardware ownership.
+Display UI Port Phase 4 is complete, including exact-SHA physical qualification of true reduced SSD1680 dirty-window transfer. The current implementation stage is Phase 5: add growbox-owned native ESP-IDF button input with host-tested debounce/long-press behavior while keeping navigation state outside the GPIO layer.
 
 The live implementation contract is `docs/DISPLAY_UI_PORT.md`.
 
 ## Current source baseline
 
-Phase 3 production-path verification was completed on source `76447b963bb1e3f4d9290bfb26380ac30a0a41ab` before documentation/CI closeout. Subsequent `main` commits add the canonical `make build-crowpanel` gate, CI coverage and current documentation; always fetch fresh `main` before new work.
+Phase 4 code is merged on source `4c32466c6a0af798620faf0e85416ad39ea4f07a` and was physically qualified on that exact SHA. Subsequent documentation-only commits may advance `main`; always fetch fresh `main` before new work.
 
 Current architecture state:
 
@@ -26,7 +26,8 @@ Current architecture state:
 - `CrowPanelSsd1680DisplayBackend` remains sole owner of the one 296x128 / 4736-byte framebuffer and all native SSD1680 hardware access;
 - `CrowPanelDisplayService` owns one persistent Clay scratch arena allocated in PSRAM and the existing display worker/task transaction;
 - navigation remains the growbox `DisplayNavigation`; Clay does not own navigation, sensor/output truth, control or safety state;
-- Phase 3 product verification covers host rendering, transaction failure paths and the canonical real-input CrowPanel/e-ink firmware build.
+- Phase 4 adds semantic row-aware dirty planning plus reduced native SSD1680 RAM-window transfer; a one-row update is verified at 1776 bytes/plane versus 4736 bytes full-plane;
+- the exact merged Phase 4 SHA was flashed to `/dev/cu.usbserial-120` with real outputs disabled and produced a real `physical_partial=1` refresh without crash/watchdog/brownout evidence.
 
 ## Architecture quality baseline
 
@@ -85,7 +86,7 @@ Production-polarity nominal page hashes:
 
 Each nominal page emits 25 Clay render commands in the integration fixture.
 
-The current partial-refresh path still uses partial waveform handling while transferring the full framebuffer. True reduced dirty-window RAM transfer is Phase 4.
+The partial-refresh path now transfers only the mapped dirty SSD1680 RAM window. Dirty planning is based on differences between the last physically successful semantic page and the next page; hardware padding/alignment remains in the backend. Full refresh remains the fallback when previous controller RAM is not known to be seeded.
 
 ## Phase 3 verification state
 
@@ -104,6 +105,14 @@ Local Agent `20260920-clay-phase3-crowpanel-build-v4` verified exact source `764
 - `git diff --check` and clean working tree: PASS.
 
 This is software/build evidence only. No new physical hardware qualification is claimed for Phase 3.
+
+## Phase 4 verification state
+
+Phase 4 merged as `4c32466c6a0af798620faf0e85416ad39ea4f07a`. Software gates passed display/Clay suites, full 50-test `make test-host`, canonical `make build-crowpanel`, exact 1776-byte single-row native-window mapping and `git diff --check`.
+
+Physical qualification on authorized `/dev/cu.usbserial-120` used e-ink enabled with real outputs/RF loopback/thermal test sequence disabled. The captured firmware reported the exact merged SHA and produced a real partial refresh: `dirty=0,48,296,41`, native `6-11,0-295`, `window_bytes=1776`, `ram_payload_bytes=3552`, `physical_partial=1`. The same 120-second capture contained no Guru Meditation, brownout, task/interrupt watchdog timeout, assert, abort or backtrace. Application `INFO/WATCHDOG ... heartbeat` records remained healthy heartbeats.
+
+The display worker reported `stack_min_free_bytes=2228` during the qualified refresh.
 
 ## SCD41 state
 
@@ -127,7 +136,7 @@ For a new ChatGPT window:
 
 1. Read `AGENTS.md`, `docs/README.md`, this file, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md` and `docs/DISPLAY_UI_PORT.md`.
 2. Fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any write.
-3. Continue from the first incomplete phase in `docs/DISPLAY_UI_PORT.md`; currently that is Phase 4.
+3. Continue from the first incomplete phase in `docs/DISPLAY_UI_PORT.md`; currently that is Phase 5.
 4. Keep Clay under `lib/growbox_clay_ui/`; do not re-create it under another directory or restart it from donor code.
 5. Keep `lib/growbox_display_model/` as the shared behavior-free semantic DTO boundary.
 6. Preserve the backend-owned single framebuffer, native SSD1680 backend, async observer transaction and C++17/C++20 boundary.
@@ -140,8 +149,8 @@ For a new ChatGPT window:
 1. Isolated C++20 Clay component plus exact 296x128 host simulator — DONE.
 2. Reproduce the existing four growbox pages with deterministic host/golden checks — DONE.
 3. Attach Clay behind the existing async display transaction — DONE.
-4. Add true dirty-region RAM-window transfer — NEXT.
-5. Add native ESP-IDF button input with host-tested debounce/long-press behavior.
+4. Add true dirty-region RAM-window transfer — DONE.
+5. Add native ESP-IDF button input with host-tested debounce/long-press behavior — NEXT.
 6. Add only justified growbox menu/settings flows through existing domain APIs.
 7. Qualify the final exact SHA on hardware when a physical claim is required.
 

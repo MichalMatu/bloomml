@@ -210,7 +210,7 @@ For unattended qualification keep physical outputs disabled unless the operator 
 
 The production-integrated Clay component lives under `lib/growbox_clay_ui/`. It is C++20 internally and exposes only growbox-owned C++17-compatible, Clay-free public types. It now renders the existing semantic `DisplayPageModel` directly into the single framebuffer owned by the native SSD1680 backend, behind the existing asynchronous display transaction. The display service owns one persistent Clay scratch arena in PSRAM; Clay does not own the framebuffer, worker, navigation, refresh confirmation or hardware.
 
-Current next display work is Phase 4 in `docs/DISPLAY_UI_PORT.md`: true dirty-region RAM-window transfer. Do not create a second framebuffer/refresh owner while implementing it.
+Display UI Port Phase 4 is integrated and physically qualified on merged source `4c32466c6a0af798620faf0e85416ad39ea4f07a`: semantic row-aware dirty planning narrows SSD1680 RAM-window transfers while preserving the single framebuffer, async refresh owner and native backend. Current next display work is Phase 5 in `docs/DISPLAY_UI_PORT.md`: native ESP-IDF button input with host-tested debounce/long-press behavior.
 
 Do not replace the native SSD1680 backend, copy Arduino hardware ownership into production, or expose `Clay_*` types across the component boundary.
 

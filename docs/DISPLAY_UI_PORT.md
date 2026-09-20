@@ -197,29 +197,44 @@ Verification:
 
 This remains software/build evidence only. No new physical CrowPanel qualification is claimed by Phase 3.
 
-### Phase 4 — real dirty-region partial transfer — NEXT
+### Phase 4 — real dirty-region partial transfer — DONE
 
-Adapt the donor dirty-region algorithm into growbox refresh planning.
+The production SSD1680 partial-refresh path now performs a true reduced RAM-window transfer rather than selecting the partial waveform while streaming the full 4736-byte plane.
 
-Required behavior:
+Implemented boundary:
 
-- compute visible pixel-writing bounds;
-- add bounded padding;
-- clamp/alignment for SSD1680 constraints;
-- union current region with previous dirty region so disappeared/moved pixels are cleared;
-- only then narrow SSD1680 RAM-window transfer.
+- `growbox_clay_ui::planPageDirtyRegion()` compares the last physically successful semantic `DisplayPageModel` with the next page and marks only changed header/row footprints;
+- renderer and dirty planner share private Clay page geometry constants, so dirty bounds cannot silently drift from the actual layout;
+- changed and removed rows include their full old/new row footprint, preventing stale pixels when text disappears or changes width;
+- the SSD1680 backend owns hardware padding/clamping and logical-to-native 128x296 byte-window mapping;
+- partial refresh writes only the selected native window to current RAM, activates the partial waveform, then mirrors that same window to previous RAM;
+- full refresh remains the fallback whenever controller previous-RAM state is not known/seeded;
+- failed physical refreshes do not advance the service's last-physical-page baseline; hardware reinitialization clears the previous-RAM seed and therefore forces a full refresh on retry;
+- there is still exactly one 4736-byte framebuffer, one display worker and one physical refresh owner; Clay did not gain hardware ownership.
 
-Important: the current partial-refresh waveform path still streams the full 4736-byte frame. The goal here is a true reduced RAM-window transfer, not merely selecting the partial waveform.
+Host acceptance evidence:
 
-Acceptance:
+- clamp/expand/union and both SSD1680 rotations: PASS;
+- changed/removed semantic row planning: PASS;
+- one changed row `{x=6,y=44,w=284,h=9}` plus 16 px hardware padding maps to exactly 1776 bytes per SSD1680 RAM plane, below the full 4736-byte plane: PASS;
+- full `scripts/test_display_host.sh`: PASS;
+- full `make test-host`: 50/50 PASS;
+- canonical `make build-crowpanel`: PASS;
+- `git diff --check`: PASS.
 
-- host tests for region clamp/union/moved-content cleanup;
-- full-refresh fallback remains available;
-- no stale pixels after moving/removing content;
-- measured transferred bytes/region are observable in diagnostics;
-- do not introduce a second framebuffer, refresh owner or Clay-to-hardware dependency.
+Physical qualification on merged exact SHA `4c32466c6a0af798620faf0e85416ad39ea4f07a` used only authorized `/dev/cu.usbserial-120`, with `GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED=0`, `GROWBOX_RF433_LOOPBACK_ENABLED=0` and the e-ink path enabled. The 120-second UART capture showed:
 
-### Phase 5 — native buttons
+- firmware-reported SHA `4c32466c6a0af798620faf0e85416ad39ea4f07a`;
+- initial full refreshes with `window_bytes=4736`, `physical_partial=0`;
+- a real partial refresh at uptime ~73.6 s with `dirty=0,48,296,41`, native window `6-11,0-295`, `window_bytes=1776`, `ram_payload_bytes=3552`, `physical_partial=1`;
+- display worker `stack_min_free_bytes=2228`;
+- no Guru Meditation, brownout, task/interrupt watchdog timeout, assert, abort or backtrace in the captured interval.
+
+The log's recurring `INFO/WATCHDOG ... heartbeat` lines are application heartbeat diagnostics, not watchdog failures.
+
+Local Agent evidence: `20260920-phase4-hardware-qualification-v1` performed the exact-SHA flash and UART capture; its over-broad first-pass text filter failed on the benign word `WATCHDOG`. `20260920-phase4-hardware-qualification-v2` re-parsed the same captured log with specific crash signatures and passed, preserving the physical partial-refresh evidence above.
+
+### Phase 5 — native buttons — NEXT
 
 Implement a growbox-owned ESP-IDF GPIO input layer using semantic events such as Home, Back, Previous, Next and Ok.
 
@@ -240,7 +255,7 @@ Any setting/action that can affect control must call the existing growbox domain
 
 ### Phase 7 — hardware qualification
 
-After software gates are green, qualify the exact candidate SHA on `/dev/cu.usbserial-1130` with outputs fenced unless the operator explicitly authorizes actuation.
+After software gates are green, qualify the exact candidate SHA on `/dev/cu.usbserial-120` with outputs fenced unless the operator explicitly authorizes actuation.
 
 Verify:
 
@@ -285,7 +300,7 @@ Before implementation:
 1. read `../AGENTS.md`, `README.md`, `CURRENT_STATUS.md`, `ARCHITECTURE.md`, this file and `vendor/litegraph_epd_port/README.md`;
 2. fetch fresh `main` and verify Local Agent is idle before direct writes;
 3. confirm the vendor source pins have not drifted;
-4. continue from the first incomplete phase above; currently Phase 4;
+4. continue from the first incomplete phase above; currently Phase 5;
 5. preserve the shared `growbox_display_model` boundary and existing `DisplayNavigation` ownership;
 6. preserve the backend-owned single framebuffer, async transaction and C++17/C++20 boundary;
 7. do not reopen SSD1680 pin mapping, rotation, async ownership or SCD41 recovery without new evidence.
