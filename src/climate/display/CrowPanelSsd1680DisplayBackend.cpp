@@ -66,7 +66,7 @@ bool CrowPanelSsd1680DisplayBackend::beginFrame(std::uint16_t width_px, std::uin
   return true;
 }
 
-bool CrowPanelSsd1680DisplayBackend::drawText(const ClayDisplayTextElement& element) noexcept {
+bool CrowPanelSsd1680DisplayBackend::drawText(const DisplayTextElement& element) noexcept {
   return frame_open_ && raster_.drawText(element);
 }
 

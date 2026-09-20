@@ -9,9 +9,8 @@ namespace display = growbox::app::climate_io::display;
 
 namespace {
 
-display::ClayDisplayTextElement textElement(std::uint16_t x, std::uint16_t y,
-                                            std::uint16_t max_width, std::uint16_t font_size,
-                                            const char* text) {
+display::DisplayTextElement textElement(std::uint16_t x, std::uint16_t y, std::uint16_t max_width,
+                                        std::uint16_t font_size, const char* text) {
   return {x, y, max_width, {0U, font_size, false}, text};
 }
 

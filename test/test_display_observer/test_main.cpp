@@ -1,4 +1,4 @@
-#include "climate/display/DisplayClayCoordinator.h"
+#include "climate/display/DisplayRenderCoordinator.h"
 #include "climate/display/DisplayTelemetryObserver.h"
 #include "climate/output/LampSafety.h"
 #include "climate/output/OutputBindings.h"
@@ -39,7 +39,7 @@ public:
     return begin_result;
   }
 
-  bool drawText(const display::ClayDisplayTextElement& element) noexcept {
+  bool drawText(const display::DisplayTextElement& element) noexcept {
     if (!frame_open || element.text == nullptr) {
       return false;
     }
@@ -239,11 +239,11 @@ void testClayCoordinatorAcknowledgesOnlySuccessfulBackendRender() {
   assert(observer.observe(telemetry_snapshot, storage_status));
   assert(observer.hasPendingRefresh());
 
-  display::ClayDisplayTheme theme{};
+  display::DisplayTheme theme{};
   FakeClayBackend backend{};
   backend.draw_result = false;
 
-  assert(!display::renderPendingDisplayToClay(observer, theme, backend, 200'005U));
+  assert(!display::renderPendingDisplay(observer, theme, backend, 200'005U));
   assert(observer.hasPendingRefresh());
   assert(backend.begin_count == 1U);
   assert(backend.draw_count == 1U);
@@ -254,7 +254,7 @@ void testClayCoordinatorAcknowledgesOnlySuccessfulBackendRender() {
 
   backend.draw_result = true;
   backend.end_result = false;
-  assert(!display::renderPendingDisplayToClay(observer, theme, backend, 200'010U));
+  assert(!display::renderPendingDisplay(observer, theme, backend, 200'010U));
   assert(observer.hasPendingRefresh());
   assert(backend.begin_count == 2U);
   assert(backend.end_count == 1U);
@@ -265,19 +265,19 @@ void testClayCoordinatorAcknowledgesOnlySuccessfulBackendRender() {
   assert(backend.last_refresh_kind == display::DisplayRefreshKind::Full);
 
   backend.end_result = true;
-  assert(display::renderPendingDisplayToClay(observer, theme, backend, 200'020U));
+  assert(display::renderPendingDisplay(observer, theme, backend, 200'020U));
   assert(!observer.hasPendingRefresh());
   assert(backend.begin_count == 3U);
   assert(backend.end_count == 2U);
   assert(backend.cancel_count == 2U);
   assert(backend.last_refresh_kind == display::DisplayRefreshKind::Full);
-  assert(!display::renderPendingDisplayToClay(observer, theme, backend, 200'021U));
+  assert(!display::renderPendingDisplay(observer, theme, backend, 200'021U));
   assert(backend.begin_count == 3U);
 
   assert(observer.handleButton(display::DisplayButton::Next));
   telemetry_snapshot.uptime_ms = 200'100U;
   assert(observer.observe(telemetry_snapshot, storage_status));
-  assert(display::renderPendingDisplayToClay(observer, theme, backend, 200'100U));
+  assert(display::renderPendingDisplay(observer, theme, backend, 200'100U));
   assert(backend.last_refresh_kind == display::DisplayRefreshKind::Partial);
 }
 

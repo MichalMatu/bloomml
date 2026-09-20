@@ -111,7 +111,7 @@ void DisplayMonochromeRaster::clearWhite() noexcept {
   buffer_.fill(0xFFU);
 }
 
-bool DisplayMonochromeRaster::drawText(const ClayDisplayTextElement& element) noexcept {
+bool DisplayMonochromeRaster::drawText(const DisplayTextElement& element) noexcept {
   if (element.text == nullptr || element.text[0] == '\0' || element.max_width_px == 0U ||
       element.style.font_size_px == 0U || element.x_px >= kWidthPx || element.y_px >= kHeightPx) {
     return false;

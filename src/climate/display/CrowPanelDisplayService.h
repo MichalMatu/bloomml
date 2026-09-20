@@ -1,8 +1,8 @@
 #pragma once
 
-#include "climate/display/ClayDisplayAdapter.h"
 #include "climate/display/CrowPanelSsd1680DisplayBackend.h"
 #include "climate/display/DisplayAsyncTransaction.h"
+#include "climate/display/DisplayRenderAdapter.h"
 #include "climate/display/DisplayTelemetryObserver.h"
 
 #include <freertos/FreeRTOS.h>
@@ -34,8 +34,7 @@ struct CrowPanelDisplayServiceStatus final {
 class CrowPanelDisplayService final {
 public:
   CrowPanelDisplayService(DisplayTelemetryObserver& observer,
-                          CrowPanelSsd1680DisplayBackend& backend,
-                          const ClayDisplayTheme& theme = {},
+                          CrowPanelSsd1680DisplayBackend& backend, const DisplayTheme& theme = {},
                           std::uint64_t retry_backoff_ms = 30'000U) noexcept
       : observer_(observer), backend_(backend), geometry_(observer.geometry()), theme_(theme),
         retry_backoff_ms_(retry_backoff_ms) {}
@@ -67,7 +66,7 @@ private:
   DisplayTelemetryObserver& observer_;
   CrowPanelSsd1680DisplayBackend& backend_;
   DisplayRenderGeometry geometry_{};
-  ClayDisplayTheme theme_{};
+  DisplayTheme theme_{};
   std::uint64_t retry_backoff_ms_{30'000U};
   std::uint64_t next_submit_ms_{0U};
   DisplayAsyncTransaction transaction_{};
