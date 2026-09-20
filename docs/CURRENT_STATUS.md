@@ -1,21 +1,38 @@
 # Current controller status
 
-Updated: 2026-09-19
+Updated: 2026-09-20
 Repository: `MichalMatu/growbox-ml-controller`
 Canonical source branch: `main`
 Control branch: `agent-control`
 
 ## Current phase
 
-The SCD41/e-ink recovery and runtime-hardening work are integrated on `main`. Display UI port Phase 1 is now complete: an isolated C++20 Clay component and exact 296x128 host simulator exist without firmware integration. The active next stage is Phase 2: reproduce the current Environment, Outputs, System and Diagnostics pages in the host simulator while preserving the native SSD1680 backend and observer-only architecture.
+Runtime reliability hardening and Display UI Port Phase 1 are integrated on `main`.
 
-Before starting that feature stage, the runtime reliability audit closed three cross-cutting issues: global NVS ownership is now centralized before BLE/output persistence startup; failed output-persistence writes remain retryable with bounded runtime backoff; and the e-ink worker uses a statically allocated FreeRTOS task with stack high-water instrumentation. Host-test build parallelism is also bounded by default to avoid memory-dependent gate failures.
+Fresh audit baseline on 2026-09-20:
 
-The documentation/vendor re-audit was performed from `main` baseline `6d083e5b00a29b20a8a9bb6f2bb83a395634aff5`.
+- `main`: `ba4eb341139731189ac8706462020faa58bad1ae` (`Add isolated Clay UI host component`);
+- runtime-hardening integration parent: `0b605d4c9f3f17f99b799a5248e5b4cfb3d740f6`;
+- Local Agent architecture audit `20260920-architecture-agents-audit-v1`: terminal `done`, exact baseline `ba4eb341139731189ac8706462020faa58bad1ae`;
+- Local Agent was idle after the audit.
 
-The curated donor snapshot is under `vendor/litegraph_epd_port/`, pinned to `esp32s3_LiteGraph@5b8c758c365547ddeaab65bbe9f849bdd071695d`. It is reference code only and is not part of any build.
+The active implementation stage is Display UI Port Phase 2: reproduce the current Environment, Outputs, System and Diagnostics pages in the exact 296x128 host simulator while preserving the native SSD1680 backend and observer-only architecture.
 
-The live implementation contract for the next stage is `docs/DISPLAY_UI_PORT.md`.
+The live implementation contract is `docs/DISPLAY_UI_PORT.md`.
+
+## Architecture quality baseline
+
+The repository already has a meaningful runtime split: composition/lifetime wiring, cycle coordination, output ownership, persistence, telemetry, display and RF transport are separated by subsystem.
+
+The 2026-09-20 read-only architecture audit found no new obvious production mega-function in first-party C++ through the coarse long-function scan, but it identified growth-risk files that should not keep accumulating unrelated responsibility:
+
+- `lib/environment_control/src/SafetySupervisor.cpp` — about 759 lines;
+- `tools/panel/static/js/form.js` — about 1103 lines;
+- `src/demo/protocol/ScenarioWireCodec.cpp` — about 1054 lines.
+
+Generated code, pinned third-party Clay and large test fixtures are not refactor targets merely because of size.
+
+`AGENTS.md` contains the repository-wide architecture-first implementation gate, dependency/ownership rules, anti-God-object rules and ESP32-S3 resource guardrails. New independent responsibilities should be placed in focused modules rather than appended to central coordinators/controllers for convenience.
 
 ## Production invariants
 
@@ -46,7 +63,7 @@ Keep:
 - four operator pages: Environment, Outputs, System, Diagnostics;
 - current `DisplaySnapshot` / presenter truth boundary.
 
-The current partial-refresh path uses partial waveform handling but still transfers the full framebuffer. True reduced dirty-window transfer is future optimization work and is explicitly staged in `DISPLAY_UI_PORT.md`.
+The current partial-refresh path uses partial waveform handling but still transfers the full framebuffer. True reduced dirty-window transfer remains a later phase in `DISPLAY_UI_PORT.md`.
 
 ## SCD41 state
 
@@ -58,66 +75,56 @@ and one bounded liveness recovery after 30 seconds without a new measurement, at
 
 Historical exact-SHA physical evidence and the intermittent-failure reproduction are preserved in `HISTORY.md` / `CHANGELOG.md` and Git history.
 
-## Current software boundary for Clay
+## NVS/output persistence state
 
-Current `src` compiles as C++17. The pinned Clay 0.14 header requires C++20.
+Global ESP-IDF NVS ownership is centralized before BLE/output persistence startup. Failed durable-output writes remain retryable with bounded runtime backoff, and fallback snapshot repair is covered by the hardening work already integrated into `main`.
 
-Phase 1 implements the isolated C++20 `growbox_clay_ui` component with a plain growbox-owned API; `Clay_*` types do not escape into the normal C++17 runtime. The production firmware remains C++17 and does not consume the Clay component yet.
+Do not redesign this ownership unless a new regression or requirement demonstrates that the current boundary is insufficient.
+
+## Current Clay boundary
+
+The isolated Phase 1 component is integrated under `lib/growbox_clay_ui/`.
+
+It provides:
+
+- an isolated C++20 Clay implementation;
+- a growbox-owned public boundary with no exposed `Clay_*` types;
+- an exact 296x128 monochrome host simulator;
+- component/renderer/clipping/smoke verification described in `DISPLAY_UI_PORT.md`.
+
+The normal production application remains C++17. Firmware integration has not started; that belongs to later phases after Phase 2 reproduces the current pages on host.
 
 ## Verification state
 
-The runtime-hardening branch has passed the focused persistence regression, the complete host C++ suite with bounded build parallelism, display host suites and ESP-IDF production build. `git diff --check` and the explicit NVS ownership guard are clean.
+Historical runtime-hardening verification and physical evidence remain in `HISTORY.md`, `CHANGELOG.md` and exact Local Agent result files.
 
-`make check-fast` was not executed successfully in the Local Agent workspace because that workspace does not currently contain the repository `.venv`; this is an environment limitation, not a recorded source/test failure.
+The 2026-09-20 architecture audit was intentionally read-only. It confirmed the exact current `main` baseline and inspected repository structure/file-growth risk; it did not claim a fresh firmware build or hardware qualification.
 
-The latest GitHub Actions run for functional code HEAD `b73aebc12f94261002bc1c297ab30d482a4198ec` is run `35404412014`. `web-tests` and `esp-idf-build` passed. `host-tests` stopped at the pre-commit gate because the `clang-format` hook modified files; later host steps were therefore skipped. Treat this as the current formatting gate, not as a firmware/runtime test regression.
+For new implementation work, use the smallest relevant gate first and follow `AGENTS.md` / `DISPLAY_UI_PORT.md` for widening verification.
 
-## Chat handoff — 2026-09-19 01:30 CEST
+## Restart point
 
-This section is the live restart point for the next ChatGPT window. Replace it at the next handoff instead of accumulating retired session notes.
+For a new ChatGPT window:
 
-Exact repository binding:
-
-- repository: `MichalMatu/growbox-ml-controller`;
-- Local Agent repository id: `growbox-ml-controller`;
-- Local Agent binding: `815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5`;
-- control branch: `agent-control`;
-- current working branch: `agent/nvs-persistence-hardening`;
-- canonical `main` HEAD at handoff: `fff9d3a8c024ca19dcf6fc39619c2b7559a546ac`;
-- functional working-branch HEAD before this docs-only handoff commit: `b73aebc12f94261002bc1c297ab30d482a4198ec`;
-- at that point the working branch was 28 commits ahead of `main` and 0 behind;
-- the Local Agent daemon was `idle` with no active task.
-
-The reliability work on the working branch includes NVS ownership centralization, retryable output persistence with bounded backoff, fallback snapshot repair, static e-ink worker allocation/high-water diagnostics, bounded host-build parallelism, PSRAM/profile clarification and the accompanying host regression tests/documentation.
-
-Important terminal Local Agent evidence:
-
-- `20260919-runtime-hardening-final-verify-v1` — terminal `done`; focused persistence tests, all 50 portable host tests, display host suites and ESP-IDF production build passed on the then-current hardening branch;
-- `20260919-persistence-fallback-repair-verify-v1` — terminal `done`; `git diff --check`, persistence coordinator/store regression and final-clean checks all passed;
-- do not claim a Local Agent task succeeded unless its exact `.agent/results/<task-id>.json` is terminal and read.
-
-Immediate continuation order for a new chat:
-
-1. Read `AGENTS.md`, `docs/README.md`, this file, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md` and the relevant subsystem doc before changing behavior.
-2. Fetch fresh `agent/nvs-persistence-hardening`, fresh `main` and `agent-control:.agent/status/daemon.json`; do not assume the SHAs above are still current.
-3. Keep working on `agent/nvs-persistence-hardening` until its quality gate is green; do not restart the hardening work from `main` and do not race direct writes with an active Local Agent task.
-4. First close the GitHub CI formatting gate: reproduce `pre-commit run clang-format --all-files` (or the equivalent focused hook), inspect that the resulting diff is formatting-only, commit it on the working branch, then rerun the relevant local gates and GitHub CI.
-5. Preserve the already-green functional evidence. Do not redesign NVS/persistence/display-worker ownership unless the formatter or a subsequent test exposes a real regression.
-6. Once the hardening branch is fully green, review/integrate it into `main` before beginning the Clay feature stage unless the operator explicitly chooses a different sequencing.
-7. After integration, continue the first incomplete phase in `docs/DISPLAY_UI_PORT.md`: isolated C++20 Clay component plus exact 296x128 host simulator, with no firmware behavior change.
+1. Read `AGENTS.md`, `docs/README.md`, this file, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md` and the relevant subsystem document.
+2. Fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any write.
+3. Continue from the first incomplete phase in `docs/DISPLAY_UI_PORT.md`; currently that is Phase 2.
+4. Keep Phase 1 under `lib/growbox_clay_ui/`; do not re-create it under another directory or restart it from donor code.
+5. Preserve the native SSD1680 backend, async observer transaction and C++17/C++20 boundary.
+6. Apply the architecture completion gate before declaring substantial code changes complete.
 
 ## Next work
 
 0. Runtime hardening integration and full CI — DONE.
-1. Isolated C++20 Clay component plus exact 296x128 host simulator — DONE on `agent/clay-ui-phase1`, pending branch CI/integration.
-2. Reproduce the existing four growbox pages with deterministic host/golden checks.
+1. Isolated C++20 Clay component plus exact 296x128 host simulator — DONE and integrated on `main`.
+2. Reproduce the existing four growbox pages with deterministic host/golden checks — NEXT.
 3. Attach Clay behind the existing async display transaction.
 4. Add true dirty-region RAM-window transfer.
 5. Add native ESP-IDF button input with host-tested debounce/long-press behavior.
 6. Add only justified growbox menu/settings flows through existing domain APIs.
 7. Qualify the final exact SHA on hardware when a physical claim is required.
 
-Do not reopen completed panel pin mapping, SSD1680 backend ownership, rotation, async architecture or the discarded display-brownout hypothesis without new evidence.
+Do not reopen completed panel pin mapping, SSD1680 backend ownership, rotation, async architecture, SCD41 recovery or runtime persistence ownership without new evidence.
 
 ## Hardware boundary
 
