@@ -255,16 +255,38 @@ bool validPage(const ::growbox::display_model::DisplayPageModel& page) noexcept 
   return true;
 }
 
-std::size_t blackPixelCount(const std::uint8_t* framebuffer) noexcept {
-  std::size_t black_pixels = 0U;
+struct FrameStats final {
+  std::size_t black_pixels{0U};
+  RenderRegion content_region{};
+};
+
+FrameStats summarizeFrame(const std::uint8_t* framebuffer) noexcept {
+  FrameStats stats{};
+  std::uint16_t min_x = kDisplayWidth;
+  std::uint16_t min_y = kDisplayHeight;
+  std::uint16_t max_x = 0U;
+  std::uint16_t max_y = 0U;
+
   for (std::uint16_t y = 0U; y < kDisplayHeight; ++y) {
     for (std::uint16_t x = 0U; x < kDisplayWidth; ++x) {
       const std::size_t index = static_cast<std::size_t>(y) * kFrameStrideBytes + x / 8U;
       const auto mask = static_cast<std::uint8_t>(0x80U >> (x % 8U));
-      black_pixels += (framebuffer[index] & mask) == 0U ? 1U : 0U;
+      if ((framebuffer[index] & mask) != 0U) {
+        continue;
+      }
+      ++stats.black_pixels;
+      min_x = std::min(min_x, x);
+      min_y = std::min(min_y, y);
+      max_x = std::max(max_x, x);
+      max_y = std::max(max_y, y);
     }
   }
-  return black_pixels;
+
+  if (stats.black_pixels > 0U) {
+    stats.content_region = {min_x, min_y, static_cast<std::uint16_t>(max_x - min_x + 1U),
+                            static_cast<std::uint16_t>(max_y - min_y + 1U)};
+  }
+  return stats;
 }
 
 void configureClayLimits() noexcept {
@@ -396,14 +418,16 @@ bool renderPageToMonochrome(const ::growbox::display_model::DisplayPageModel& pa
   internal::ClayRenderer renderer(target);
   renderer.render(commands, internal::ClayRenderConfig{kDisplayWidth, kDisplayHeight});
 
-  const std::size_t black_pixels = blackPixelCount(framebuffer);
+  const FrameStats frame_stats = summarizeFrame(framebuffer);
   if (summary != nullptr) {
     summary->width = kDisplayWidth;
     summary->height = kDisplayHeight;
-    summary->black_pixels = black_pixels;
+    summary->black_pixels = frame_stats.black_pixels;
     summary->render_commands = static_cast<std::size_t>(commands.length);
+    summary->content_region = frame_stats.content_region;
   }
-  return black_pixels > 0U && black_pixels < (kDisplayWidth * kDisplayHeight);
+  return frame_stats.black_pixels > 0U &&
+         frame_stats.black_pixels < (kDisplayWidth * kDisplayHeight);
 }
 
 } // namespace growbox::clay_ui

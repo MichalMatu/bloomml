@@ -77,9 +77,8 @@ bool CrowPanelSsd1680DisplayBackend::setContentRegion(
   if (!frame_open_) {
     return false;
   }
-  staged_content_region_ =
-      clampDisplayRegion(content_region, DisplayMonochromeRaster::kWidthPx,
-                         DisplayMonochromeRaster::kHeightPx);
+  staged_content_region_ = clampDisplayRegion(content_region, DisplayMonochromeRaster::kWidthPx,
+                                              DisplayMonochromeRaster::kHeightPx);
   content_region_staged_ = true;
   return true;
 }
@@ -114,12 +113,12 @@ bool CrowPanelSsd1680DisplayBackend::endFrame() noexcept {
     }
     previous_ram_seeded_ = true;
   } else {
-    transfer_region = dirty_region_tracker_.plan(
-        staged_content_region_, kPartialRefreshPaddingPx, DisplayMonochromeRaster::kWidthPx,
-        DisplayMonochromeRaster::kHeightPx);
+    transfer_region = dirty_region_tracker_.plan(staged_content_region_, kPartialRefreshPaddingPx,
+                                                 DisplayMonochromeRaster::kWidthPx,
+                                                 DisplayMonochromeRaster::kHeightPx);
     if (!displayRegionEmpty(transfer_region)) {
       if (!Ssd1680FrameMapper::nativeWindowForLogicalRegion(transfer_region, config_.rotation,
-                                                             native_window) ||
+                                                            native_window) ||
           !writeMappedRam(kCmdWriteCurrentRam, native_window) ||
           !activate(DisplayRefreshKind::Partial) ||
           !writeMappedRam(kCmdWritePreviousRam, native_window)) {
@@ -309,8 +308,7 @@ bool CrowPanelSsd1680DisplayBackend::sendData(const std::uint8_t* data,
   return spi_device_transmit(spi_device_, &transaction) == ESP_OK;
 }
 
-bool CrowPanelSsd1680DisplayBackend::sendCommandData(std::uint8_t command,
-                                                     const std::uint8_t* data,
+bool CrowPanelSsd1680DisplayBackend::sendCommandData(std::uint8_t command, const std::uint8_t* data,
                                                      std::size_t length) noexcept {
   return sendCommand(command) && sendData(data, length);
 }
@@ -334,8 +332,7 @@ bool CrowPanelSsd1680DisplayBackend::setRamWindow(const Ssd1680NativeWindow& win
          sendCommandData(kCmdRamYWindow, y_window.data(), y_window.size());
 }
 
-bool CrowPanelSsd1680DisplayBackend::setRamCounters(
-    const Ssd1680NativeWindow& window) noexcept {
+bool CrowPanelSsd1680DisplayBackend::setRamCounters(const Ssd1680NativeWindow& window) noexcept {
   const std::array<std::uint8_t, 1U> x_counter{window.x_start_byte};
   const std::array<std::uint8_t, 2U> y_counter{
       static_cast<std::uint8_t>(window.y_start_px & 0xFFU),
@@ -353,8 +350,8 @@ bool CrowPanelSsd1680DisplayBackend::setRamCountersToOrigin() noexcept {
   return setRamCounters(fullNativeWindow());
 }
 
-bool CrowPanelSsd1680DisplayBackend::writeMappedRam(
-    std::uint8_t command, const Ssd1680NativeWindow& window) noexcept {
+bool CrowPanelSsd1680DisplayBackend::writeMappedRam(std::uint8_t command,
+                                                    const Ssd1680NativeWindow& window) noexcept {
   if (!setRamWindow(window) || !setRamCounters(window) || !sendCommand(command)) {
     return false;
   }
@@ -362,8 +359,8 @@ bool CrowPanelSsd1680DisplayBackend::writeMappedRam(
   std::array<std::uint8_t, kTransferChunkBytes> chunk{};
   std::size_t chunk_size = 0U;
   for (std::uint16_t native_y = window.y_start_px; native_y <= window.y_end_px; ++native_y) {
-    for (std::uint16_t native_byte_x = window.x_start_byte;
-         native_byte_x <= window.x_end_byte; ++native_byte_x) {
+    for (std::uint16_t native_byte_x = window.x_start_byte; native_byte_x <= window.x_end_byte;
+         ++native_byte_x) {
       const std::size_t native_index =
           static_cast<std::size_t>(native_y) * Ssd1680FrameMapper::kNativeBytesPerRow +
           native_byte_x;
@@ -392,9 +389,9 @@ bool CrowPanelSsd1680DisplayBackend::activate(DisplayRefreshKind kind) noexcept 
          sendCommand(kCmdMasterActivation) && waitWhileBusy(timeout);
 }
 
-void CrowPanelSsd1680DisplayBackend::recordSuccessfulTransfer(
-    const DisplayRegion& transfer_region, const Ssd1680NativeWindow& window,
-    DisplayRefreshKind kind) noexcept {
+void CrowPanelSsd1680DisplayBackend::recordSuccessfulTransfer(const DisplayRegion& transfer_region,
+                                                              const Ssd1680NativeWindow& window,
+                                                              DisplayRefreshKind kind) noexcept {
   last_transfer_region_ = transfer_region;
   last_native_window_ = window;
   last_window_bytes_ = displayRegionEmpty(transfer_region) ? 0U : window.transferBytes();

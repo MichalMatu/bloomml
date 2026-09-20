@@ -50,6 +50,25 @@ void testDirtyRegionGeometry() {
   assertRegion(display::planDisplayDirtyRegion({}, previous, 16U, width, height), 4U, 24U, 52U,
                42U);
   assert(display::displayRegionEmpty(display::planDisplayDirtyRegion({}, {}, 16U, width, height)));
+
+  display::DisplayDirtyRegionTracker tracker{};
+  assert(display::displayRegionEmpty(tracker.previousContent()));
+  assertRegion(tracker.plan(previous, 16U, width, height), 4U, 24U, 52U, 42U);
+
+  // Planning is side-effect free: a failed physical refresh must not move the
+  // previous-content baseline used by the next retry.
+  assertRegion(tracker.plan(current, 16U, width, height), 84U, 24U, 52U, 42U);
+  assert(display::displayRegionEmpty(tracker.previousContent()));
+
+  tracker.confirm(previous, width, height);
+  assertRegion(tracker.previousContent(), 20U, 40U, 20U, 10U);
+  assertRegion(tracker.plan(current, 16U, width, height), 4U, 24U, 132U, 42U);
+  assertRegion(tracker.plan({}, 16U, width, height), 4U, 24U, 52U, 42U);
+
+  tracker.confirm({}, width, height);
+  assert(display::displayRegionEmpty(tracker.previousContent()));
+  tracker.reset();
+  assert(display::displayRegionEmpty(tracker.previousContent()));
 }
 
 void testNativeWindowMapping() {

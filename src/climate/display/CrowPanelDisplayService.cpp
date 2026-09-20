@@ -121,15 +121,28 @@ void CrowPanelDisplayService::taskLoop() noexcept {
     if (success) {
       const std::uint32_t successes =
           render_successes_.fetch_add(1U, std::memory_order_relaxed) + 1U;
+      const DisplayRegion transfer_region = backend_.lastTransferRegion();
+      const Ssd1680NativeWindow native_window = backend_.lastNativeWindow();
       ESP_LOGI(kTag,
                "Physical Clay refresh completed generation=%llu kind=%u reason=%u successes=%lu "
-               "commands=%lu black_pixels=%lu stack_min_free_bytes=%lu",
+               "commands=%lu black_pixels=%lu dirty=%u,%u,%u,%u native=%u-%u,%u-%u "
+               "window_bytes=%lu ram_payload_bytes=%lu stack_min_free_bytes=%lu",
                static_cast<unsigned long long>(work_item.generation),
                static_cast<unsigned>(work_item.frame.refresh_kind),
                static_cast<unsigned>(work_item.frame.refresh_reason),
                static_cast<unsigned long>(successes),
                static_cast<unsigned long>(render_summary.render_commands),
                static_cast<unsigned long>(render_summary.black_pixels),
+               static_cast<unsigned>(transfer_region.x_px),
+               static_cast<unsigned>(transfer_region.y_px),
+               static_cast<unsigned>(transfer_region.width_px),
+               static_cast<unsigned>(transfer_region.height_px),
+               static_cast<unsigned>(native_window.x_start_byte),
+               static_cast<unsigned>(native_window.x_end_byte),
+               static_cast<unsigned>(native_window.y_start_px),
+               static_cast<unsigned>(native_window.y_end_px),
+               static_cast<unsigned long>(backend_.lastWindowBytes()),
+               static_cast<unsigned long>(backend_.lastRamPayloadBytes()),
                static_cast<unsigned long>(stack_min_free_bytes));
     } else {
       const std::uint32_t failures = render_failures_.fetch_add(1U, std::memory_order_relaxed) + 1U;

@@ -97,8 +97,7 @@ private:
   bool waitWhileBusy(std::uint32_t timeout_ms) noexcept;
   bool sendCommand(std::uint8_t command) noexcept;
   bool sendData(const std::uint8_t* data, std::size_t length) noexcept;
-  bool sendCommandData(std::uint8_t command, const std::uint8_t* data,
-                       std::size_t length) noexcept;
+  bool sendCommandData(std::uint8_t command, const std::uint8_t* data, std::size_t length) noexcept;
   static constexpr Ssd1680NativeWindow fullNativeWindow() noexcept {
     return {0U, static_cast<std::uint8_t>(Ssd1680FrameMapper::kNativeBytesPerRow - 1U), 0U,
             static_cast<std::uint16_t>(Ssd1680FrameMapper::kNativeHeightPx - 1U)};
