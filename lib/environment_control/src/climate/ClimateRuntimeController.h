@@ -2,6 +2,7 @@
 
 #include "ClimateActuatorStateEstimator.h"
 #include "ClimateFeatureEncoder.h"
+#include "ClimatePolicy.h"
 #include "ClimateTrendEstimator.h"
 #include "ClimateTypes.h"
 
@@ -16,32 +17,6 @@ enum class ClimateRuntimeStatus : std::uint8_t {
   MlProviderMissing,
   MlInferenceFailed,
   MlActiveNotAllowed,
-};
-
-enum ClimateIntervention : std::uint32_t {
-  InterventionNone = 0U,
-  UnavailableHeater = 1U << 0U,
-  UnavailableCooler = 1U << 1U,
-  UnavailableExhaustFan = 1U << 2U,
-  UnavailableHumidifier = 1U << 3U,
-  UnavailableDehumidifier = 1U << 4U,
-  UnavailableCo2Doser = 1U << 5U,
-  OppositionHeaterCooler = 1U << 6U,
-  OppositionHumidifierDehumidifier = 1U << 7U,
-  RequiredSensorUnusable = 1U << 8U,
-  Co2DosingInhibited = 1U << 9U,
-  HighTemperature = 1U << 10U,
-  LowTemperature = 1U << 11U,
-  HighHumidity = 1U << 12U,
-  HighCo2 = 1U << 13U,
-};
-
-struct ClimatePolicyEvaluation {
-  ClimatePolicyRequest raw{};
-  ClimatePolicyRequest arbitrated{};
-  ClimatePolicyRequest safe{};
-  std::uint32_t arbitration_interventions = InterventionNone;
-  std::uint32_t safety_interventions = InterventionNone;
 };
 
 struct ClimateRuntimeConfig {
