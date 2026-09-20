@@ -121,6 +121,99 @@ void testNavigationRefreshBypassesRoutineInterval() {
   assert(runtime.confirmRendered(frame, 12U));
 }
 
+void testLongPressOkOpensReadOnlyPageChooser() {
+  display::DisplayRuntimeConfig config{};
+  config.refresh.minimum_refresh_interval_ms = 60'000U;
+  display::DisplayRuntimeController runtime{config};
+  auto snapshot = nominalSnapshot();
+  display::DisplayRuntimeFrame frame{};
+
+  assert(runtime.update(snapshot, 0U, frame));
+  assert(runtime.confirmRendered(frame, 0U));
+
+  // Existing short-press compatibility is unchanged.
+  assert(runtime.handleButton(display::DisplayButton::Ok));
+  assert(runtime.page() == display::DisplayPage::Outputs);
+  assert(!runtime.menuActive());
+  assert(runtime.update(snapshot, 1U, frame));
+  assert(frame.view_mode == display::DisplayViewMode::Page);
+  assert(runtime.confirmRendered(frame, 1U));
+
+  const display::DisplayButtonEvent open_menu{display::DisplayButton::Ok,
+                                              display::DisplayButtonGesture::LongPress, 700U};
+  assert(runtime.handleButtonEvent(open_menu));
+  assert(runtime.menuActive());
+  assert(runtime.menuSelection() == display::DisplayPage::Outputs);
+  assert(runtime.page() == display::DisplayPage::Outputs);
+  assert(runtime.update(snapshot, 2U, frame));
+  assert(frame.refresh_reason == display::DisplayRefreshReason::Navigation);
+  assert(frame.view_mode == display::DisplayViewMode::Menu);
+  assert(std::strcmp(frame.page_model.title.data(), "Pages") == 0);
+  assert(frame.page_model.line_count == 4U);
+  assert(std::strcmp(frame.page_model.lines[1].label.data(), ">") == 0);
+  assert(std::strcmp(frame.page_model.lines[1].value.data(), "Outputs") == 0);
+  assert(runtime.confirmRendered(frame, 2U));
+
+  assert(runtime.handleButton(display::DisplayButton::Next));
+  assert(runtime.menuSelection() == display::DisplayPage::System);
+  assert(runtime.page() == display::DisplayPage::Outputs);
+  assert(runtime.update(snapshot, 3U, frame));
+  assert(frame.view_mode == display::DisplayViewMode::Menu);
+  assert(std::strcmp(frame.page_model.lines[2].label.data(), ">") == 0);
+  assert(runtime.confirmRendered(frame, 3U));
+
+  // Back cancels the chooser without changing the committed page.
+  assert(runtime.handleButton(display::DisplayButton::Back));
+  assert(!runtime.menuActive());
+  assert(runtime.page() == display::DisplayPage::Outputs);
+  assert(runtime.update(snapshot, 4U, frame));
+  assert(frame.view_mode == display::DisplayViewMode::Page);
+  assert(frame.page == display::DisplayPage::Outputs);
+  assert(runtime.confirmRendered(frame, 4U));
+
+  assert(runtime.handleButtonEvent(open_menu));
+  assert(runtime.handleButton(display::DisplayButton::Next));
+  assert(runtime.menuSelection() == display::DisplayPage::System);
+  assert(runtime.handleButton(display::DisplayButton::Ok));
+  assert(!runtime.menuActive());
+  assert(runtime.page() == display::DisplayPage::System);
+  assert(runtime.update(snapshot, 5U, frame));
+  assert(frame.view_mode == display::DisplayViewMode::Page);
+  assert(frame.page == display::DisplayPage::System);
+  assert(std::strcmp(frame.page_model.title.data(), "System") == 0);
+  assert(runtime.confirmRendered(frame, 5U));
+}
+
+void testMenuPreservesWarningsAndInvalidatesStaleFrames() {
+  display::DisplayRuntimeController runtime{};
+  auto snapshot = nominalSnapshot();
+  snapshot.safety_latched = true;
+  snapshot.safety_reason_code =
+      static_cast<std::uint32_t>(stage28d::LampSafetyReason::OverTemperature);
+
+  display::DisplayRuntimeFrame frame{};
+  assert(runtime.update(snapshot, 0U, frame));
+  assert(runtime.confirmRendered(frame, 0U));
+
+  runtime.requestRefresh();
+  assert(runtime.update(snapshot, 1U, frame));
+  const auto stale = frame;
+
+  const display::DisplayButtonEvent open_menu{display::DisplayButton::Ok,
+                                              display::DisplayButtonGesture::LongPress, 700U};
+  assert(runtime.handleButtonEvent(open_menu));
+  assert(!runtime.hasPendingRefresh());
+  assert(!runtime.confirmRendered(stale, 2U));
+
+  assert(runtime.update(snapshot, 2U, frame));
+  assert(frame.view_mode == display::DisplayViewMode::Menu);
+  assert(frame.page_model.warning);
+  assert(frame.page_model.warning_mask ==
+         static_cast<std::uint8_t>(display::DisplayWarning::Safety));
+  assert(frame.page_model.safety_warning_reason_code == snapshot.safety_reason_code);
+  assert(runtime.confirmRendered(frame, 2U));
+}
+
 void testWarningIdentityChangesForceImmediateFullRefresh() {
   display::DisplayRuntimeConfig config{};
   config.refresh.minimum_refresh_interval_ms = 60'000U;
@@ -255,6 +348,8 @@ void testInvalidGeometryFailsClosedWithoutRefresh() {
 int main() {
   testInitialRefreshRetriesUntilRenderedAndRoutineChangesCoalesce();
   testNavigationRefreshBypassesRoutineInterval();
+  testLongPressOkOpensReadOnlyPageChooser();
+  testMenuPreservesWarningsAndInvalidatesStaleFrames();
   testWarningIdentityChangesForceImmediateFullRefresh();
   testFullRefreshCadenceAdvancesOnlyAfterRenderedFrames();
   testStalePlannedFrameCannotConsumeNewNavigationRequest();

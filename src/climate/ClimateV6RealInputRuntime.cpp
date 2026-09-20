@@ -215,14 +215,17 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
     if (display_buttons != nullptr && display_observer != nullptr) {
       display::DisplayButtonEvent event{};
       while (display_buttons->poll(event)) {
+        const bool display_changed = display_observer->handleButtonEvent(event);
         if (event.gesture == display::DisplayButtonGesture::Press) {
-          const bool navigation_changed = display_observer->handleButton(event.button);
-          ESP_LOGI(kTag, "E-ink button press button=%u navigation_changed=%d page=%u",
-                   static_cast<unsigned>(event.button), navigation_changed,
-                   static_cast<unsigned>(display_observer->page()));
+          ESP_LOGI(kTag, "E-ink button press button=%u display_changed=%d page=%u menu=%d",
+                   static_cast<unsigned>(event.button), display_changed,
+                   static_cast<unsigned>(display_observer->page()), display_observer->menuActive());
         } else {
-          ESP_LOGI(kTag, "E-ink button long_press button=%u timestamp_ms=%llu",
-                   static_cast<unsigned>(event.button),
+          ESP_LOGI(kTag,
+                   "E-ink button long_press button=%u display_changed=%d page=%u menu=%d "
+                   "timestamp_ms=%llu",
+                   static_cast<unsigned>(event.button), display_changed,
+                   static_cast<unsigned>(display_observer->page()), display_observer->menuActive(),
                    static_cast<unsigned long long>(event.timestamp_ms));
         }
       }

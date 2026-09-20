@@ -61,8 +61,20 @@ public:
     return runtime_.hasPendingRefresh();
   }
 
+  bool handleButtonEvent(const DisplayButtonEvent& event) noexcept {
+    return runtime_.handleButtonEvent(event);
+  }
+
   bool handleButton(DisplayButton button) noexcept {
     return runtime_.handleButton(button);
+  }
+
+  DisplayViewMode viewMode() const noexcept {
+    return runtime_.viewMode();
+  }
+
+  bool menuActive() const noexcept {
+    return runtime_.menuActive();
   }
 
   void requestRefresh(bool full_refresh = false) noexcept {

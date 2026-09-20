@@ -1,5 +1,6 @@
 #pragma once
 
+#include "climate/display/DisplayMenu.h"
 #include "climate/display/DisplayPresenter.h"
 #include "climate/display/DisplayRenderList.h"
 #include "climate/display/DisplaySurface.h"
@@ -9,6 +10,11 @@
 #include <cstring>
 
 namespace growbox::app::climate_io::display {
+
+enum class DisplayViewMode : std::uint8_t {
+  Page = 0U,
+  Menu,
+};
 
 enum class DisplayRefreshKind : std::uint8_t {
   None = 0U,
@@ -44,6 +50,7 @@ struct DisplayRuntimeConfig final {
 
 struct DisplayRuntimeFrame final {
   DisplayPage page{DisplayPage::Status};
+  DisplayViewMode view_mode{DisplayViewMode::Page};
   DisplayPageModel page_model{};
   DisplayRenderList render_list{};
   DisplayRefreshKind refresh_kind{DisplayRefreshKind::None};
@@ -99,8 +106,8 @@ inline bool displayRenderListsEqual(const DisplayRenderList& left,
 
 inline bool displayRuntimeFramesEqual(const DisplayRuntimeFrame& left,
                                       const DisplayRuntimeFrame& right) noexcept {
-  return left.page == right.page && left.refresh_kind == right.refresh_kind &&
-         left.refresh_reason == right.refresh_reason &&
+  return left.page == right.page && left.view_mode == right.view_mode &&
+         left.refresh_kind == right.refresh_kind && left.refresh_reason == right.refresh_reason &&
          displayPageModelsEqual(left.page_model, right.page_model) &&
          displayRenderListsEqual(left.render_list, right.render_list);
 }
@@ -128,6 +135,18 @@ public:
     return navigation_.page();
   }
 
+  DisplayViewMode viewMode() const noexcept {
+    return menu_.active() ? DisplayViewMode::Menu : DisplayViewMode::Page;
+  }
+
+  bool menuActive() const noexcept {
+    return menu_.active();
+  }
+
+  DisplayPage menuSelection() const noexcept {
+    return menu_.selectedPage();
+  }
+
   const DisplayRenderGeometry& geometry() const noexcept {
     return config_.geometry;
   }
@@ -136,14 +155,48 @@ public:
     return pending_refresh_valid_;
   }
 
-  bool handleButton(DisplayButton button) noexcept {
-    const bool changed = navigation_.handle(button);
+  bool handleButtonEvent(const DisplayButtonEvent& event) noexcept {
+    bool changed = false;
+    if (event.gesture == DisplayButtonGesture::LongPress) {
+      if (event.button == DisplayButton::Ok && !menu_.active()) {
+        changed = menu_.open(navigation_.page());
+      }
+    } else if (menu_.active()) {
+      switch (event.button) {
+      case DisplayButton::Home:
+        changed = menu_.close();
+        changed = navigation_.select(DisplayPage::Environment) || changed;
+        break;
+      case DisplayButton::Back:
+        changed = menu_.close();
+        break;
+      case DisplayButton::Previous:
+        changed = menu_.previous();
+        break;
+      case DisplayButton::Next:
+        changed = menu_.next();
+        break;
+      case DisplayButton::Ok: {
+        const DisplayPage selected = menu_.selectedPage();
+        changed = menu_.close();
+        changed = navigation_.select(selected) || changed;
+        break;
+      }
+      }
+    } else {
+      changed = navigation_.handle(event.button);
+    }
+
     if (changed) {
       refresh_requested_ = true;
       navigation_refresh_requested_ = true;
       pending_refresh_valid_ = false;
     }
     return changed;
+  }
+
+  bool handleButton(DisplayButton button) noexcept {
+    return handleButtonEvent({button, DisplayButtonGesture::Press, 0U});
   }
 
   void requestRefresh(bool full_refresh = false) noexcept {
@@ -156,10 +209,20 @@ public:
               DisplayRuntimeFrame& output) noexcept {
     output = {};
     output.page = navigation_.page();
+    output.view_mode = viewMode();
 
-    if (!buildDisplayPage(snapshot, output.page, config_.presenter, output.page_model)) {
+    DisplayPageModel underlying_page{};
+    if (!buildDisplayPage(snapshot, output.page, config_.presenter, underlying_page)) {
       pending_refresh_valid_ = false;
       return false;
+    }
+    if (menu_.active()) {
+      if (!buildDisplayMenuPage(underlying_page, menu_, output.page_model)) {
+        pending_refresh_valid_ = false;
+        return false;
+      }
+    } else {
+      output.page_model = underlying_page;
     }
 
     DisplayRenderListSurface surface{config_.geometry, output.render_list};
@@ -248,6 +311,7 @@ private:
 
   DisplayRuntimeConfig config_{};
   DisplayNavigation navigation_{};
+  DisplayMenuState menu_{};
   DisplayPageModel last_page_{};
   DisplayRuntimeFrame pending_frame_{};
   std::uint64_t last_refresh_ms_{0U};

@@ -51,7 +51,7 @@ bool DisplayMenuState::previous() noexcept {
     return false;
   }
   selected_index_ = selected_index_ == 0U ? static_cast<std::uint8_t>(kItemCount - 1U)
-                                           : static_cast<std::uint8_t>(selected_index_ - 1U);
+                                          : static_cast<std::uint8_t>(selected_index_ - 1U);
   return true;
 }
 
