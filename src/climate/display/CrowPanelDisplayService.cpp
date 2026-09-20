@@ -67,8 +67,7 @@ bool CrowPanelDisplayService::begin() noexcept {
 
   started_ = true;
   ESP_LOGI(kTag, "Display worker started static_stack_bytes=%u clay_arena_psram_bytes=%lu",
-           static_cast<unsigned>(taskStackBytes()),
-           static_cast<unsigned long>(clay_arena_bytes_));
+           static_cast<unsigned>(taskStackBytes()), static_cast<unsigned long>(clay_arena_bytes_));
   return true;
 }
 
