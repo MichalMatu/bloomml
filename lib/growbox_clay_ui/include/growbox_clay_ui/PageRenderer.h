@@ -12,19 +12,11 @@ inline constexpr std::uint16_t kDisplayHeight = 128U;
 inline constexpr std::size_t kFrameStrideBytes = (kDisplayWidth + 7U) / 8U;
 inline constexpr std::size_t kFrameBytes = kFrameStrideBytes * kDisplayHeight;
 
-struct RenderRegion final {
-  std::uint16_t x_px{0U};
-  std::uint16_t y_px{0U};
-  std::uint16_t width_px{0U};
-  std::uint16_t height_px{0U};
-};
-
 struct RenderSummary final {
   std::uint16_t width{0U};
   std::uint16_t height{0U};
   std::size_t black_pixels{0U};
   std::size_t render_commands{0U};
-  RenderRegion content_region{};
 };
 
 // Required caller-owned scratch arena for one Clay page render. The arena may
