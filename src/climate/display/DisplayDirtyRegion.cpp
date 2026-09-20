@@ -60,9 +60,9 @@ DisplayRegion expandDisplayRegion(const DisplayRegion& region, std::uint16_t pad
       clamped.x_px > padding_px ? static_cast<std::uint32_t>(clamped.x_px - padding_px) : 0U;
   const std::uint32_t top =
       clamped.y_px > padding_px ? static_cast<std::uint32_t>(clamped.y_px - padding_px) : 0U;
-  const std::uint32_t right = std::min<std::uint32_t>(
-      static_cast<std::uint32_t>(display_width_px),
-      static_cast<std::uint32_t>(clamped.x_px) + clamped.width_px + padding_px);
+  const std::uint32_t right = std::min<std::uint32_t>(static_cast<std::uint32_t>(display_width_px),
+                                                      static_cast<std::uint32_t>(clamped.x_px) +
+                                                          clamped.width_px + padding_px);
   const std::uint32_t bottom = std::min<std::uint32_t>(
       static_cast<std::uint32_t>(display_height_px),
       static_cast<std::uint32_t>(clamped.y_px) + clamped.height_px + padding_px);
@@ -73,7 +73,8 @@ DisplayRegion unionDisplayRegions(const DisplayRegion& left, const DisplayRegion
                                   std::uint16_t display_width_px,
                                   std::uint16_t display_height_px) noexcept {
   const DisplayRegion clamped_left = clampDisplayRegion(left, display_width_px, display_height_px);
-  const DisplayRegion clamped_right = clampDisplayRegion(right, display_width_px, display_height_px);
+  const DisplayRegion clamped_right =
+      clampDisplayRegion(right, display_width_px, display_height_px);
   if (displayRegionEmpty(clamped_left)) {
     return clamped_right;
   }

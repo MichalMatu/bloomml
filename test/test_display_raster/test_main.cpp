@@ -36,12 +36,12 @@ void testDirtyRegionGeometry() {
   constexpr std::uint16_t width = display::DisplayMonochromeRaster::kWidthPx;
   constexpr std::uint16_t height = display::DisplayMonochromeRaster::kHeightPx;
 
-  assertRegion(display::clampDisplayRegion({290U, 120U, 20U, 20U}, width, height), 290U, 120U,
-               6U, 8U);
-  assertRegion(display::expandDisplayRegion({4U, 3U, 10U, 5U}, 16U, width, height), 0U, 0U,
-               30U, 24U);
-  assertRegion(display::expandDisplayRegion({290U, 120U, 6U, 8U}, 16U, width, height), 274U,
-               104U, 22U, 24U);
+  assertRegion(display::clampDisplayRegion({290U, 120U, 20U, 20U}, width, height), 290U, 120U, 6U,
+               8U);
+  assertRegion(display::expandDisplayRegion({4U, 3U, 10U, 5U}, 16U, width, height), 0U, 0U, 30U,
+               24U);
+  assertRegion(display::expandDisplayRegion({290U, 120U, 6U, 8U}, 16U, width, height), 274U, 104U,
+               22U, 24U);
 
   const display::DisplayRegion previous{20U, 40U, 20U, 10U};
   const display::DisplayRegion current{100U, 40U, 20U, 10U};

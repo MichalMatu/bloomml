@@ -51,20 +51,17 @@ bool Ssd1680FrameMapper::nativeByteAt(const DisplayMonochromeRaster::Buffer& log
 }
 
 bool Ssd1680FrameMapper::nativeWindowForLogicalRegion(const DisplayRegion& logical_region,
-                                                       Ssd1680Rotation rotation,
-                                                       Ssd1680NativeWindow& output) noexcept {
-  const DisplayRegion region =
-      clampDisplayRegion(logical_region, DisplayMonochromeRaster::kWidthPx,
-                         DisplayMonochromeRaster::kHeightPx);
+                                                      Ssd1680Rotation rotation,
+                                                      Ssd1680NativeWindow& output) noexcept {
+  const DisplayRegion region = clampDisplayRegion(logical_region, DisplayMonochromeRaster::kWidthPx,
+                                                  DisplayMonochromeRaster::kHeightPx);
   if (displayRegionEmpty(region)) {
     output = {};
     return false;
   }
 
-  const std::uint16_t logical_right =
-      static_cast<std::uint16_t>(region.x_px + region.width_px);
-  const std::uint16_t logical_bottom =
-      static_cast<std::uint16_t>(region.y_px + region.height_px);
+  const std::uint16_t logical_right = static_cast<std::uint16_t>(region.x_px + region.width_px);
+  const std::uint16_t logical_bottom = static_cast<std::uint16_t>(region.y_px + region.height_px);
 
   std::uint16_t native_x_start = 0U;
   std::uint16_t native_x_end_exclusive = 0U;
