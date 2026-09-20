@@ -213,9 +213,9 @@ private:
     const std::size_t index = static_cast<std::size_t>(y) * kFrameStrideBytes + x / 8U;
     const auto mask = static_cast<std::uint8_t>(0x80U >> (x % 8U));
     if (black) {
-      framebuffer_[index] |= mask;
-    } else {
       framebuffer_[index] &= static_cast<std::uint8_t>(~mask);
+    } else {
+      framebuffer_[index] |= mask;
     }
   }
 };
@@ -261,7 +261,7 @@ std::size_t blackPixelCount(const std::uint8_t* framebuffer) noexcept {
     for (std::uint16_t x = 0U; x < kDisplayWidth; ++x) {
       const std::size_t index = static_cast<std::size_t>(y) * kFrameStrideBytes + x / 8U;
       const auto mask = static_cast<std::uint8_t>(0x80U >> (x % 8U));
-      black_pixels += (framebuffer[index] & mask) != 0U ? 1U : 0U;
+      black_pixels += (framebuffer[index] & mask) == 0U ? 1U : 0U;
     }
   }
   return black_pixels;
@@ -369,7 +369,7 @@ bool renderPageToMonochrome(const ::growbox::display_model::DisplayPageModel& pa
   };
   [[maybe_unused]] ContextReset context_reset{};
 
-  std::fill_n(framebuffer, kFrameBytes, std::uint8_t{0U});
+  std::fill_n(framebuffer, kFrameBytes, std::uint8_t{0xFFU});
   configureClayLimits();
 
   Clay_Arena arena = Clay_CreateArenaWithCapacityAndMemory(arena_bytes, arena_memory);
