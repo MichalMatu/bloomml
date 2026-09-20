@@ -22,9 +22,8 @@ struct PageDirtyRegion final {
 // physically confirmed baseline and therefore requests a full-screen region.
 // The result is intentionally unpadded; hardware-specific safety padding and
 // byte alignment belong to the SSD1680 backend.
-[[nodiscard]] bool planPageDirtyRegion(
-    const ::growbox::display_model::DisplayPageModel* previous,
-    const ::growbox::display_model::DisplayPageModel& current,
-    PageDirtyRegion& output) noexcept;
+[[nodiscard]] bool planPageDirtyRegion(const ::growbox::display_model::DisplayPageModel* previous,
+                                       const ::growbox::display_model::DisplayPageModel& current,
+                                       PageDirtyRegion& output) noexcept;
 
 } // namespace growbox::clay_ui

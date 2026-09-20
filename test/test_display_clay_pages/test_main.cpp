@@ -59,12 +59,12 @@ public:
     return reported_framebuffer_bytes;
   }
 
-  bool setContentRegion(const display::DisplayRegion& region) noexcept {
-    ++set_content_region_count;
-    if (!open || !set_content_region_result) {
+  bool setTransferRegion(const display::DisplayRegion& region) noexcept {
+    ++set_transfer_region_count;
+    if (!open || !set_transfer_region_result) {
       return false;
     }
-    content_region = region;
+    transfer_region = region;
     return true;
   }
 
@@ -87,12 +87,12 @@ public:
   std::size_t begin_count{0U};
   std::size_t end_count{0U};
   std::size_t cancel_count{0U};
-  std::size_t set_content_region_count{0U};
-  display::DisplayRegion content_region{};
+  std::size_t set_transfer_region_count{0U};
+  display::DisplayRegion transfer_region{};
   display::DisplayRefreshKind last_refresh_kind{display::DisplayRefreshKind::None};
   bool begin_result{true};
   bool end_result{true};
-  bool set_content_region_result{true};
+  bool set_transfer_region_result{true};
   bool expose_framebuffer{true};
   bool last_warning{false};
   bool open{false};
@@ -159,14 +159,6 @@ std::uint64_t renderPage(const display::DisplaySnapshot& snapshot, display::Disp
   assert(summary.height == growbox::clay_ui::kDisplayHeight);
   assert(summary.black_pixels > 0U);
   assert(summary.render_commands == 25U);
-  assert(summary.content_region.width_px > 0U);
-  assert(summary.content_region.height_px > 0U);
-  assert(static_cast<std::uint32_t>(summary.content_region.x_px) +
-             summary.content_region.width_px <=
-         growbox::clay_ui::kDisplayWidth);
-  assert(static_cast<std::uint32_t>(summary.content_region.y_px) +
-             summary.content_region.height_px <=
-         growbox::clay_ui::kDisplayHeight);
 
   const std::uint64_t hash = frameHash(first);
   std::printf("CLAY_PAGE_HASH %s %016llx commands=%zu black=%zu\n", expected_title,
@@ -231,12 +223,13 @@ void testProductionClayBridgeUsesBackendOwnedFramebuffer() {
   std::vector<std::uint8_t> arena(growbox::clay_ui::pageRendererArenaBytes());
   FakeFramebufferBackend backend{};
   growbox::clay_ui::RenderSummary summary{};
-  assert(display::renderClayDisplayFrame(frame, arena.data(), arena.size(), backend, &summary));
+  assert(display::renderClayDisplayFrame(frame, {6U, 44U, 284U, 9U}, arena.data(), arena.size(),
+                                         backend, &summary));
   assert(backend.begin_count == 1U);
   assert(backend.end_count == 1U);
   assert(backend.cancel_count == 0U);
-  assert(backend.set_content_region_count == 1U);
-  assert(!display::displayRegionEmpty(backend.content_region));
+  assert(backend.set_transfer_region_count == 1U);
+  assert(!display::displayRegionEmpty(backend.transfer_region));
   assert(!backend.open);
   assert(backend.last_refresh_kind == display::DisplayRefreshKind::Full);
   assert(!backend.last_warning);
@@ -257,41 +250,45 @@ void testProductionClayBridgeCancelsIncompleteFrames() {
 
   FakeFramebufferBackend short_buffer{};
   short_buffer.reported_framebuffer_bytes = growbox::clay_ui::kFrameBytes - 1U;
-  assert(!display::renderClayDisplayFrame(frame, arena.data(), arena.size(), short_buffer));
+  assert(!display::renderClayDisplayFrame(frame, {6U, 44U, 284U, 9U}, arena.data(), arena.size(),
+                                          short_buffer));
   assert(short_buffer.begin_count == 1U);
   assert(short_buffer.end_count == 0U);
   assert(short_buffer.cancel_count == 1U);
   assert(!short_buffer.open);
 
   FakeFramebufferBackend short_arena{};
-  assert(!display::renderClayDisplayFrame(frame, arena.data(), required_arena - 1U, short_arena));
+  assert(!display::renderClayDisplayFrame(frame, {6U, 44U, 284U, 9U}, arena.data(),
+                                          required_arena - 1U, short_arena));
   assert(short_arena.begin_count == 1U);
   assert(short_arena.end_count == 0U);
   assert(short_arena.cancel_count == 1U);
   assert(!short_arena.open);
 
-  FakeFramebufferBackend content_region_failure{};
-  content_region_failure.set_content_region_result = false;
-  assert(
-      !display::renderClayDisplayFrame(frame, arena.data(), arena.size(), content_region_failure));
-  assert(content_region_failure.begin_count == 1U);
-  assert(content_region_failure.set_content_region_count == 1U);
-  assert(content_region_failure.end_count == 0U);
-  assert(content_region_failure.cancel_count == 1U);
-  assert(!content_region_failure.open);
+  FakeFramebufferBackend transfer_region_failure{};
+  transfer_region_failure.set_transfer_region_result = false;
+  assert(!display::renderClayDisplayFrame(frame, {6U, 44U, 284U, 9U}, arena.data(), arena.size(),
+                                          transfer_region_failure));
+  assert(transfer_region_failure.begin_count == 1U);
+  assert(transfer_region_failure.set_transfer_region_count == 1U);
+  assert(transfer_region_failure.end_count == 0U);
+  assert(transfer_region_failure.cancel_count == 1U);
+  assert(!transfer_region_failure.open);
 
   FakeFramebufferBackend end_failure{};
   end_failure.end_result = false;
-  assert(!display::renderClayDisplayFrame(frame, arena.data(), arena.size(), end_failure));
+  assert(!display::renderClayDisplayFrame(frame, {6U, 44U, 284U, 9U}, arena.data(), arena.size(),
+                                          end_failure));
   assert(end_failure.begin_count == 1U);
-  assert(end_failure.set_content_region_count == 1U);
+  assert(end_failure.set_transfer_region_count == 1U);
   assert(end_failure.end_count == 1U);
   assert(end_failure.cancel_count == 1U);
   assert(!end_failure.open);
 
   FakeFramebufferBackend no_refresh{};
   frame.refresh_kind = display::DisplayRefreshKind::None;
-  assert(!display::renderClayDisplayFrame(frame, arena.data(), arena.size(), no_refresh));
+  assert(!display::renderClayDisplayFrame(frame, {6U, 44U, 284U, 9U}, arena.data(), arena.size(),
+                                          no_refresh));
   assert(no_refresh.begin_count == 0U);
   assert(no_refresh.cancel_count == 0U);
 }

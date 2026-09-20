@@ -61,8 +61,8 @@ bool CrowPanelSsd1680DisplayBackend::beginFrame(std::uint16_t width_px, std::uin
   }
 
   raster_.clearWhite();
-  staged_content_region_ = {};
-  content_region_staged_ = false;
+  staged_transfer_region_ = {};
+  transfer_region_staged_ = false;
   planned_refresh_ = refresh_kind;
   frame_open_ = true;
   return true;
@@ -72,19 +72,19 @@ bool CrowPanelSsd1680DisplayBackend::drawText(const DisplayTextElement& element)
   return frame_open_ && raster_.drawText(element);
 }
 
-bool CrowPanelSsd1680DisplayBackend::setContentRegion(
-    const DisplayRegion& content_region) noexcept {
+bool CrowPanelSsd1680DisplayBackend::setTransferRegion(
+    const DisplayRegion& transfer_region) noexcept {
   if (!frame_open_) {
     return false;
   }
-  staged_content_region_ = clampDisplayRegion(content_region, DisplayMonochromeRaster::kWidthPx,
-                                              DisplayMonochromeRaster::kHeightPx);
-  content_region_staged_ = true;
-  return true;
+  staged_transfer_region_ = clampDisplayRegion(transfer_region, DisplayMonochromeRaster::kWidthPx,
+                                               DisplayMonochromeRaster::kHeightPx);
+  transfer_region_staged_ = !displayRegionEmpty(staged_transfer_region_);
+  return transfer_region_staged_;
 }
 
 bool CrowPanelSsd1680DisplayBackend::endFrame() noexcept {
-  if (!frame_open_ || planned_refresh_ == DisplayRefreshKind::None || !content_region_staged_) {
+  if (!frame_open_ || planned_refresh_ == DisplayRefreshKind::None || !transfer_region_staged_) {
     return false;
   }
 
@@ -113,34 +113,30 @@ bool CrowPanelSsd1680DisplayBackend::endFrame() noexcept {
     }
     previous_ram_seeded_ = true;
   } else {
-    transfer_region = dirty_region_tracker_.plan(staged_content_region_, kPartialRefreshPaddingPx,
-                                                 DisplayMonochromeRaster::kWidthPx,
-                                                 DisplayMonochromeRaster::kHeightPx);
-    if (!displayRegionEmpty(transfer_region)) {
-      if (!Ssd1680FrameMapper::nativeWindowForLogicalRegion(transfer_region, config_.rotation,
-                                                            native_window) ||
-          !writeMappedRam(kCmdWriteCurrentRam, native_window) ||
-          !activate(DisplayRefreshKind::Partial) ||
-          !writeMappedRam(kCmdWritePreviousRam, native_window)) {
-        releaseHardware();
-        return false;
-      }
+    transfer_region =
+        expandDisplayRegion(staged_transfer_region_, kPartialRefreshPaddingPx,
+                            DisplayMonochromeRaster::kWidthPx, DisplayMonochromeRaster::kHeightPx);
+    if (!Ssd1680FrameMapper::nativeWindowForLogicalRegion(transfer_region, config_.rotation,
+                                                          native_window) ||
+        !writeMappedRam(kCmdWriteCurrentRam, native_window) ||
+        !activate(DisplayRefreshKind::Partial) ||
+        !writeMappedRam(kCmdWritePreviousRam, native_window)) {
+      releaseHardware();
+      return false;
     }
   }
 
-  dirty_region_tracker_.confirm(staged_content_region_, DisplayMonochromeRaster::kWidthPx,
-                                DisplayMonochromeRaster::kHeightPx);
   recordSuccessfulTransfer(transfer_region, native_window, effective_refresh);
   frame_open_ = false;
-  content_region_staged_ = false;
+  transfer_region_staged_ = false;
   planned_refresh_ = DisplayRefreshKind::None;
   return true;
 }
 
 void CrowPanelSsd1680DisplayBackend::cancelFrame() noexcept {
   frame_open_ = false;
-  content_region_staged_ = false;
-  staged_content_region_ = {};
+  transfer_region_staged_ = false;
+  staged_transfer_region_ = {};
   planned_refresh_ = DisplayRefreshKind::None;
 }
 
@@ -175,7 +171,6 @@ bool CrowPanelSsd1680DisplayBackend::ensureHardwareReady() noexcept {
   }
   controller_initialized_ = true;
   previous_ram_seeded_ = false;
-  dirty_region_tracker_.reset();
   return true;
 }
 
@@ -402,9 +397,8 @@ void CrowPanelSsd1680DisplayBackend::recordSuccessfulTransfer(const DisplayRegio
 void CrowPanelSsd1680DisplayBackend::releaseHardware() noexcept {
   controller_initialized_ = false;
   previous_ram_seeded_ = false;
-  dirty_region_tracker_.reset();
-  staged_content_region_ = {};
-  content_region_staged_ = false;
+  staged_transfer_region_ = {};
+  transfer_region_staged_ = false;
   last_transfer_region_ = {};
   last_native_window_ = {};
   last_window_bytes_ = 0U;

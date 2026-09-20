@@ -8,6 +8,7 @@
 #include "ClayRenderer.h"
 #include "ClipStack.h"
 #include "growbox_clay_ui/HostSimulator.h"
+#include "growbox_clay_ui/PageDirtyRegion.h"
 
 namespace {
 using growbox::clay_ui::internal::ClayRenderConfig;
@@ -135,9 +136,42 @@ void testInvalidSemanticPageFailsClosed() {
   assert(!growbox::clay_ui::renderHostPage(page, frame));
 }
 
+void testPageDirtyRegionPlanner() {
+  growbox::display_model::DisplayPageModel previous{};
+  std::snprintf(previous.title.data(), previous.title.size(), "Status");
+  previous.line_count = 3U;
+  for (std::size_t index = 0U; index < previous.line_count; ++index) {
+    std::snprintf(previous.lines[index].label.data(), previous.lines[index].label.size(), "L%zu",
+                  index);
+    std::snprintf(previous.lines[index].value.data(), previous.lines[index].value.size(), "V%zu",
+                  index);
+  }
+
+  auto current = previous;
+  std::snprintf(current.lines[2].value.data(), current.lines[2].value.size(), "changed");
+  growbox::clay_ui::PageDirtyRegion dirty{};
+  assert(growbox::clay_ui::planPageDirtyRegion(&previous, current, dirty));
+  assert(dirty.x_px == 6U && dirty.y_px == 44U && dirty.width_px == 284U && dirty.height_px == 9U);
+
+  current = previous;
+  current.line_count = 2U;
+  assert(growbox::clay_ui::planPageDirtyRegion(&previous, current, dirty));
+  assert(dirty.y_px == 44U && dirty.height_px == 9U);
+
+  current = previous;
+  current.warning = true;
+  assert(growbox::clay_ui::planPageDirtyRegion(&previous, current, dirty));
+  assert(dirty.x_px == 6U && dirty.y_px == 5U && dirty.width_px == 284U && dirty.height_px == 14U);
+
+  assert(!growbox::clay_ui::planPageDirtyRegion(&previous, previous, dirty));
+  assert(growbox::clay_ui::planPageDirtyRegion(nullptr, previous, dirty));
+  assert(dirty.x_px == 0U && dirty.y_px == 0U && dirty.width_px == 296U && dirty.height_px == 128U);
+}
+
 } // namespace
 
 int main() {
+  testPageDirtyRegionPlanner();
   std::puts("growbox Clay phase2: geometry");
   testGeometry();
   std::puts("growbox Clay phase2: clip stack");

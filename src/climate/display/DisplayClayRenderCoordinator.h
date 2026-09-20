@@ -14,9 +14,8 @@ namespace growbox::app::climate_io::display {
 // caller supplies a layout-derived physical transfer region; the renderer never
 // reaches into SSD1680 hardware ownership.
 template <typename Backend>
-bool renderClayDisplayFrame(const DisplayRuntimeFrame& frame,
-                            const DisplayRegion& transfer_region, void* clay_arena,
-                            std::size_t clay_arena_bytes, Backend& backend,
+bool renderClayDisplayFrame(const DisplayRuntimeFrame& frame, const DisplayRegion& transfer_region,
+                            void* clay_arena, std::size_t clay_arena_bytes, Backend& backend,
                             ::growbox::clay_ui::RenderSummary* summary = nullptr) noexcept {
   if (!frame.refreshRequired() || clay_arena == nullptr || clay_arena_bytes == 0U ||
       displayRegionEmpty(transfer_region)) {

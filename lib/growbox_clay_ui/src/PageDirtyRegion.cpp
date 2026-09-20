@@ -30,15 +30,14 @@ void includeRegion(PageDirtyRegion& bounds, bool& has_bounds,
 
   const std::uint32_t left = std::min<std::uint32_t>(bounds.x_px, region.x_px);
   const std::uint32_t top = std::min<std::uint32_t>(bounds.y_px, region.y_px);
-  const std::uint32_t right = std::max<std::uint32_t>(
-      static_cast<std::uint32_t>(bounds.x_px) + bounds.width_px,
-      static_cast<std::uint32_t>(region.x_px) + region.width_px);
-  const std::uint32_t bottom = std::max<std::uint32_t>(
-      static_cast<std::uint32_t>(bounds.y_px) + bounds.height_px,
-      static_cast<std::uint32_t>(region.y_px) + region.height_px);
+  const std::uint32_t right =
+      std::max<std::uint32_t>(static_cast<std::uint32_t>(bounds.x_px) + bounds.width_px,
+                              static_cast<std::uint32_t>(region.x_px) + region.width_px);
+  const std::uint32_t bottom =
+      std::max<std::uint32_t>(static_cast<std::uint32_t>(bounds.y_px) + bounds.height_px,
+                              static_cast<std::uint32_t>(region.y_px) + region.height_px);
   bounds = {static_cast<std::uint16_t>(left), static_cast<std::uint16_t>(top),
-            static_cast<std::uint16_t>(right - left),
-            static_cast<std::uint16_t>(bottom - top)};
+            static_cast<std::uint16_t>(right - left), static_cast<std::uint16_t>(bottom - top)};
 }
 
 template <std::size_t N>
@@ -59,8 +58,7 @@ bool planPageDirtyRegion(const ::growbox::display_model::DisplayPageModel* previ
 
   bool has_bounds = false;
   if (stringsDiffer(previous->title, current.title) || previous->warning != current.warning) {
-    includeRegion(output, has_bounds,
-                  {kInnerLeftPx, kHeaderTopPx, kInnerWidthPx, kHeaderHeightPx});
+    includeRegion(output, has_bounds, {kInnerLeftPx, kHeaderTopPx, kInnerWidthPx, kHeaderHeightPx});
   }
 
   const std::size_t previous_count = std::min(previous->line_count, previous->lines.size());
@@ -78,8 +76,7 @@ bool planPageDirtyRegion(const ::growbox::display_model::DisplayPageModel* previ
       continue;
     }
 
-    const std::uint16_t row_y =
-        static_cast<std::uint16_t>(kRowsTopPx + index * kRowStepPx);
+    const std::uint16_t row_y = static_cast<std::uint16_t>(kRowsTopPx + index * kRowStepPx);
     includeRegion(output, has_bounds, {kInnerLeftPx, row_y, kInnerWidthPx, kRowHeightPx});
   }
 
