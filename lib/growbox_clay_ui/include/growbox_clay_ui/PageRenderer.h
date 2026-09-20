@@ -25,13 +25,13 @@ struct RenderSummary final {
 [[nodiscard]] std::size_t pageRendererArenaBytes() noexcept;
 
 // Render one semantic growbox page into a caller-owned 296x128 row-major 1-bpp
-// framebuffer. A set bit is black. Clay state and render commands remain private
-// to this C++20 component; only growbox-owned C++17-compatible types cross the
-// public boundary.
+// framebuffer. A cleared bit is black and a set bit is white, matching the
+// production DisplayMonochromeRaster/SSD1680 logical framebuffer contract. Clay
+// state and render commands remain private to this C++20 component; only
+// growbox-owned C++17-compatible types cross the public boundary.
 [[nodiscard]] bool renderPageToMonochrome(const ::growbox::display_model::DisplayPageModel& page,
-                                          std::uint8_t* framebuffer,
-                                          std::size_t framebuffer_bytes, void* arena_memory,
-                                          std::size_t arena_bytes,
+                                          std::uint8_t* framebuffer, std::size_t framebuffer_bytes,
+                                          void* arena_memory, std::size_t arena_bytes,
                                           RenderSummary* summary = nullptr) noexcept;
 
 } // namespace growbox::clay_ui
