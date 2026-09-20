@@ -13,6 +13,13 @@ namespace storage = growbox::app::climate_io::storage;
 
 namespace {
 
+constexpr std::array<std::uint64_t, 4U> kGoldenPageHashes{
+    0x2d40c7bccbf2e12bULL,
+    0xb7e3999ea15d8d2bULL,
+    0x430713d76487fc25ULL,
+    0x3be1346eb2b8c1e5ULL,
+};
+
 std::uint64_t frameHash(const growbox::clay_ui::MonochromeFrame& frame) {
   std::uint64_t hash = 1469598103934665603ULL;
   for (const std::uint8_t byte : frame.bytes) {
@@ -82,7 +89,7 @@ std::uint64_t renderPage(const display::DisplaySnapshot& snapshot, display::Disp
   assert(summary.width == growbox::clay_ui::kDisplayWidth);
   assert(summary.height == growbox::clay_ui::kDisplayHeight);
   assert(summary.black_pixels > 0U);
-  assert(summary.render_commands >= model.line_count * 2U);
+  assert(summary.render_commands == 25U);
 
   const std::uint64_t hash = frameHash(first);
   std::printf("CLAY_PAGE_HASH %s %016llx commands=%zu black=%zu\n", expected_title,
@@ -107,11 +114,7 @@ void testPresenterNavigationAndFourClayPages() {
   assert(navigation.page() == display::DisplayPage::Diagnostics);
   hashes[3] = renderPage(snapshot, navigation.page(), "Diagnostics");
 
-  for (std::size_t left = 0U; left < hashes.size(); ++left) {
-    for (std::size_t right = left + 1U; right < hashes.size(); ++right) {
-      assert(hashes[left] != hashes[right]);
-    }
-  }
+  assert(hashes == kGoldenPageHashes);
 
   assert(navigation.handle(display::DisplayButton::Next));
   assert(navigation.page() == display::DisplayPage::Environment);
