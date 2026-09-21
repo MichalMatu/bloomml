@@ -1,6 +1,8 @@
 # Display UI / Clay port contract
 
-Status: active; Phases 0-6 are complete. Phase 7 has autonomous exact-SHA hardware evidence; manual operator checks remain.
+Status: active. Phases 0-6 are implementation milestones. Phase 7 has autonomous exact-SHA hardware evidence, but final stabilization is OPEN for physical buttons and SCD41-with-device-present.
+
+Qualification note: historical `DONE` labels below describe implementation/build milestones. They do not override current physical evidence. Until the stabilization handoff is closed, treat the five-key input path as physically unqualified and do not expand menu/settings behavior.
 
 Documentation re-audit baseline: `growbox-ml-controller@6d083e5b00a29b20a8a9bb6f2bb83a395634aff5`.
 Donor snapshot: `esp32s3_LiteGraph@5b8c758c365547ddeaab65bbe9f849bdd071695d` under `vendor/litegraph_epd_port/`.

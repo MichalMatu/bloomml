@@ -1,15 +1,15 @@
 # Current controller status
 
-Updated: 2026-09-20
+Updated: 2026-09-21
 Repository: `MichalMatu/growbox-ml-controller`
 Canonical source branch: `main`
 Control branch: `agent-control`
 
 ## Current phase
 
-Runtime reliability hardening and Display UI Port Phases 1-6 are integrated on `main`.
+Runtime reliability hardening and Display UI Port implementation Phases 1-6 are integrated on `main`.
 
-Display UI Port Phase 6 is complete at the deliberately bounded read-only scope: long-press OK opens the four-page chooser while committed page ownership remains in the existing display runtime. Phase 7 autonomous hardware qualification is complete for boot/display/resources with outputs fenced; manual physical-key/visual checks and SCD41 qualification with the device present remain open.
+The implementation milestones are not the same as final hardware qualification. The current stabilization gate is open: the button stack is software-complete but must be treated as physically unqualified until all five CrowPanel keys are proven on the board with the known-good GPIO/active-low/release semantics, and SCD41 must be qualified with the sensor physically present. Do not extend the menu/settings surface before these two I/O paths are stable.
 
 The live implementation contract is `docs/DISPLAY_UI_PORT.md`.
 
@@ -28,10 +28,11 @@ Current architecture state:
 - navigation remains the growbox `DisplayNavigation`; Clay does not own navigation, sensor/output truth, control or safety state;
 - Phase 4 adds semantic row-aware dirty planning plus reduced native SSD1680 RAM-window transfer; a one-row update is verified at 1776 bytes/plane versus 4736 bytes full-plane;
 - the exact merged Phase 4 SHA was flashed to `/dev/cu.usbserial-120` with real outputs disabled and produced a real `physical_partial=1` refresh without crash/watchdog/brownout evidence.
-- Phase 5 adds growbox-owned Home/Back/Previous/Next/OK GPIO input through a 20 ms timer sampler, pure 40 ms stable-edge debounce, 700 ms long-press semantics and a bounded static event queue; navigation ownership remains in `DisplayRuntimeController`;
-- exact merged Phase 5 SHA `7533f7f4c2c92675ef0908c91912b89a66f7ee4a` booted on `/dev/cu.usbserial-120` with `eink_ready=1`, `eink_buttons_ready=1` and outputs fake-locked;
+- Phase 5 implements growbox-owned Home/Back/Previous/Next/OK GPIO input through a 20 ms timer sampler, pure 40 ms stable-edge debounce, 700 ms long-press semantics and a bounded static event queue; navigation ownership remains in `DisplayRuntimeController`;
+- exact merged Phase 5 SHA `7533f7f4c2c92675ef0908c91912b89a66f7ee4a` proved startup (`eink_ready=1`, `eink_buttons_ready=1`) with outputs fake-locked, but startup success is not proof that physical key events are correct;
 - Phase 6 merged as `b64a7f294da716b59d7ca2a819f938f52ba726b0`: a read-only four-page chooser uses long-press OK and preserves `DisplayNavigation` / `DisplayRuntimeController` as the committed-page owner; no writable settings/control API was added;
-- Phase 7 autonomous exact-SHA qualification observed two full and two real reduced partial refreshes, stable heap/PSRAM, 2228-byte display-worker stack minimum, healthy RTC/BLE and no crash/display-failure signatures; SCD41 was physically absent and no human key press occurred.
+- Phase 7 autonomous exact-SHA qualification observed two full and two real reduced partial refreshes, stable heap/PSRAM, 2228-byte display-worker stack minimum, healthy RTC/BLE and no crash/display-failure signatures; SCD41 was physically absent and no human key press occurred;
+- current stabilization policy therefore keeps button actuation and SCD41-with-device-present as open qualification items, regardless of earlier implementation-phase DONE labels.
 
 ## Architecture quality baseline
 
@@ -148,9 +149,11 @@ The production line retains the Sensirion-aligned clean-start sequence:
 
 `wake_up -> stop_periodic_measurement -> reinit -> start_periodic_measurement`
 
-and one bounded liveness recovery after 30 seconds without a new measurement, at most once per MCU boot. Do not restart broad SCD41 diagnosis unless new evidence shows a regression.
+and one bounded liveness recovery after 30 seconds without a new measurement, at most once per MCU boot.
 
-Historical exact-SHA physical evidence and intermittent-failure reproduction remain in `HISTORY.md` / `CHANGELOG.md` and Git history.
+The runtime coordinator ticks at 1 Hz, but `Scd41InsideSource::sample()` does not force a measurement read every second: it polls `scd4x_get_data_ready_status()` and calls `scd4x_read_measurement()` only when the sensor reports new data. The last valid sample is cached with its age. A roughly five-second fresh-sample cadence is therefore compatible with normal SCD41 periodic operation and is not by itself evidence of a fault.
+
+Physical SCD41 qualification is OPEN until the device is present and a bounded run confirms probe/startup, repeated fresh measurements, cache age behavior, recovery counters and absence of recurring I2C/read failures. Historical evidence remains useful, but this path is not currently considered closed.
 
 ## NVS/output persistence state
 
@@ -164,7 +167,7 @@ For a new ChatGPT window:
 
 1. Read `AGENTS.md`, `docs/README.md`, this file, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md` and `docs/DISPLAY_UI_PORT.md`.
 2. Fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any write.
-3. Continue from the first incomplete qualification item in `docs/DISPLAY_UI_PORT.md`; currently that is the remaining manual Phase 7 hardware work.
+3. Continue from `docs/STABILIZATION_HANDOFF.md`: qualify physical buttons and SCD41 first. Do not add more menu/settings behavior until both are stable.
 4. Keep Clay under `lib/growbox_clay_ui/`; do not re-create it under another directory or restart it from donor code.
 5. Keep `lib/growbox_display_model/` as the shared behavior-free semantic DTO boundary.
 6. Preserve the backend-owned single framebuffer, native SSD1680 backend, async observer transaction and C++17/C++20 boundary.
@@ -178,9 +181,9 @@ For a new ChatGPT window:
 2. Reproduce the existing four growbox pages with deterministic host/golden checks — DONE.
 3. Attach Clay behind the existing async display transaction — DONE.
 4. Add true dirty-region RAM-window transfer — DONE.
-5. Add native ESP-IDF button input with host-tested debounce/long-press behavior — DONE.
-6. Add the justified read-only growbox page chooser without creating a settings/control owner — DONE.
-7. Qualify the final exact SHA on hardware — PARTIAL: autonomous boot/display/resource checks PASS; manual key/visual checks and SCD41-with-device-present remain.
+5. Add native ESP-IDF button input with host-tested debounce/long-press behavior — IMPLEMENTED; physical key qualification OPEN.
+6. Add the justified read-only growbox page chooser without creating a settings/control owner — IMPLEMENTED; depends on qualified physical keys.
+7. Qualify the final exact SHA on hardware — PARTIAL: autonomous boot/display/resource checks PASS; physical-key and SCD41-with-device-present stabilization remain OPEN.
 
 Do not reopen completed panel pin mapping, SSD1680 backend ownership, rotation, async architecture, SCD41 recovery or runtime persistence ownership without new evidence.
 

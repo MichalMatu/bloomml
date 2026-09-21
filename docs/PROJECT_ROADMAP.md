@@ -1,6 +1,6 @@
 # Growbox ML project roadmap
 
-Updated: 2026-09-20
+Updated: 2026-09-21
 
 ## Direction
 
@@ -20,9 +20,11 @@ Current position:
 2. reproduce current Environment / Outputs / System / Diagnostics pages on host — DONE;
 3. connect Clay behind the existing async display transaction and backend-owned framebuffer — DONE;
 4. implement true dirty-region RAM-window partial transfer — DONE;
-5. add native ESP-IDF buttons with host-tested debounce/long-press logic — DONE;
-6. add the justified read-only growbox page chooser without inventing write-side settings — DONE;
-7. exact-SHA physical qualification — PARTIAL: autonomous boot/display/resource evidence is green; manual key/visual checks and SCD41-with-device-present remain.
+5. native ESP-IDF button stack — IMPLEMENTED, but physical key qualification is OPEN;
+6. bounded read-only growbox page chooser — IMPLEMENTED, but depends on qualified physical keys;
+7. exact-SHA physical qualification — PARTIAL: autonomous boot/display/resource evidence is green; physical-key and SCD41-with-device-present stabilization remain OPEN.
+
+Current priority is stabilization, not UI expansion. First prove all five physical keys with the known-good CrowPanel mapping and event semantics, then qualify SCD41 with the device attached. Only after those pass should menu/settings work resume.
 
 Do not replace the native SSD1680 backend, create another framebuffer/refresh owner or make UI another output owner. Production display integration must be verified with `make build-crowpanel`; the generic default firmware build does not compile the CrowPanel real-input display path.
 
@@ -52,7 +54,7 @@ Before substantial implementation, identify the owning module, state owner, depe
 
 ## Closed work that should not be reopened by default
 
-- SCD41 clean-start/liveness recovery;
+- SCD41 clean-start/liveness recovery design is retained, but physical SCD41 qualification is currently open;
 - CrowPanel SSD1680 pin map and native backend ownership;
 - display rotation and async worker architecture;
 - runtime NVS/output-persistence hardening;
