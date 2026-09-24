@@ -39,6 +39,9 @@ jobs:
       - name: Run pre-commit quality gate
         run: pre-commit run --all-files
 
+      - name: Run architecture boundary gate
+        run: bash scripts/check_architecture.sh
+
       - name: Run Python tests
         run: python -m pytest
 
