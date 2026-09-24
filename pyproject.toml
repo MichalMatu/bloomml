@@ -1,5 +1,5 @@
 [project]
-name = "growbox-ml-controller-tools"
+name = "bloomml-tools"
 version = "0.1.0"
 description = "Deterministic simulation, training, export, serial, and analysis tools"
 requires-python = ">=3.11,<3.12"

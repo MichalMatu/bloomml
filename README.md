@@ -1,4 +1,4 @@
-# Growbox ML Controller
+# BloomML
 
 Native ESP-IDF controller for an ESP32-S3 growbox with deterministic climate control, real sensors, RF433 outputs, durable telemetry, e-ink operator visibility and TinyML shadow/research tooling.
 

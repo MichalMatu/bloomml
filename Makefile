@@ -30,7 +30,7 @@ endif
         flash monitor monitor-reset flash-monitor menuconfig clean
 
 help: ## Lista komend make (domyślny cel)
-	@printf '\nGrowbox ML — make targets\n\n'
+	@printf '\nBloomML — make targets\n\n'
 	@printf '  Firmware (wymaga ESP-IDF — scripts/source_idf.sh):\n'
 	@printf '    make build          — kompilacja domyślnego profilu N16R8\n'
 	@printf '    make flash          — build + wgranie na płytkę\n'

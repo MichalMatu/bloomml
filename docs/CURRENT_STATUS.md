@@ -1,7 +1,7 @@
 # Current controller status
 
 Updated: 2026-09-21
-Repository: `MichalMatu/growbox-ml-controller`
+Repository: `MichalMatu/bloomml`
 Canonical source branch: `main`
 Control branch: `agent-control`
 

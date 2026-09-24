@@ -1,4 +1,4 @@
-# Sandbox-first execution for Growbox ML Controller
+# Sandbox-first execution for BloomML
 
 This repository supports a ChatGPT Sandbox workflow that is deliberately independent from other repositories. The persistent Library location is:
 

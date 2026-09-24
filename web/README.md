@@ -1,6 +1,6 @@
 # Growbox browser configurator
 
-React + TypeScript + Vite frontend for the Growbox ML Controller project.
+React + TypeScript + Vite frontend for the BloomML project.
 
 Public surfaces:
 
@@ -9,8 +9,8 @@ Public surfaces:
 
 Live deployment:
 
-- https://michalmatu.github.io/growbox-ml-controller/
-- https://michalmatu.github.io/growbox-ml-controller/chamber-3d
+- https://michalmatu.github.io/bloomml/
+- https://michalmatu.github.io/bloomml/chamber-3d
 
 ## Contract boundary
 
@@ -64,7 +64,7 @@ Frontend checks remain separate from firmware/controller checks so one surface c
 
 ## Routing and GitHub Pages
 
-Vite uses the repository base path `/growbox-ml-controller/`. The 3D route is lazy-loaded so Three.js does not need to load for the JSON configurator.
+Vite uses the repository base path `/bloomml/`. The 3D route is lazy-loaded so Three.js does not need to load for the JSON configurator.
 
 ## 3D chamber
 

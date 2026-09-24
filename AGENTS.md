@@ -2,8 +2,8 @@
 
 ## Repository identity
 
-- repository: `MichalMatu/growbox-ml-controller`
-- repository id: `growbox-ml-controller`
+- repository: `MichalMatu/bloomml`
+- repository id: `bloomml`
 - agent binding: `815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5`
 - source branch: `main`
 - control branch: `agent-control`
