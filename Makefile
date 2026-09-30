@@ -2,11 +2,13 @@ PYTHON ?= python3
 VENV ?= .venv
 PY := $(VENV)/bin/python
 RUN_IDF := bash scripts/run_idf.sh
+IDF_CCACHE_ENABLE ?= 1
+export IDF_CCACHE_ENABLE
 
 IDF_BUILD_DIR ?= build/idf
 IDF_GATE_BUILD_DIR ?= build/idf-gate
 HOST_BUILD_DIR ?= build/host-tests
-HOST_BUILD_JOBS ?= 2
+HOST_BUILD_JOBS ?= 4
 N8_BUILD_DIR ?= build/idf-n8
 N32R16V_BUILD_DIR ?= build/idf-n32r16v
 CROWPANEL_BUILD_DIR ?= build/idf-stage27c-crowpanel
