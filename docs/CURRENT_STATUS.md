@@ -1,7 +1,7 @@
 # Current controller status
 
-Updated: **2026-09-30**  
-Repository: `MichalMatu/bloomml`  
+Updated: **2026-09-30**
+Repository: `MichalMatu/bloomml`
 Canonical source branch: `main`
 
 Status: **feature and performance work is paused until the MacBook M1 Pro / 32 GB host is available.** No implementation slice or benchmark tuning is intentionally left in progress.
