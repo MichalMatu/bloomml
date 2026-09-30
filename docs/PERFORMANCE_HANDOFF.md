@@ -1,77 +1,56 @@
 # Performance handoff
 
-Status: 2026-09-30. The first local build/test acceleration pass is complete and merged. Start the next performance phase from fresh `main` on an otherwise idle host.
+Status: **2026-09-30 — performance work is paused until the MacBook M1 Pro / 32 GB host is available.** Resume from fresh `main`; do not change ML/build dependencies or concurrency before a fixed baseline.
 
-## Completed optimization pass
+## Stable optimizations already merged
 
-PR #16 (`Speed up local BloomML builds`) is merged. It changed only build/test tooling defaults:
+PR #16 (`Speed up local BloomML builds`) changed tooling only:
 
-- `IDF_CCACHE_ENABLE ?= 1` is exported by the Makefile, so ESP-IDF uses ccache by default while callers can still override it.
-- `HOST_BUILD_JOBS` increased from 2 to 4.
+- ESP-IDF ccache is enabled by default through `IDF_CCACHE_ENABLE ?= 1`;
+- `HOST_BUILD_JOBS` default is 4.
 
-Measured on MacBook Air M1 / 8 GB at source revision `b8a8295edc7ec78d1fa9965123da16009b8c67d9`:
+Historical MacBook Air M1 / 8 GB measurements at source `b8a8295edc7ec78d1fa9965123da16009b8c67d9`:
 
-### ESP-IDF clean rebuild
+- ESP-IDF uncached clean build: **89.270 s**;
+- first ccache-fill build: **150.204 s**;
+- warm-cache clean rebuild: **43.767 s**;
+- clean `make HOST_BUILD_JOBS=2 test-host`: **88.106 s**;
+- clean `make HOST_BUILD_JOBS=4 test-host`: **72.494 s**.
 
-- uncached clean build: 89.270 s
-- first ccache fill build: 150.204 s
-- subsequent clean rebuild with a warm cache: 43.767 s
-- steady-state clean rebuild improvement: about 51%
-- second ccache run: 1018 direct hits out of 1020 cacheable compilations
+The first ccache population is slower by design; judge it on repeated development rebuilds. Keep 4 host jobs until a fresh baseline on the 32 GB machine proves that more parallelism is useful.
 
-The first cache-fill is slower than the uncached build. This is expected; judge ccache by repeated development rebuilds, not its first population run.
+## ML/GPU eligibility audit completed before the pause
 
-### Host C++ gate
+The active research trainer uses TensorFlow/Keras with a small dense MLP. The current quick/full dataset presets are small by desktop-GPU standards, training is deterministic, and the training path explicitly limits TensorFlow CPU threading to one inter-op and one intra-op thread.
 
-- clean `make HOST_BUILD_JOBS=2 test-host`: 88.106 s
-- clean `make HOST_BUILD_JOBS=4 test-host`: 72.494 s
-- improvement: about 17.7%
+Current dependency state does **not** pin `tensorflow-metal`. Apple GPU availability must therefore be probed on the new host rather than assumed.
 
-The PR passed clean-room GitHub CI for host tests, normal ESP-IDF firmware, CrowPanel firmware and web tests, including clang-tidy.
+No CPU-vs-GPU A/B benchmark was run before the pause. ML remains shadow/research-only and is not production control authority.
 
-## Next performance phase: CPU and GPU, separated by workload
+## Resume on the M1 Pro / 32 GB host
 
-### Measurement rules
+For an apples-to-apples build comparison, first rerun the historical build/test commands at exact source `b8a8295edc7ec78d1fa9965123da16009b8c67d9` on the new machine. Then establish a fresh current-`main` baseline.
 
-1. Benchmark only when no other repository is compiling, testing, installing dependencies or running a heavy Local Agent/ML task on the M1.
-2. Pin the exact source revision and fixed input data/seed where applicable.
-3. Separate cold, warm and incremental build numbers.
-4. Prefer three comparable runs and report the median.
-5. Record wall time, CPU utilization, peak RSS and swap pressure; use `/usr/bin/time -lp` on macOS where practical.
-6. For ML/inference comparisons also record model/input shape, batch size, numeric precision and result-equivalence tolerance.
-7. Change one variable at a time.
+For build/test measurements:
 
-### CPU track
+1. run one heavy workload at a time on an otherwise idle host;
+2. separate cold, warm-cache and representative incremental paths;
+3. use at least three comparable runs where practical and report medians;
+4. record wall time, CPU, process-tree peak RSS and swap/memory pressure;
+5. keep the first cross-host run at the current 4-job default;
+6. only after that test higher job counts one variable at a time.
 
-Profile the real workloads:
+For ML CPU/GPU A/B:
 
-- ESP-IDF build and representative one-source incremental rebuild;
-- `make test-host` with the new 4-job default;
-- Python ML pipeline/training/inference/probe workloads that are actually used during development.
+1. first record TensorFlow version, installed Metal plugin state and `tf.config.list_physical_devices()`;
+2. do not install or change a GPU dependency before recording the existing-environment CPU baseline;
+3. compare the same dataset, model, seed, batch size, precision and training configuration;
+4. separate startup/device-transfer overhead from steady-state training/inference time;
+5. verify result equivalence within an explicit tolerance;
+6. keep GPU support only if the real workload is faster enough to justify the extra dependency/tooling surface.
 
-Do not increase host jobs beyond 4 until measurements prove a benefit without creating swap pressure.
+ESP-IDF/C++ compilation, ccache, clang-tidy and ordinary host tests remain CPU/RAM/cache/I/O workloads and must not be routed through GPU-specific tooling.
 
-### GPU track
+## Bootstrap after the pause
 
-BloomML is the primary repository where Apple GPU/MPS may be useful, but eligibility must be proven from the current ML stack before changing code or dependencies.
-
-First inspect the active ML backend and hot operations. If the existing framework supports Apple MPS for the relevant model, benchmark the same workload on CPU and MPS with identical input/seed/precision constraints. Measure both startup/transfer overhead and steady-state throughput; small workloads can be slower on GPU.
-
-ESP-IDF/C++ compilation, ccache, clang-tidy and ordinary host tests remain CPU workloads. Do not try to route compilation through the GPU.
-
-## Deferred work
-
-- GitHub Actions cache optimization is not part of this local-M1 pass. Revisit it only when CI wall time becomes a development bottleneck.
-- More aggressive C++ job counts are deferred until the current 4-job default is observed under normal development load.
-- Do not redesign build directories or clean semantics solely for performance without a measured problem.
-
-## New-chat bootstrap
-
-Read:
-
-1. `AGENTS.md`
-2. `docs/CURRENT_STATUS.md`
-3. this file
-4. fresh `agent-control` daemon/binding state
-
-Then verify the host is idle before any CPU/GPU A/B run. The figures above are reference measurements; take a fresh baseline from current `main` before making another optimization.
+Read `AGENTS.md`, `docs/CURRENT_STATUS.md`, this file, then fetch fresh `main` and the Local Agent daemon state. Historical timings are reference values only; future development starts from fresh `main`.
