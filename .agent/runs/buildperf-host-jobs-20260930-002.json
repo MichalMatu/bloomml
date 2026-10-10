@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "buildperf-host-jobs-20260930-002",
+  "task_digest": "8e47a19bf3d4720ec40477d73fbe107a42b371d9ffbe1691bb2b9ca969b462e6",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-09-30T02:28:35.320328+00:00",
+  "attempt_id": "21d982cd5bfb236c6d246a9f",
+  "daemon_version": "4.19.9",
+  "daemon_pid": 26988,
+  "updated_at": "2026-09-30T02:28:35.646314+00:00",
+  "pid": 26988
+}

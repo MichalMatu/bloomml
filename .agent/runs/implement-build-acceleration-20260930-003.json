@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "implement-build-acceleration-20260930-003",
+  "task_digest": "a44a64fc095fbf9cc1ed0168a62f7f4a5dc578f2ebc761c15b8fbf48634a990d",
+  "status": "failed",
+  "failure_reason": "command_failed",
+  "finished_at": "2026-09-30T02:30:21.995597+00:00",
+  "attempt_id": "a57a43ba9be880dec1a13328",
+  "daemon_version": "4.19.9",
+  "daemon_pid": 38762,
+  "updated_at": "2026-09-30T02:30:22.535406+00:00",
+  "pid": 38762
+}

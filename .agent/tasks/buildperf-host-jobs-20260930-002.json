@@ -1,0 +1,18 @@
+{
+  "id": "buildperf-host-jobs-20260930-002",
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "command_timeout": 7200,
+  "task_timeout": 21600,
+  "commands": [
+    "echo '=== IDENTITY ==='; git rev-parse HEAD; git status --short; uname -m; sysctl -n hw.ncpu; sysctl -n hw.memsize",
+    "echo '=== CLEAN_J2 ==='; rm -rf build/host-tests build/host-display-* build/host-clay-ui",
+    "echo '=== COLD_HOST_J2 ==='; /usr/bin/time -lp make HOST_BUILD_JOBS=2 test-host",
+    "echo '=== CLEAN_J4 ==='; rm -rf build/host-tests build/host-display-* build/host-clay-ui",
+    "echo '=== COLD_HOST_J4 ==='; /usr/bin/time -lp make HOST_BUILD_JOBS=4 test-host",
+    "echo '=== FINAL ==='; git status --short"
+  ]
+}

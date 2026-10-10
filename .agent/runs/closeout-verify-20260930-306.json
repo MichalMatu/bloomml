@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "closeout-verify-20260930-306",
+  "task_digest": "4f74782cf16fc67d487897c5d1bb6abfae2b792921376d9de87fd8c83e88a6a8",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-09-30T19:33:03.729156+00:00",
+  "attempt_id": "37cd70f240631bddb7008489",
+  "daemon_version": "4.19.10",
+  "daemon_pid": 68881,
+  "updated_at": "2026-09-30T19:33:03.962071+00:00",
+  "pid": 68881
+}

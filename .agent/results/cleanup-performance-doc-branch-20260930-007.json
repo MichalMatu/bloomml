@@ -1,0 +1,116 @@
+{
+  "id": "cleanup-performance-doc-branch-20260930-007",
+  "status": "done",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "started_at": "2026-09-30T03:04:59.452258+00:00",
+  "command_timeout": 300,
+  "edits": {},
+  "commands": [
+    {
+      "command": "git fetch --prune origin && git ls-remote --heads origin docs/performance-handoff",
+      "exit_code": 0,
+      "output": "From https://github.com/MichalMatu/bloomml\n   042d630..b215965  agent-control -> origin/agent-control\nb7f9484dcf00ce994233aa4d0c09cbe3c2337420\trefs/heads/docs/performance-handoff\n",
+      "elapsed_seconds": 1.967,
+      "timed_out": false,
+      "idle_timed_out": false,
+      "memory_limit_mb": 4096,
+      "memory_limited": false,
+      "background_process_leak": false,
+      "peak_rss_mb": 3.03,
+      "output_policy": "stream",
+      "captured_output_chars": 179,
+      "output_truncated": false,
+      "current_rss_mb": 3.03,
+      "stage_name": "command-1",
+      "stage_index": 1,
+      "stage_total": 3,
+      "stage_phase": "commands"
+    },
+    {
+      "command": "git push --no-verify origin --delete docs/performance-handoff",
+      "exit_code": 0,
+      "output": "To https://github.com/MichalMatu/bloomml.git\n - [deleted]         docs/performance-handoff\n",
+      "elapsed_seconds": 2.071,
+      "timed_out": false,
+      "idle_timed_out": false,
+      "memory_limit_mb": 4096,
+      "memory_limited": false,
+      "background_process_leak": false,
+      "peak_rss_mb": 0.58,
+      "output_policy": "stream",
+      "captured_output_chars": 91,
+      "output_truncated": false,
+      "current_rss_mb": 0.58,
+      "stage_name": "command-2",
+      "stage_index": 2,
+      "stage_total": 3,
+      "stage_phase": "commands"
+    },
+    {
+      "command": "git ls-remote --heads origin docs/performance-handoff || true",
+      "exit_code": 0,
+      "output": "",
+      "elapsed_seconds": 0.886,
+      "timed_out": false,
+      "idle_timed_out": false,
+      "memory_limit_mb": 4096,
+      "memory_limited": false,
+      "background_process_leak": false,
+      "peak_rss_mb": 8.73,
+      "output_policy": "stream",
+      "captured_output_chars": 0,
+      "output_truncated": false,
+      "current_rss_mb": 8.73,
+      "stage_name": "command-3",
+      "stage_index": 3,
+      "stage_total": 3,
+      "stage_phase": "commands"
+    }
+  ],
+  "verification": [],
+  "stages": [
+    {
+      "stage_name": "command-1",
+      "stage_index": 1,
+      "stage_total": 3,
+      "stage_phase": "commands",
+      "outcome": "passed",
+      "elapsed_seconds": 1.967
+    },
+    {
+      "stage_name": "command-2",
+      "stage_index": 2,
+      "stage_total": 3,
+      "stage_phase": "commands",
+      "outcome": "passed",
+      "elapsed_seconds": 2.071
+    },
+    {
+      "stage_name": "command-3",
+      "stage_index": 3,
+      "stage_total": 3,
+      "stage_phase": "commands",
+      "outcome": "passed",
+      "elapsed_seconds": 0.886
+    }
+  ],
+  "git_status": {
+    "exit_code": 0,
+    "output": "",
+    "elapsed_seconds": 0.087
+  },
+  "git_diff": {
+    "exit_code": 0,
+    "output": "",
+    "elapsed_seconds": 0.072
+  },
+  "finished_at": "2026-09-30T03:05:06.153284+00:00",
+  "task_digest": "dad9143550ed040225450bbec205ef9138183d33050ff43e6237babf40748c54",
+  "idle_timeout": 300,
+  "task_timeout": 900,
+  "memory_limit_mb": 4096,
+  "attempt_id": "4e224d16acb81a095009af7b",
+  "daemon_version": "4.19.9"
+}

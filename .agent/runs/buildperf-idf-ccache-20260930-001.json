@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "buildperf-idf-ccache-20260930-001",
+  "task_digest": "985236df3a4707c66fb77123328746364b6dd0d3774c092d96e9890e4de72949",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-09-30T02:25:29.429230+00:00",
+  "attempt_id": "1113707a3b682fbcdd3c403f",
+  "daemon_version": "4.19.9",
+  "daemon_pid": 1607,
+  "updated_at": "2026-09-30T02:25:29.711697+00:00",
+  "pid": 1607
+}
