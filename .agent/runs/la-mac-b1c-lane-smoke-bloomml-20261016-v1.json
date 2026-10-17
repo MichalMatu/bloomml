@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-mac-b1c-lane-smoke-bloomml-20261016-v1",
+  "task_digest": "fde76798176d4f632fe183f30a41a9aea4c29cf3c9e11d19bf01e24713c93d63",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-10-16T16:37:40.618970+00:00",
+  "attempt_id": "853f16a24b293675be649ade",
+  "daemon_version": "4.20.6",
+  "daemon_pid": 33595,
+  "updated_at": "2026-10-16T16:37:40.826258+00:00",
+  "pid": 33595
+}

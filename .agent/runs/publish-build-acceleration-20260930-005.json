@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "publish-build-acceleration-20260930-005",
+  "task_digest": "7a2a8edbe71086b5ddf865319800f7cf2402ca14b22b746352d633232f1a2ed5",
+  "status": "failed",
+  "failure_reason": "command_failed",
+  "finished_at": "2026-09-30T02:37:53.558291+00:00",
+  "attempt_id": "f3d75b125eb66472b759604f",
+  "daemon_version": "4.19.9",
+  "daemon_pid": 56856,
+  "updated_at": "2026-09-30T02:37:53.774891+00:00",
+  "pid": 56856
+}
