@@ -1,0 +1,18 @@
+{
+  "id": "implement-build-acceleration-20260930-003",
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "perf/build-acceleration",
+  "allow_write": true,
+  "resources": [],
+  "command_timeout": 7200,
+  "task_timeout": 21600,
+  "commands": [
+    "echo '=== IDENTITY ==='; git rev-parse HEAD; git status --short",
+    "python3 - <<'PY'\nfrom pathlib import Path\np = Path('Makefile')\ntext = p.read_text()\nold_jobs = 'HOST_BUILD_JOBS ?= 2'\nold_run = 'RUN_IDF := bash scripts/run_idf.sh\\n'\nif text.count(old_jobs) != 1:\n    raise SystemExit(f'expected one {old_jobs!r}, found {text.count(old_jobs)}')\nif text.count(old_run) != 1:\n    raise SystemExit(f'expected one RUN_IDF line, found {text.count(old_run)}')\ntext = text.replace(old_jobs, 'HOST_BUILD_JOBS ?= 4', 1)\ntext = text.replace(old_run, old_run + 'IDF_CCACHE_ENABLE ?= 1\\nexport IDF_CCACHE_ENABLE\\n', 1)\np.write_text(text)\nPY\ngit diff --check\necho '=== PERF_ENV ==='; make --no-print-directory -s --eval 'print-perf-env: ; @printf \"IDF_CCACHE_ENABLE=%s HOST_BUILD_JOBS=%s\\n\" \"$$IDF_CCACHE_ENABLE\" \"$(HOST_BUILD_JOBS)\"' print-perf-env",
+    "echo '=== DEFAULT_HOST_GATE ==='; /usr/bin/time -lp make test-host",
+    "echo '=== DEFAULT_IDF_BUILD ==='; /usr/bin/time -lp make build",
+    "echo '=== DIFF ==='; git diff --check; git diff -- Makefile; git status --short",
+    "git add Makefile && git commit -m 'Speed up local BloomML builds' && git push origin HEAD:perf/build-acceleration"
+  ]
+}

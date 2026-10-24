@@ -1,0 +1,20 @@
+{
+  "id": "buildperf-idf-ccache-20260930-001",
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "command_timeout": 7200,
+  "task_timeout": 21600,
+  "commands": [
+    "echo '=== IDENTITY ==='; git rev-parse HEAD; git status --short; uname -m; sysctl -n hw.ncpu; sysctl -n hw.memsize; ccache --version | head -n 1",
+    "rm -rf build/ccache-benchmark; mkdir -p build/ccache-benchmark; CCACHE_DIR=$PWD/build/ccache-benchmark ccache -z; echo '=== CLEAN_UNCACHED ==='; make clean-idf",
+    "echo '=== COLD_UNCACHED ==='; /usr/bin/time -lp make build",
+    "echo '=== CLEAN_CACHE_FILL ==='; make clean-idf",
+    "echo '=== COLD_CACHE_FILL ==='; CCACHE_DIR=$PWD/build/ccache-benchmark IDF_CCACHE_ENABLE=1 /usr/bin/time -lp make build; CCACHE_DIR=$PWD/build/ccache-benchmark ccache -s",
+    "echo '=== CLEAN_CACHE_HIT ==='; make clean-idf",
+    "echo '=== COLD_CACHE_HIT ==='; CCACHE_DIR=$PWD/build/ccache-benchmark IDF_CCACHE_ENABLE=1 /usr/bin/time -lp make build; CCACHE_DIR=$PWD/build/ccache-benchmark ccache -s",
+    "rm -rf build/ccache-benchmark; echo '=== FINAL ==='; git status --short"
+  ]
+}

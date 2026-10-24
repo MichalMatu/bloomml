@@ -1,0 +1,14 @@
+{
+  "id": "closeout-verify-20260930-306",
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "command_timeout": 300,
+  "task_timeout": 600,
+  "memory_limit_mb": 1024,
+  "commands": [
+    "set -eu\nEXPECTED=b6fb33990f490c2c7514dcef968b2712afae8126\nBASE=f046509955527db3ad2aa39d0fb8e71bd381903e\n[ -z \"$(git status --porcelain)\" ] || { echo 'ABORT dirty worktree'; git status --short; exit 41; }\ngit fetch --prune origin\ngit switch main >/dev/null 2>&1\ngit merge --ff-only origin/main >/dev/null\nACTUAL=$(git rev-parse HEAD)\necho \"REVISION|$ACTUAL\"\n[ \"$ACTUAL\" = \"$EXPECTED\" ] || { echo \"ABORT expected=$EXPECTED actual=$ACTUAL\"; exit 42; }\ngit diff --check \"$BASE..HEAD\"\ngrep -q 'performance work is paused' docs/PERFORMANCE_HANDOFF.md\ngrep -q 'feature and performance work is paused' docs/CURRENT_STATUS.md\ngrep -q 'ML remains shadow/research-only' docs/CURRENT_STATUS.md\n[ -z \"$(git status --porcelain)\" ] || { echo 'ABORT final worktree dirty'; git status --short; exit 43; }\necho 'CLOSEOUT_VERIFY_DONE|bloomml'"
+  ]
+}
