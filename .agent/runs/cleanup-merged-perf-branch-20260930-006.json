@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "cleanup-merged-perf-branch-20260930-006",
+  "task_digest": "d361895be52dfc1db309dbb2fcfc135dadaa8beb5b4aecedd691092090fe470f",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-09-30T03:03:50.269545+00:00",
+  "attempt_id": "6658a54e4a440e85e4752339",
+  "daemon_version": "4.19.9",
+  "daemon_pid": 2849,
+  "updated_at": "2026-09-30T03:03:50.507786+00:00",
+  "pid": 2849
+}

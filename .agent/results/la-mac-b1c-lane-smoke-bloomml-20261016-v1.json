@@ -1,0 +1,60 @@
+{
+  "allow_write": false,
+  "attempt_id": "853f16a24b293675be649ade",
+  "command_timeout": 105,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 44,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\ngit rev-parse --is-inside-work-tree | grep -Fx true\nprintf 'MAC_B1C_LANE_E2E_OK repository=bloomml\\n'\n",
+      "current_rss_mb": 4.38,
+      "elapsed_seconds": 0.381,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 460,
+      "memory_limited": false,
+      "output": "true\nMAC_B1C_LANE_E2E_OK repository=bloomml\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 4.38,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.6",
+  "edits": {},
+  "finished_at": "2026-10-16T16:37:40.618970+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.07,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.072,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-mac-b1c-lane-smoke-bloomml-20261016-v1",
+  "idle_timeout": 100,
+  "memory_limit_mb": 460,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 0.381,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-10-16T16:37:38.831539+00:00",
+  "status": "done",
+  "task_digest": "fde76798176d4f632fe183f30a41a9aea4c29cf3c9e11d19bf01e24713c93d63",
+  "task_timeout": 300,
+  "verification": [],
+  "work_branch": "main"
+}

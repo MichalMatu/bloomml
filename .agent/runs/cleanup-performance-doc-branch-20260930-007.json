@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "cleanup-performance-doc-branch-20260930-007",
+  "task_digest": "dad9143550ed040225450bbec205ef9138183d33050ff43e6237babf40748c54",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-09-30T03:05:06.153284+00:00",
+  "attempt_id": "4e224d16acb81a095009af7b",
+  "daemon_version": "4.19.9",
+  "daemon_pid": 5907,
+  "updated_at": "2026-09-30T03:05:06.382409+00:00",
+  "pid": 5907
+}
