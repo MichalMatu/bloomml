@@ -1,5 +1,7 @@
 # BloomML — trwały checkpoint: symulator → Kaggle T4×2
 
+**AKTUALIZACJA 2026-11-03, po sprincie R2:** REAL DUAL-GPU PHYSICS PILOT PASS. Prywatny Kaggle notebook `meeehooow/bloomml-gpu-physics-r2` wykonał 512 scenariuszy × 8 kroków na dwóch Tesla T4, parity CPU↔CUDA (pilot 8 na kartę) i bilans wody PASS, manifest z SHA `84ee2245550b095422a9e5dd6c74834bd1ecc8f4` pobrany i sprawdzony przez Local Agenta. Pełne wyniki i ograniczenia w [`2026-11-03-r2-torch-parity-sprint.md`](2026-11-03-r2-torch-parity-sprint.md). **R1 wykonany, R2 pilot wykonany; R4 fizyka ekstremów i R6 kalibracja OTWARTE.** Nie traktuj starszych statusów poniżej jako aktualnych bez tej aktualizacji.
+
 **Data:** 2026-11-03. **Repo:** MichalMatu/bloomml. **Branch:** research/simulator-fidelity-kaggle-20261103. **Autorytet źródeł:** GitHub (konkretny commit SHA, nie sam branch). **Środowisko obliczeń intensywnych:** Kaggle, GPU NVIDIA T4 ×2. **Zakres:** wyłącznie offline research; Growclip, firmware i main bez zmian.
 
 ## Pierwsze czynności następnej rozmowy (NIE POMIJAĆ)
@@ -7,8 +9,8 @@
 1. Przeczytaj AGENTS.md, docs/README.md, docs/CURRENT_STATUS.md, docs/ARCHITECTURE.md, docs/PROJECT_ROADMAP.md, ten checkpoint, docs/simulator/KAGGLE_EXECUTION.md oraz docs/checkpoints/2026-11-03-thermodynamics-convection-fidelity.md.
 2. GitHub Connector: odśwież HEAD main i research/simulator-fidelity-kaggle-20261103, stan Local Agent na agent-control. Nie zakładaj starego SHA; porównaj diff, testy i aktualne zgłoszenia. Bez Codex, ChatGPT Work i GitHub Actions.
 3. Wznów dokładnie ten tor badań, bez przepisywania symulatora od nowa i bez zmian w Growclip/firmware.
-4. **Pierwszy konkretny krok:** wykonaj w prywatnym notebooku Kaggle (T4 ×2, Internet ON) notebooks/BloomML_Kaggle_T4x2.ipynb. Zachowaj kaggle_manifest.json i dokładny source_commit. Sprawdź, czy oba GPU faktycznie wykonały CUDA smoke.
-5. Dopiero później implementuj wektorowy backend solvera na Torch/JAX i testy parity CPU↔GPU. Aktualna implementacja fizyki jest CPU! Nie wprowadzaj użytkownika w błąd.
+4. **Wykonane:** R1 Kaggle `notebooks/BloomML_Kaggle_T4x2.ipynb` (matmul T4 ×2 i CPU oracle), następnie R2 `notebooks/BloomML_Kaggle_GPU_R2.ipynb` (fizyka rzeczywiście liczona przez oba GPU). Zewnętrzny manifest R2 jest zweryfikowany.
+5. **Następny krok:** poprawić R4 wrażliwość ekstremalnej kondensacji/mgły, bilans entalpii i charakterystykę wentylatorów, po czym poszerzyć numeryczne parity CPU↔GPU oraz benchmark. Bazowy solver CPU i nowy backend CUDA istnieją; model nadal nie jest skalibrowany.
 
 ## Stały kontrakt BloomML↔Kaggle
 
@@ -17,14 +19,14 @@
 - Runner: tools/ml/kaggle_physics_runner.py. Wymaga co najmniej dwóch urządzeń CUDA, wykonuje na każdym z nich arytmetyczny test PyTorch i zapisuje manifest SHA.
 - CPU oracle: tools/ml/physics/run_thermodynamic_sweep.py. Generuje złote trajektorie bez zmiany fizyki i zapisuje provenance, digest SHA-256 i residuale. To **nie** jest wykonanie fizyki na GPU.
 - Artefakty Kaggle: /kaggle/working/bloomml-run/kaggle_manifest.json oraz cpu_golden.ndjson. Zachowuj prywatnie w outputs/datasets, bo notebook/sesja Kaggle jest nietrwała. Nie publikuj logów rzeczywistego growboxa ani tokenów.
-- Kaggle nie udostępnia z automatu stale działającego serwera i nie ma gwarantowanego limitu czasu; wymagane kliknięcie operatora w koncie Kaggle. Żadne automatyczne wysyłanie z GitHub ani z Mac nie zostało uruchomione.
+- Kaggle nie jest gwarantowanym stale działającym serwerem i ma limity czasu/GPU. **Mac Local Agent uzyskał autoryzację i w tym sprincie z powodzeniem wysłał przez Kaggle CLI prywatny notebook R2 oraz pobrał wynikowy manifest.** Nie działa stały harmonogram ani automatyczny dwukierunkowy mirroring repozytorium/artefaktów.
 - T4 ×2 = dwa oddzielne urządzenia po 16 GB VRAM, nie jeden GPU z 32 GB. GPU-ensemble realizujemy przez sharding niezależnych scenariuszy, a nie założenie wspólnej pamięci.
 
 ## Co faktycznie jest już wykonane
 
 - Model 0D: temperatura powietrza, liści, ścian, podłoża; wilgotność, bilans wody/CO₂, ciśnienie, punkt rosy, VPD powietrza i liści, strumienie lamp/PPFD/DLI, kondensacja i konwekcja naturalna/wymuszona, odrębne wyciąg i wewnętrzna cyrkulacja.
 - Poprzedni checkpoint (2026-11-03-thermodynamics-convection-fidelity.md): 33/33 PASS lokalnych testów naukowych, 40 × 720 = 28 800 kroków syntetycznych, maksymalny residual masy wody 1.7319479184152442e-13 kg. To **nie** dowodzi fizycznej zgodności ani działania CUDA.
-- Nowy Kaggle runner i notebook zostały zapisane na branchu; w tym checkpointcie realne uruchomienie Kaggle, CUDA parity oraz masowe GPU sweeps są **NOT RUN**.
+- R1 Kaggle smoke i R2 GPU pilot są już wykonane (R2: 2× Tesla T4, 512 scenariuszy × 8 kroków; CPU↔CUDA pilot PASS; manifest pobrany przez Local Agenta). Wielkie zbiory GPU sweeps i fizyczna kalibracja nadal **NOT RUN**.
 - Importer SD w BloomML już istnieje, ale dane z poleceń sterownika nie są równoznaczne z fizyczną prawdą o wykonaniu wyjść.
 - Produkcyjne sterowanie: Rule + OutputSupervisor pozostają nadrzędne; ML tylko shadow/research.
 
@@ -33,8 +35,8 @@
 | Etap | Cel / warunek zamknięcia | Status |
 | --- | --- | --- |
 | R0 | Rdzeń termodynamiki i konwekcji; testy invariants, ekstremalne przypadki, CPU golden | **NUMERIC PASS, uncalibrated** |
-| R1 | Prawdziwe uruchomienie notebooka Kaggle: źródłowy SHA, 2 sprawdzone T4, manifest i CPU baseline | **CODE READY; KAGGLE NOT RUN** |
-| R2 | Batched PyTorch/JAX GPU solver, testy CPU↔GPU na skrajnych parametrach, metryki błędu i wydajności; sharding na oba GPU | **OPEN** |
+| R1 | Prawdziwe uruchomienie notebooka Kaggle: źródłowy SHA, 2 sprawdzone T4, manifest i CPU baseline | **KAGGLE COMPLETE, CUDA+CPU PASS; digest R1 z API niezweryfikowany** |
+| R2 | Batched PyTorch/JAX GPU solver, testy CPU↔GPU na skrajnych parametrach, metryki błędu i wydajności; sharding na oba GPU | **DUAL-T4 PHYSICS PILOT PASS; szersze ekstremalne parity i benchmark CPU/GPU OTWARTE** |
 | R3 | Integracja realnych logów SD: T/RH/CO₂, czasy, status/pozycja czujników, fizyczne wykonanie wyjść i jednostki | **PARTIAL** |
 | R4 | Fizyka P0: bilans suchego powietrza i entalpii przy wymianie, fan Q(ΔP), opory filtra, kondensacja, transport wody | **OPEN** |
 | R5 | Wielostrefowy model ROM/CFD tylko przy udowodnionych gradientach w growboxie; siatka czujników, przepływy, cyrkulacja | **OPEN** |
@@ -61,4 +63,4 @@ Zbieraj: wewnętrzne T/RH/CO₂ na różnych wysokościach i zewnętrzne na wloc
 - Roadmapa: docs/PROJECT_ROADMAP.md.
 - Ten plik: docs/checkpoints/2026-11-03-kaggle-bloomml-compute-handoff.md.
 
-**Checkpoint states:** NUMERIC_REGRESSION_PASS; PHYSICAL_FIDELITY_UNVERIFIED; KAGGLE_GPU_NOT_RUN; GPU_SIMULATOR_BACKEND_OPEN; REAL_DATA_CALIBRATION_OPEN; PRODUCTION_UNCHANGED.
+**Checkpoint states (zaktualizowane):** NUMERIC_REGRESSION_PASS; KAGGLE_R2_DUAL_GPU_PHYSICS_PILOT_PASS; PILOT_CPU_CUDA_PARITY_PASS; PHYSICAL_FIDELITY_UNVERIFIED; EXTREME_CONDENSATION_CONVERGENCE_OPEN; REAL_DATA_CALIBRATION_OPEN; PRODUCTION_UNCHANGED.
