@@ -31,6 +31,7 @@ def sweep(*, scenarios: int, steps: int, seed: int, dt_s: float = 10.0,
     end_air_t: list[float] = []
     end_rh: list[float] = []
     end_co2: list[float] = []
+    end_speed: list[float] = []
     digest = hashlib.sha256()
     if trajectories is not None:
         trajectories.parent.mkdir(parents=True, exist_ok=True)
@@ -60,7 +61,7 @@ def sweep(*, scenarios: int, steps: int, seed: int, dt_s: float = 10.0,
                 volume_m3=volume, substrate_water_kg=rng.uniform(.3, 2.4)))
             outside_t = rng.uniform(5, 36)
             outside_rh = rng.uniform(30, 90)
-            fan, heater, cool, hum, dehum, co2 = (rng.random() for _ in range(6))
+            fan, heater, cool, hum, dehum, co2, circulation = (rng.random() for _ in range(7))
             for step in range(steps):
                 # Disturbance and lamp changes are deterministic and bounded.
                 t = step * dt_s
@@ -70,7 +71,7 @@ def sweep(*, scenarios: int, steps: int, seed: int, dt_s: float = 10.0,
                     outside_relative_humidity_pct=outside_rh,
                     outside_co2_ppm=420,
                     lamp_dimmer=lamp,
-                    heater=heater, cooler=cool, exhaust_fan=fan,
+                    heater=heater, cooler=cool, exhaust_fan=fan, circulation_fan=circulation,
                     humidifier=hum, dehumidifier=dehum, co2_doser=co2,
                 )
                 model.step(forcing, dt_s)
@@ -83,7 +84,7 @@ def sweep(*, scenarios: int, steps: int, seed: int, dt_s: float = 10.0,
                 if residual > 1e-8:
                     raise AssertionError("water mass conservation failed")
                 row = {
-                    "schema": "growbox-thermodynamic-golden-v1",
+                    "schema": "growbox-thermodynamic-golden-v2",
                     "origin": "synthetic_uncalibrated",
                     "seed": seed, "scenario": i, "step": step, "t_s": (step + 1) * dt_s,
                     "air_t_c": state.air_temperature_c,
@@ -95,6 +96,9 @@ def sweep(*, scenarios: int, steps: int, seed: int, dt_s: float = 10.0,
                     "vpd_leaf_kpa": obs.leaf_vpd_kpa,
                     "dewpoint_c": obs.dew_point_c,
                     "ppfd_umol_m2_s": obs.ppfd_umol_m2_s,
+                    "circulation_fan_fraction": circulation,
+                    "estimated_or_measured_air_speed_m_s": obs.canopy_air_speed_m_s,
+                    "air_speed_source": obs.canopy_air_speed_source,
                     "dli_mol_m2": obs.dli_mol_m2,
                     "soil_water_kg": state.substrate_water_kg,
                     "condensate_wall_kg": state.wall_condensate_kg,
@@ -111,8 +115,10 @@ def sweep(*, scenarios: int, steps: int, seed: int, dt_s: float = 10.0,
             end_air_t.append(model.state.air_temperature_c)
             end_rh.append(model.observe(forcing).rh_pct)
             end_co2.append(model.state.co2_ppm)
+            end_speed.append(model.observe(forcing).canopy_air_speed_m_s)
     return {
-        "schema": "growbox-thermodynamic-golden-summary-v1",
+        "schema": "growbox-thermodynamic-golden-summary-v2",
+        "physics_revision": "mixed-convection-v2",
         "origin": "synthetic_uncalibrated",
         "seed": seed, "scenarios": scenarios, "steps_per_scenario": steps,
         "time_step_s": dt_s, "total_steps": total_steps,
@@ -121,6 +127,7 @@ def sweep(*, scenarios: int, steps: int, seed: int, dt_s: float = 10.0,
         "mean_final_air_temperature_c": fmean(end_air_t),
         "mean_final_rh_pct": fmean(end_rh),
         "mean_final_co2_ppm": fmean(end_co2),
+        "mean_final_canopy_air_speed_m_s": fmean(end_speed),
         "ready_for_hardware": False, "ready_for_calibrated_training": False,
     }
 
