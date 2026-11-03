@@ -86,3 +86,17 @@ def test_cpu_tensor_parity_with_pressure_curve_and_isothermal_moist_exchange():
     batch = simulate_batch([p],[s],[f],dt_s=5,ticks=6,device='cpu',dtype=torch.float64)
     assert batch.states[0].air_temperature_c == pytest.approx(scalar.state.air_temperature_c,abs=2e-8)
     assert batch.states[0].air_vapor_kg == pytest.approx(scalar.state.air_vapor_kg,abs=2e-10)
+
+
+def test_condensing_dehumidifier_cannot_remove_below_coil_saturation():
+    p = GrowboxPhysics()
+    dry = GrowboxState.initial(air_temperature_c=25,rh_pct=10)
+    wet = GrowboxState.initial(air_temperature_c=25,rh_pct=90)
+    forcing = GrowboxForcing(dehumidifier=1)
+    a,b=GrowboxThermodynamics(p,dry),GrowboxThermodynamics(p,wet)
+    a.step(forcing,2);b.step(forcing,2)
+    assert a.state.dehumidifier_condensate_kg==0
+    assert b.state.dehumidifier_condensate_kg>0
+    result=simulate_batch([p,p],[dry,wet],[forcing,forcing],dt_s=2,ticks=1,device='cpu',dtype=torch.float64)
+    assert result.states[0].dehumidifier_condensate_kg==0
+    assert result.states[1].dehumidifier_condensate_kg==pytest.approx(b.state.dehumidifier_condensate_kg,abs=1e-12)
