@@ -14,6 +14,7 @@ import math
 from dataclasses import dataclass, replace
 
 from .growbox_convection import effective_canopy_air_speed_m_s, mixed_convection_factor
+from .growbox_phase import phase_equilibrium
 from .growbox_psychrometrics import (
     LATENT_HEAT_VAPORIZATION, air_vpd_kpa, dew_point_c,
     leaf_vpd_kpa, moist_air_density_kg_m3, relative_humidity_pct,
@@ -121,6 +122,8 @@ class GrowboxEquipment:
     heater_power_w: float = 180.0
     cooler_capacity_w: float = 200.0
     exhaust_max_m3_h: float = 90.0
+    # Optional characterized fan shutoff pressure; zero disables fan curve.
+    exhaust_shutoff_pressure_pa: float = 0.0
     infiltration_ach: float = 0.25
     humidifier_output_g_h: float = 110.0
     humidifier_air_cooling_fraction: float = 0.3
@@ -252,6 +255,7 @@ class GrowboxObservables:
     lamp_power_w: float
     air_density_kg_m3: float
     exhaust_m3_h: float
+    exhaust_source: str
     canopy_air_speed_m_s: float
     canopy_air_speed_source: str
     wall_condensation_risk: bool
@@ -293,9 +297,25 @@ class GrowboxThermodynamics:
 
     def _exhaust(self, forcing: GrowboxForcing) -> float:
         device = self.parameters.equipment
-        return (device.exhaust_max_m3_h * forcing.exhaust_fan
-                if forcing.measured_exhaust_m3_h is None
-                else forcing.measured_exhaust_m3_h)
+        if forcing.measured_exhaust_m3_h is not None:
+            return forcing.measured_exhaust_m3_h
+        ideal = device.exhaust_max_m3_h * forcing.exhaust_fan
+        if (device.exhaust_shutoff_pressure_pa > 0
+                and forcing.measured_pressure_difference_pa is not None
+                and forcing.exhaust_fan > 0):
+            # Quadratic fan curve; pressure follows affinity law (speed^2).
+            pressure_limit = device.exhaust_shutoff_pressure_pa * forcing.exhaust_fan ** 2
+            return ideal * math.sqrt(max(0.0, 1.0 - abs(forcing.measured_pressure_difference_pa)
+                                         / pressure_limit))
+        return ideal
+
+    def _exhaust_source(self, forcing: GrowboxForcing) -> str:
+        if forcing.measured_exhaust_m3_h is not None:
+            return 'measured'
+        if (self.parameters.equipment.exhaust_shutoff_pressure_pa > 0
+                and forcing.measured_pressure_difference_pa is not None):
+            return 'characterized_curve_estimate'
+        return 'nameplate_estimate'
 
     def _canopy_air_speed(self, forcing: GrowboxForcing) -> tuple[float, str]:
         eq = self.parameters.equipment
@@ -324,6 +344,7 @@ class GrowboxThermodynamics:
             air_density_kg_m3=moist_air_density_kg_m3(
                 s.air_temperature_c, forcing.atmospheric_pressure_pa, partial_pa),
             exhaust_m3_h=self._exhaust(forcing),
+            exhaust_source=self._exhaust_source(forcing),
             canopy_air_speed_m_s=air_speed,
             canopy_air_speed_source=speed_source,
             wall_condensation_risk=(s.wall_temperature_c < (dew_point_c(partial_pa) or -1000.0)),
@@ -404,7 +425,12 @@ class GrowboxThermodynamics:
                                                     forcing.outside_relative_humidity_pct)
         q_m3_s = (self._exhaust(forcing) / 3600.0 + eq.infiltration_ach * v / 3600.0)
         water_vent_kg = q_m3_s * (outside_vapor_density - vapor_density) * h
-        heat_vent_w = density * 1005.0 * q_m3_s * (forcing.outside_temperature_c - s.air_temperature_c)
+        # Sensible moist-air exchange: separate dry-air and vapor capacities.
+        # Vapor latent enthalpy follows transported vapor; do not double count.
+        rho_dry_air = max(0.0, (forcing.atmospheric_pressure_pa - partial_pa)
+                              / (287.05 * (s.air_temperature_c + 273.15)))
+        sensible_capacity_per_m3 = rho_dry_air * 1005.0 + vapor_density * 1860.0
+        heat_vent_w = sensible_capacity_per_m3 * q_m3_s * (forcing.outside_temperature_c - s.air_temperature_c)
 
         # Wall condensation is controlled by surface saturation and may re-evaporate.
         saturation_wall = saturation_vapor_density_kg_m3(s.wall_temperature_c)
@@ -473,16 +499,6 @@ class GrowboxThermodynamics:
         vapor_new = max(0, s.air_vapor_kg + water_vent_kg + humidifier_kg + transp_kg
                         + soil_evap_kg - wall_flux_kg - leaf_flux_kg
                         - dehumidifier_kg - cooler_condensate)
-        fog = s.fog_condensate_kg
-        # Up to 2% of chamber saturated vapor/step available for fog evaporation.
-        vapor_capacity = saturation_vapor_density_kg_m3(s.air_temperature_c) * v
-        if vapor_new < vapor_capacity and fog > 0:
-            revap = min(fog, vapor_capacity - vapor_new, 0.02 * vapor_capacity)
-            vapor_new += revap
-            fog -= revap
-        else:
-            revap = 0.0
-
         # Sensible heat plus latent flows. Wall condensation heats walls, leaf
         # transpiration cools leaves; cold-coil condensate consumes cooling power.
         leaf_air_w = (g.leaf_air_conductance_w_k * leaf_factor
@@ -499,7 +515,6 @@ class GrowboxThermodynamics:
                      * eq.dehumidifier_latent_return_fraction
                    - cooler_w + latent_coil_w
                    - humidifier_kg / h * LATENT_HEAT_VAPORIZATION * eq.humidifier_air_cooling_fraction
-                   - revap / h * LATENT_HEAT_VAPORIZATION
                    + heat_vent_w + leaf_air_w + wall_air_w + substrate_air_w) * h / air_capacity)
         leaf_dT = ((light_leaf_w - leaf_air_w
                      + leaf_flux_kg / h * LATENT_HEAT_VAPORIZATION
@@ -516,13 +531,13 @@ class GrowboxThermodynamics:
         t_leaf = s.leaf_temperature_c + leaf_dT
         t_sub = s.substrate_temperature_c + substrate_dT
 
-        # Fog/air saturation adjustment at end-temperature conserves water.
-        vapor_capacity_final = saturation_vapor_density_kg_m3(t_air) * v
-        if vapor_new > vapor_capacity_final:
-            excess = vapor_new - vapor_capacity_final
-            fog += excess
-            vapor_new = vapor_capacity_final
-            t_air += excess * LATENT_HEAT_VAPORIZATION / air_capacity
+        # Saturation at final T releases/consumes corresponding latent heat.
+        # Fog evaporation is per elapsed time, not per numerical substep.
+        vapor_new, fog, t_air = phase_equilibrium(
+            vapor_kg=vapor_new, fog_kg=s.fog_condensate_kg,
+            air_temperature_c=t_air, volume_m3=v,
+            air_capacity_j_k=air_capacity, dt_s=h,
+        )
         # CO2: well-mixed supply, outside exchange, plant carbon uptake/respiration.
         mol_air = forcing.atmospheric_pressure_pa * v / (8.314462618 * (s.air_temperature_c + 273.15))
         co2_injection_ppm_s = ((eq.co2_injection_g_h / 3600.0 * forcing.co2_doser / 44.01)
