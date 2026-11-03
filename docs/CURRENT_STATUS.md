@@ -53,7 +53,7 @@ The canonical benchmark history and new-Mac comparison procedure are in `docs/PE
 
 ## Active offline research branch — simulator / Kaggle (2026-11-03)
 
-Separate from the production main branch, ongoing thermodynamic research is on research/simulator-fidelity-kaggle-20261103. For continuity read docs/checkpoints/2026-11-03-kaggle-bloomml-compute-handoff.md (complete R0–R8 roadmap) and docs/simulator/KAGGLE_EXECUTION.md. Kaggle T4 x2 is the intended compute backend; source-pin notebook and CUDA smoke runner are committed, but *no real Kaggle session or GPU physics solver has been verified*. The current numerical model is an uncalibrated CPU oracle; production Rule authority and physical hardware remain unchanged.
+Separate from the production main branch, thermodynamic research continues on `research/simulator-fidelity-kaggle-20261103`. For continuity use `docs/checkpoints/2026-11-03-kaggle-bloomml-compute-handoff.md`, `docs/checkpoints/2026-11-03-r2-torch-parity-sprint.md` and `docs/simulator/KAGGLE_EXECUTION.md`. **Dual-T4 GPU physics R2 pilot PASSED** on Kaggle (2026-11-03; code commit `84ee2245550b095422a9e5dd6c74834bd1ecc8f4`): 256 independent scenarios × 8 ticks per GPU, both CUDA runs plus CPU-oracle parity and water balance confirmed by downloaded Kaggle manifest. This is an uncalibrated research model, not production qualification; R4 condensation/enthalpy convergence and R6 real-data calibration remain open. Production Rule authority, physical hardware, Growclip and `main` remain unchanged.
 
 
 When the M1 Pro / 32 GB machine is available:
