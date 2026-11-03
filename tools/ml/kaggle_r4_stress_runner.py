@@ -60,6 +60,7 @@ def physics_gate(parameters, final_states, water_residuals, *, dtype='float64'):
         raise AssertionError('invalid physics batch lengths')
     temperature, humidity, carbon = [], [], []
     max_water, fog_count, surface_dew = 0., 0, 0
+    ultradry_count, high_co2_count = 0, 0
     for p, s, residual in zip(parameters,final_states,water_residuals):
         rh = (s.air_vapor_kg / p.geometry.air_volume_m3 /
               saturation_vapor_density_kg_m3(s.air_temperature_c) * 100.)
@@ -73,6 +74,8 @@ def physics_gate(parameters, final_states, water_residuals, *, dtype='float64'):
         temperature.append(s.air_temperature_c)
         humidity.append(rh)
         carbon.append(s.co2_ppm)
+        ultradry_count += rh < 5.0
+        high_co2_count += s.co2_ppm > 2000.0
         fog_count += s.fog_condensate_kg > 1e-9
         surface_dew += s.wall_condensate_kg > 1e-8 or s.leaf_condensate_kg > 1e-8
     if max_water > (3e-5 if dtype=='float32' else 1e-8):
@@ -85,6 +88,7 @@ def physics_gate(parameters, final_states, water_residuals, *, dtype='float64'):
         'relative_humidity_pct_mean':sum(humidity)/len(humidity),
         'co2_ppm_min':min(carbon), 'co2_ppm_max':max(carbon),
         'co2_ppm_mean':sum(carbon)/len(carbon),
+        'scenarios_rh_below_5pct':ultradry_count,'scenarios_co2_above_2000ppm':high_co2_count,
         'scenarios_with_fog':fog_count,'scenarios_with_dew_on_surfaces':surface_dew,
     }
 
