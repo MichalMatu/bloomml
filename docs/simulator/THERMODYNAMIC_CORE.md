@@ -156,3 +156,12 @@ Local sandbox: 33 tests PASS, including 100 randomized edge scenarios;
 40×720 synthetic steps with maximum water residual
 `1.7319479184152442e-13 kg`. No Kaggle or hardware run; the model remains
 uncalibrated and not connected to the v6 teacher.
+
+
+## R4: model fazowy i obciążenie dual-T4 (2026-11-04)
+
+Udokumentowany [checkpoint R4](../checkpoints/2026-11-04-r4-dual-t4-stress.md): wprowadzono sprzężony bilans pary wodnej, mgły i utajonego ciepła parowania, ograniczono parowanie mgły stałą czasową zamiast liczbą podkroków. Wprowadzono opcjonalny oszacowany przepływ wentylatora Q(ΔP) tylko przy podanej charakterystyce i pierwszeństwo pomiaru przepływu. Wymianę *sensible heat* wentylacji rozdzielono na cp suchego powietrza i pary.
+
+Pierwszy ciężki przebieg Kaggle (8192 niezależnych przypadków, 24 424 020 wewnętrznych podkroków łącznie na **2× Tesla T4**) ujawnił skrajne 0.0133% RH spowodowane stałym usuwaniem pary przez osuszacz niezależnie od punktu rosy. Poprawiono osuszanie kondensacyjne, ograniczając wydajność do różnicy stężenia pary między powietrzem a nasyceniem na chłodnicy (założona depresja chłodnicy 12°C **nie jest pomiarem**). Ponowne uruchomienie identycznego obciążenia na obu T4: RH min 6.65%, zero przypadków RH<5%, zachowanie bilansu wody <3.8e-14 kg, zgodność CPU↔CUDA w próbkach <5.7e-14; pozostało 25 przypadków CO₂>2000 ppm.
+
+**Stan naukowy:** 51/51 lokalnych testów PASS, numeryczny model częściowo utwardzony, rzeczywista wierność **NIEZWERYFIKOWANA**. Model nadal 0D, bez pomiarów wielostrefowych, pełnego entalpicznego bilansu masy suchego i wilgotnego powietrza, zmierzonej krzywej wyciągu i filtra, charakterystyki chłodnicy i kalibracji na prawdziwych danych SD. Stres syntetyczny i miliony operacji nie stanowią walidacji fizycznej ani dopuszczenia do treningu modelu sterującego.
