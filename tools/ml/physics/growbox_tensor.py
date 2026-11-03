@@ -154,7 +154,13 @@ def _substep(s: dict[str, torch.Tensor], forcing: dict[str, torch.Tensor],
                            * soil_response * torch.clamp(leaf_factor, min=0) ** 0.25 * h)
 
     humidifier = e['humidifier_output_g_h'] / 3_600_000.0 * f['humidifier'] * h
-    dehumidifier = torch.minimum(s['air_vapor_kg'], e['dehumidifier_removal_g_h'] / 3_600_000.0 * f['dehumidifier'] * h)
+    dehum_coil_sat = _saturation_density(torch.clamp(t_air - e['dehumidifier_coil_depression_c'], min=-40))
+    dehum_air_sat = _saturation_density(t_air)
+    removable_density = torch.clamp(vapor_density - dehum_coil_sat, min=0)
+    dehum_effectiveness = torch.clamp(removable_density
+        / torch.clamp(dehum_air_sat - dehum_coil_sat, min=1e-9), min=0, max=1)
+    dehumidifier = torch.minimum(torch.minimum(s['air_vapor_kg'], removable_density * v),
+        e['dehumidifier_removal_g_h'] / 3_600_000.0 * f['dehumidifier'] * dehum_effectiveness * h)
     coil_t = t_air - e['cooler_coil_depression_c']
     coil_sat = _saturation_density(torch.clamp(coil_t, min=-40))
     coil_condensate = torch.where((f['cooler'] > 0) & (coil_t >= -40),
