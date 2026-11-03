@@ -138,3 +138,21 @@ backend for Kaggle **must** compare to this golden CPU solver across limiting
 cases and step sizes before scaling to two T4 devices. Heavy sweeps without
 real calibration would only amplify uncertainty, not produce accurate plant
 control. Neither Kaggle nor a GPU is needed for the reference checks.
+
+
+## Mixed-convection checkpoint (2026-11-03)
+
+See [the thermodynamics, circulation and edge-case checkpoint](../checkpoints/2026-11-03-thermodynamics-convection-fidelity.md).
+
+The research model now distinguishes internal circulation (`circulation_fan`) from
+outside exchange (`exhaust_fan`). A measured air speed overrides a labeled
+estimate. `mixed_convection_factor` scales wall, leaf and substrate heat and
+surface vapor transport with natural/forced convection; the internal fan also
+contributes explicitly to electric heat load. The reference air thermal
+capacity is held fixed to avoid phantom energy in isolated cases; full
+moist-air mass/enthalpy exchange under ventilation remains open.
+
+Local sandbox: 33 tests PASS, including 100 randomized edge scenarios;
+40×720 synthetic steps with maximum water residual
+`1.7319479184152442e-13 kg`. No Kaggle or hardware run; the model remains
+uncalibrated and not connected to the v6 teacher.
