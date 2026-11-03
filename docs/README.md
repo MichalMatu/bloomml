@@ -39,6 +39,9 @@ Hardware evidence belongs to exact executable SHAs. A software build or simulato
 
 ## Research and legacy-contract documentation
 
+**Current research continuation (2026-11-03):** [BloomML Kaggle T4×2 checkpoint and R0–R8 roadmap](checkpoints/2026-11-03-kaggle-bloomml-compute-handoff.md), [Kaggle setup](simulator/KAGGLE_EXECUTION.md) and [thermodynamic model checkpoint](checkpoints/2026-11-03-thermodynamics-convection-fidelity.md) belong to the separate research branch. The Kaggle notebook is notebooks/BloomML_Kaggle_T4x2.ipynb; do not confuse this work with the current production climate-v6 runtime.
+
+
 The repository contains two different ML/data-contract generations. Do not mix them:
 
 - production controller: `schemas/environment-controller.v6.json`, 44 climate features / 6 climate outputs, Rule-authoritative runtime;
