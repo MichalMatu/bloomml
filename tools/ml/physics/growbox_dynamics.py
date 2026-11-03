@@ -128,6 +128,9 @@ class GrowboxEquipment:
     humidifier_output_g_h: float = 110.0
     humidifier_air_cooling_fraction: float = 0.3
     dehumidifier_removal_g_h: float = 80.0
+    # Condensing dehumidifier coil; rated removal is an upper bound, not a
+    # constant rate down to arbitrarily low vapor pressure.
+    dehumidifier_coil_depression_c: float = 12.0
     dehumidifier_heat_w: float = 45.0
     dehumidifier_latent_return_fraction: float = 0.7
     co2_injection_g_h: float = 25.0
@@ -476,7 +479,16 @@ class GrowboxThermodynamics:
         # Air humidity and condensation; assume ultrasonic/evaporative humidifier
         # extracts specified fraction of latent heat from air.
         humidifier_kg = eq.humidifier_output_g_h / 3_600_000.0 * forcing.humidifier * h
-        dehumidifier_kg = min(s.air_vapor_kg, eq.dehumidifier_removal_g_h / 3_600_000.0 * forcing.dehumidifier * h)
+        dehum_coil_t = max(-40.0, s.air_temperature_c - eq.dehumidifier_coil_depression_c)
+        dehum_coil_sat = saturation_vapor_density_kg_m3(dehum_coil_t)
+        dehum_air_sat = saturation_vapor_density_kg_m3(s.air_temperature_c)
+        removable_density = max(0.0, vapor_density - dehum_coil_sat)
+        dehum_effectiveness = clip(removable_density
+            / max(1e-9, dehum_air_sat - dehum_coil_sat), 0.0, 1.0)
+        dehumidifier_kg = min(s.air_vapor_kg,
+                              removable_density * v,
+                              eq.dehumidifier_removal_g_h / 3_600_000.0
+                              * forcing.dehumidifier * dehum_effectiveness * h)
         cooler_coil_t = s.air_temperature_c - eq.cooler_coil_depression_c
         cooler_condensate = 0.0
         if forcing.cooler > 0 and cooler_coil_t >= -40:
