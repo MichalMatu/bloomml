@@ -13,6 +13,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, replace
 
+from .growbox_convection import effective_canopy_air_speed_m_s, mixed_convection_factor
 from .growbox_psychrometrics import (
     LATENT_HEAT_VAPORIZATION, air_vpd_kpa, dew_point_c,
     leaf_vpd_kpa, moist_air_density_kg_m3, relative_humidity_pct,
@@ -50,11 +51,14 @@ class GrowboxGeometry:
     substrate_evaporation_kg_m2_s: float = 0.0000007
     external_solar_area_m2: float = 0.45
     external_solar_absorptivity: float = 0.35
+    reference_pressure_pa: float = 101_325.0
 
     def __post_init__(self) -> None:
         for name, val in vars(self).items():
             if not math.isfinite(val) or val < 0:
                 raise ValueError(f"invalid geometry {name}")
+        if not 50_000 <= self.reference_pressure_pa <= 110_000:
+            raise ValueError("invalid reference pressure")
         if self.air_volume_m3 < 0.05 or self.canopy_area_m2 <= 0:
             raise ValueError("growbox air volume and canopy area must be positive")
         if min(self.wall_heat_capacity_j_k, self.leaf_heat_capacity_j_k,
@@ -125,6 +129,11 @@ class GrowboxEquipment:
     dehumidifier_latent_return_fraction: float = 0.7
     co2_injection_g_h: float = 25.0
     fan_electrical_heat_w: float = 5.0
+    # Internal circulation changes local heat and mass transport, NOT outside ACH.
+    circulation_fan_heat_w: float = 3.0
+    background_air_speed_m_s: float = 0.10
+    exhaust_induced_air_speed_m_s: float = 0.20
+    circulation_reference_air_speed_m_s: float = 0.60
     cooler_coil_condensation_kg_s_k: float = 0.000005
     cooler_coil_depression_c: float = 10.0
 
@@ -164,13 +173,14 @@ class GrowboxForcing:
     heater: float = 0.0
     cooler: float = 0.0
     exhaust_fan: float = 0.0
+    circulation_fan: float = 0.0
     humidifier: float = 0.0
     dehumidifier: float = 0.0
     co2_doser: float = 0.0
     irrigation_kg_s: float = 0.0
 
     def validate(self) -> None:
-        for name in ("lamp_dimmer", "heater", "cooler", "exhaust_fan", "humidifier", "dehumidifier", "co2_doser"):
+        for name in ("lamp_dimmer", "heater", "cooler", "exhaust_fan", "circulation_fan", "humidifier", "dehumidifier", "co2_doser"):
             fraction(getattr(self, name))
         if not -40 <= self.outside_temperature_c <= 80 or not 0 <= self.outside_relative_humidity_pct <= 100:
             raise ValueError("outside boundary is not physical")
@@ -242,6 +252,8 @@ class GrowboxObservables:
     lamp_power_w: float
     air_density_kg_m3: float
     exhaust_m3_h: float
+    canopy_air_speed_m_s: float
+    canopy_air_speed_source: str
     wall_condensation_risk: bool
     leaf_condensation_risk: bool
     dli_mol_m2: float
@@ -259,6 +271,14 @@ class GrowboxThermodynamics:
         if state.substrate_water_kg > parameters.biology.substrate_water_capacity_kg:
             raise ValueError("initial soil water exceeds configured capacity")
         self.initial_water_kg = state.total_water_kg() - state.cumulative_net_external_water_kg - state.cumulative_added_water_kg
+        # Fixed reference air thermal inertia. Re-evaluating rho(T) each step
+        # silently creates/removes sensible energy in an isolated constant-volume
+        # chamber; ventilation changes enthalpy separately through heat_vent_w.
+        rho_v_initial = state.air_vapor_kg / parameters.geometry.air_volume_m3
+        self._reference_air_density_kg_m3 = moist_air_density_kg_m3(
+            state.air_temperature_c, parameters.geometry.reference_pressure_pa,
+            vapor_pressure_pa(state.air_temperature_c, rho_v_initial),
+        )
 
     def _lamp(self, forcing: GrowboxForcing) -> tuple[float, float]:
         lamp_w = (self.parameters.lighting.rated_power_w * forcing.lamp_dimmer
@@ -277,12 +297,24 @@ class GrowboxThermodynamics:
                 if forcing.measured_exhaust_m3_h is None
                 else forcing.measured_exhaust_m3_h)
 
+    def _canopy_air_speed(self, forcing: GrowboxForcing) -> tuple[float, str]:
+        eq = self.parameters.equipment
+        return effective_canopy_air_speed_m_s(
+            measured_air_speed_m_s=forcing.measured_air_speed_m_s,
+            exhaust_command=forcing.exhaust_fan,
+            circulation_command=forcing.circulation_fan,
+            background_air_speed_m_s=eq.background_air_speed_m_s,
+            exhaust_induced_air_speed_m_s=eq.exhaust_induced_air_speed_m_s,
+            circulation_air_speed_m_s=eq.circulation_reference_air_speed_m_s,
+        )
+
     def observe(self, forcing: GrowboxForcing) -> GrowboxObservables:
         forcing.validate()
         s = self.state
         v = self.parameters.geometry.air_volume_m3
         partial_pa = vapor_pressure_pa(s.air_temperature_c, s.air_vapor_kg / v)
         lamp_w, ppfd = self._lamp(forcing)
+        air_speed, speed_source = self._canopy_air_speed(forcing)
         return GrowboxObservables(
             rh_pct=relative_humidity_pct(s.air_temperature_c, s.air_vapor_kg / v),
             dew_point_c=dew_point_c(partial_pa),
@@ -292,6 +324,8 @@ class GrowboxThermodynamics:
             air_density_kg_m3=moist_air_density_kg_m3(
                 s.air_temperature_c, forcing.atmospheric_pressure_pa, partial_pa),
             exhaust_m3_h=self._exhaust(forcing),
+            canopy_air_speed_m_s=air_speed,
+            canopy_air_speed_source=speed_source,
             wall_condensation_risk=(s.wall_temperature_c < (dew_point_c(partial_pa) or -1000.0)),
             leaf_condensation_risk=(s.leaf_temperature_c < (dew_point_c(partial_pa) or -1000.0)),
             dli_mol_m2=s.cumulative_dli_mol_m2,
@@ -310,25 +344,47 @@ class GrowboxThermodynamics:
         # Keep explicit flux integration stable even for strong box fan + small V.
         exchange_s = (self._exhaust(forcing) / 3600.0 / g.air_volume_m3
                       + self.parameters.equipment.infiltration_ach / 3600)
+        # Fixed C_air with worst-case capped mixed-convection transfer prevents
+        # explicit-integration instability under strong internal circulation.
+        c_air = self._reference_air_density_kg_m3 * g.air_volume_m3 * 1005.0 * g.air_heat_capacity_multiplier
+        air_ua_max = 4 * (g.leaf_air_conductance_w_k + g.wall_air_conductance_w_k
+                          + g.substrate_air_conductance_w_k)
         characteristic_s = min(
             2.0,
+            0.05 * c_air / max(1e-12, air_ua_max),
             0.05 / max(1.0e-12, exchange_s),
-            0.05 * g.wall_heat_capacity_j_k / max(1.0e-12, g.wall_air_conductance_w_k + g.wall_outside_conductance_w_k),
-            0.05 * g.leaf_heat_capacity_j_k / max(1.0e-12, g.leaf_air_conductance_w_k),
+            0.05 * g.wall_heat_capacity_j_k / max(1.0e-12, 4.0 * g.wall_air_conductance_w_k + g.wall_outside_conductance_w_k),
+            0.05 * g.leaf_heat_capacity_j_k / max(1.0e-12, 4.0 * g.leaf_air_conductance_w_k),
+            0.05 * g.substrate_heat_capacity_j_k / max(1.0e-12, 4.0 * g.substrate_air_conductance_w_k),
         )
         steps = max(1, math.ceil(dt_s / characteristic_s))
         if steps > 30_000:
             raise ValueError("physics timestep requires excessive substeps; revise geometry/flow")
         h = dt_s / steps
+        # A failed late substep must not publish a partially advanced state.
+        candidate = self.state
         for _ in range(steps):
-            self.state = self._substep(forcing, h)
-        return self.state
+            candidate = self._substep(forcing, h, candidate)
+        self.state = candidate
+        return candidate
 
-    def _substep(self, forcing: GrowboxForcing, h: float) -> GrowboxState:
-        s = self.state
+    def _substep(self, forcing: GrowboxForcing, h: float, s: GrowboxState) -> GrowboxState:
         g, eq, bio, light = (self.parameters.geometry, self.parameters.equipment,
                              self.parameters.biology, self.parameters.lighting)
         v = g.air_volume_m3
+        speed, _speed_source = self._canopy_air_speed(forcing)
+        leaf_factor = mixed_convection_factor(
+            speed, s.leaf_temperature_c, s.air_temperature_c,
+            characteristic_length_m=0.10,
+        )
+        wall_factor = mixed_convection_factor(
+            speed, s.wall_temperature_c, s.air_temperature_c,
+            characteristic_length_m=0.80,
+        )
+        substrate_factor = mixed_convection_factor(
+            speed, s.substrate_temperature_c, s.air_temperature_c,
+            characteristic_length_m=0.40,
+        )
         lamp_w, ppfd = self._lamp(forcing)
         lamp_box_w = lamp_w * light.in_box_fraction
         solar_box_w = forcing.solar_irradiance_w_m2 * light.solar_window_area_m2
@@ -343,7 +399,7 @@ class GrowboxThermodynamics:
         vapor_density = s.air_vapor_kg / v
         partial_pa = vapor_pressure_pa(s.air_temperature_c, vapor_density)
         density = moist_air_density_kg_m3(s.air_temperature_c, forcing.atmospheric_pressure_pa, partial_pa)
-        air_capacity = density * v * 1005.0 * g.air_heat_capacity_multiplier
+        air_capacity = self._reference_air_density_kg_m3 * v * 1005.0 * g.air_heat_capacity_multiplier
         outside_vapor_density = vapor_density_kg_m3(forcing.outside_temperature_c,
                                                     forcing.outside_relative_humidity_pct)
         q_m3_s = (self._exhaust(forcing) / 3600.0 + eq.infiltration_ach * v / 3600.0)
@@ -352,7 +408,8 @@ class GrowboxThermodynamics:
 
         # Wall condensation is controlled by surface saturation and may re-evaporate.
         saturation_wall = saturation_vapor_density_kg_m3(s.wall_temperature_c)
-        wall_flux_kg = g.wall_vapor_transfer_m_s * g.wall_surface_area_m2 * (vapor_density - saturation_wall) * h
+        wall_flux_kg = (g.wall_vapor_transfer_m_s * wall_factor * g.wall_surface_area_m2
+                        * (vapor_density - saturation_wall) * h)
         if wall_flux_kg > 0:
             wall_flux_kg = min(wall_flux_kg, s.air_vapor_kg)
         else:
@@ -361,7 +418,7 @@ class GrowboxThermodynamics:
         # Leaf wetness: cold leaf surfaces condense water, then re-evaporate as
         # leaf warms. This condensation is distinct from biological transpiration.
         saturation_leaf = saturation_vapor_density_kg_m3(s.leaf_temperature_c)
-        leaf_flux_kg = (g.leaf_vapor_transfer_m_s * g.canopy_area_m2
+        leaf_flux_kg = (g.leaf_vapor_transfer_m_s * leaf_factor * g.canopy_area_m2
                         * (vapor_density - saturation_leaf) * h)
         if leaf_flux_kg > 0:
             leaf_flux_kg = min(leaf_flux_kg, s.air_vapor_kg)
@@ -375,7 +432,7 @@ class GrowboxThermodynamics:
                                    * soil_rh_surface - vapor_density)
         soil_evap_kg = min(s.substrate_water_kg,
                            g.substrate_evaporation_kg_m2_s * g.bare_substrate_area_m2
-                           * soil_vapour_deficit / 0.01 * h)
+                           * soil_vapour_deficit / 0.01 * substrate_factor * h)
 
         # Photosynthesis and transpiration depend on effective light, leaf VPD,
         # carbon availability and remaining substrate water.
@@ -387,7 +444,8 @@ class GrowboxThermodynamics:
         soil_response = clip(s.substrate_water_kg / (0.3 * bio.substrate_water_capacity_kg), 0, 1)
         transp_kg = min(max(0.0, s.substrate_water_kg - soil_evap_kg),
                         bio.maximum_transpiration_g_h / 3_600_000.0
-                        * stomata * vpd_response * soil_response * h)
+                        * stomata * vpd_response * soil_response
+                        * max(0.0, leaf_factor) ** 0.25 * h)
 
         # Air humidity and condensation; assume ultrasonic/evaporative humidifier
         # extracts specified fraction of latent heat from air.
@@ -427,16 +485,15 @@ class GrowboxThermodynamics:
 
         # Sensible heat plus latent flows. Wall condensation heats walls, leaf
         # transpiration cools leaves; cold-coil condensate consumes cooling power.
-        speed = .25 if forcing.measured_air_speed_m_s is None else forcing.measured_air_speed_m_s
-        convection_factor = clip(math.sqrt(max(0.01, speed) / 0.25), .25, 3.0)
-        leaf_air_w = (g.leaf_air_conductance_w_k * convection_factor
+        leaf_air_w = (g.leaf_air_conductance_w_k * leaf_factor
                       * (s.leaf_temperature_c - s.air_temperature_c))
-        wall_air_w = g.wall_air_conductance_w_k * (s.wall_temperature_c - s.air_temperature_c)
-        substrate_air_w = g.substrate_air_conductance_w_k * (s.substrate_temperature_c - s.air_temperature_c)
+        wall_air_w = g.wall_air_conductance_w_k * wall_factor * (s.wall_temperature_c - s.air_temperature_c)
+        substrate_air_w = g.substrate_air_conductance_w_k * substrate_factor * (s.substrate_temperature_c - s.air_temperature_c)
         cooler_w = eq.cooler_capacity_w * forcing.cooler
         latent_coil_w = min(cooler_w, cooler_condensate / h * LATENT_HEAT_VAPORIZATION)
         air_dT = ((eq.heater_power_w * forcing.heater + light_air_w
                    + eq.fan_electrical_heat_w * forcing.exhaust_fan
+                   + eq.circulation_fan_heat_w * forcing.circulation_fan
                    + eq.dehumidifier_heat_w * forcing.dehumidifier
                    + dehumidifier_kg / h * LATENT_HEAT_VAPORIZATION
                      * eq.dehumidifier_latent_return_fraction
