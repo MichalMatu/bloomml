@@ -6,6 +6,14 @@ Source contract for this directory: `schemas/environment-controller.json` (v4, 1
 
 Production firmware/controller ownership is documented in `../ARCHITECTURE.md` and uses `schemas/environment-controller.v6.json`. Do not mix the two contracts.
 
+## New coupled thermodynamic research core
+
+See [THERMODYNAMIC_CORE.md](THERMODYNAMIC_CORE.md) for the research-only SI
+heat/vapor/CO2/plant model with lamp energy, PPFD/DLI, dewpoint, leaf VPD,
+condensation, solar heat and provenance-aware measurement inputs. The new
+reference implementation is **not yet** the production v6 simulator or a
+physically calibrated digital twin. Firmware and Rule control remain unchanged.
+
 ## What this simulator is for
 
 - lumped growbox air and pot-substrate physics research;
