@@ -16,6 +16,9 @@ physically calibrated digital twin. Firmware and Rule control remain unchanged.
 
 ## What this simulator is for
 
+**Kaggle compute continuity:** read [the full dual-T4 handoff/roadmap](../checkpoints/2026-11-03-kaggle-bloomml-compute-handoff.md) and [Kaggle operator guide](KAGGLE_EXECUTION.md). The research physics remains on CPU; both Kaggle T4 GPUs will be used for batched experiments only after the backend is implemented and CPU↔GPU parity passes. Notebook and output-manifest entrypoints are versioned in the research branch.
+
+
 - lumped growbox air and pot-substrate physics research;
 - deterministic synthetic trajectories;
 - open-loop calibration tooling;
