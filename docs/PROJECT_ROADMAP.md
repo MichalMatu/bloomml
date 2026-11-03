@@ -12,6 +12,16 @@ The deployed product must remain standalone on the ESP32-S3. External foundation
 
 ## Active work
 
+## BloomML thermodynamic research and Kaggle GPU compute (research branch, 2026-11-03)
+
+The durable, actionable roadmap and handoff are in [Kaggle compute checkpoint](checkpoints/2026-11-03-kaggle-bloomml-compute-handoff.md), with setup in [Kaggle execution](simulator/KAGGLE_EXECUTION.md). This is a separate research branch; it does not change Rule authority, runtime ESP32-S3 or Growclip.
+
+- **Compute policy:** execute expensive research experiments and eventual GPU-accelerated physics on Kaggle T4 x2. GitHub is the code/checkpoint source of truth; every run must record exact commit SHA, seed, solver revision, inputs and artifact hashes. Two T4s have independent memory.
+- **Current reality:** CPU thermodynamic model and numeric tests exist; Kaggle notebook and dual-CUDA smoke runner are versioned, but the physics solver is still on CPU, and a real Kaggle GPU run and CPU↔GPU parity are pending. No claim of GPU-accelerated physics until parity tests pass.
+- **Order:** R1 real Kaggle preflight → R2 batched GPU solver parity; in parallel R4 dry-air/enthalpy and fan-curve physics, R3 real SD-log provenance → R5 multizone if data prove gradients → R6 real-box calibration/holdout → R7 large Kaggle ensembles → R8 ESP32 shadow-student only after separate qualification.
+- **Qualification:** physically calibrated data, not only synthetic trajectories, are required before the model is accepted for useful ML training; real tests and device safety remain independent gates.
+
+
 ### 1. Clay/menu/button/simulator display stage
 
 Use `DISPLAY_UI_PORT.md` as the implementation contract.
