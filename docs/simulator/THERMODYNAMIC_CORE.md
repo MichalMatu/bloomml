@@ -117,3 +117,24 @@ print(observation, model.water_balance_residual_kg())
 ```
 
 Run tests: `PYTHONPATH=. python -m pytest -q tests/test_growbox_thermodynamics.py tests/test_growbox_measurements.py`.
+
+## Reproducible CPU trajectories / eventual Kaggle GPU parity
+
+The reference workload makes fixed-seed correlated random growbox geometries,
+lighting and device scenarios. Each NDJSON row has an explicit
+`origin: synthetic_uncalibrated` and input seed/episode/step, which **cannot**
+be confused with a real sensor measurement or a qualified training dataset.
+
+```bash
+python -m tools.ml.physics.run_thermodynamic_sweep \
+  --scenarios 40 --steps 720 --seed 1729 \
+  --summary build/thermodynamic-golden.json \
+  --output build/thermodynamic-golden.ndjson
+```
+
+The result records a SHA-256 digest of canonical trajectory lines, as well as
+water-mass residuals and final climate summaries. A future batched Torch/CUDA
+backend for Kaggle **must** compare to this golden CPU solver across limiting
+cases and step sizes before scaling to two T4 devices. Heavy sweeps without
+real calibration would only amplify uncertainty, not produce accurate plant
+control. Neither Kaggle nor a GPU is needed for the reference checks.
