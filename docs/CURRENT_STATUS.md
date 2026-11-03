@@ -51,6 +51,11 @@ The canonical benchmark history and new-Mac comparison procedure are in `docs/PE
 
 ## Resume order
 
+## Active offline research branch — simulator / Kaggle (2026-11-03)
+
+Separate from the production main branch, ongoing thermodynamic research is on research/simulator-fidelity-kaggle-20261103. For continuity read docs/checkpoints/2026-11-03-kaggle-bloomml-compute-handoff.md (complete R0–R8 roadmap) and docs/simulator/KAGGLE_EXECUTION.md. Kaggle T4 x2 is the intended compute backend; source-pin notebook and CUDA smoke runner are committed, but *no real Kaggle session or GPU physics solver has been verified*. The current numerical model is an uncalibrated CPU oracle; production Rule authority and physical hardware remain unchanged.
+
+
 When the M1 Pro / 32 GB machine is available:
 
 1. fetch fresh `main` and fresh `agent-control` daemon state;
