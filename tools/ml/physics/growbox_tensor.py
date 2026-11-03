@@ -20,6 +20,7 @@ from .growbox_dynamics import (
 )
 from .growbox_psychrometrics import R_DRY_AIR, R_WATER_VAPOR, LATENT_HEAT_VAPORIZATION
 from .growbox_convection import _h_w_m2_k, REFERENCE_SPEED_M_S, REFERENCE_DELTA_T_K
+from .growbox_phase import FOG_EVAPORATION_TIME_S
 
 _STATE_NAMES = tuple(f.name for f in fields(GrowboxState))
 _FLOAT_TYPES = (torch.float32, torch.float64)
@@ -91,8 +92,13 @@ def _substep(s: dict[str, torch.Tensor], forcing: dict[str, torch.Tensor],
     v = g['air_volume_m3']
     t_air, t_wall, t_leaf, t_sub = (s[k] for k in (
         'air_temperature_c', 'wall_temperature_c', 'leaf_temperature_c', 'substrate_temperature_c'))
+    ideal_exhaust = e['exhaust_max_m3_h'] * f['exhaust_fan']
+    curve_pressure = e['exhaust_shutoff_pressure_pa'] * f['exhaust_fan'] ** 2
+    has_curve = (curve_pressure > 0) & torch.isfinite(f['measured_pressure_difference_pa'])
+    pressure_ratio = torch.abs(torch.nan_to_num(f['measured_pressure_difference_pa'], nan=0.0)) / torch.clamp(curve_pressure, min=1.e-30)
+    curved_exhaust = ideal_exhaust * torch.sqrt(torch.clamp(1.0 - pressure_ratio, min=0))
     exhaust = torch.where(torch.isfinite(f['measured_exhaust_m3_h']),
-                          f['measured_exhaust_m3_h'], e['exhaust_max_m3_h'] * f['exhaust_fan'])
+                          f['measured_exhaust_m3_h'], torch.where(has_curve, curved_exhaust, ideal_exhaust))
     speed_est = torch.sqrt(e['background_air_speed_m_s'] ** 2
                            + (f['exhaust_fan'] * e['exhaust_induced_air_speed_m_s']) ** 2
                            + (f['circulation_fan'] * e['circulation_reference_air_speed_m_s']) ** 2)
@@ -120,7 +126,10 @@ def _substep(s: dict[str, torch.Tensor], forcing: dict[str, torch.Tensor],
     outside_vapor = _saturation_density(f['outside_temperature_c']) * f['outside_relative_humidity_pct'] / 100.0
     q = exhaust / 3600.0 + e['infiltration_ach'] * v / 3600.0
     water_vent = q * (outside_vapor - vapor_density) * h
-    heat_vent = density * 1005.0 * q * (f['outside_temperature_c'] - t_air)
+    rho_dry_air = torch.clamp((f['atmospheric_pressure_pa'] - partial_pa)
+                              / (R_DRY_AIR * (t_air + 273.15)), min=0)
+    sensible_capacity_per_m3 = rho_dry_air * 1005.0 + vapor_density * 1860.0
+    heat_vent = sensible_capacity_per_m3 * q * (f['outside_temperature_c'] - t_air)
 
     wall_flux = g['wall_vapor_transfer_m_s'] * wall_factor * g['wall_surface_area_m2'] * (vapor_density - _saturation_density(t_wall)) * h
     wall_flux = torch.where(wall_flux > 0, torch.minimum(wall_flux, s['air_vapor_kg']),
@@ -164,14 +173,6 @@ def _substep(s: dict[str, torch.Tensor], forcing: dict[str, torch.Tensor],
     coil_condensate = coil_condensate * scale
     vapor_new = torch.clamp(s['air_vapor_kg'] + water_vent + humidifier + transp + soil_evap
                             - wall_flux - leaf_flux - dehumidifier - coil_condensate, min=0)
-    fog = s['fog_condensate_kg']
-    vapor_capacity = _saturation_density(t_air) * v
-    revap = torch.where((vapor_new < vapor_capacity) & (fog > 0),
-                        torch.minimum(torch.minimum(fog, vapor_capacity - vapor_new), 0.02 * vapor_capacity),
-                        torch.zeros_like(fog))
-    vapor_new = vapor_new + revap
-    fog = fog - revap
-
     leaf_air = g['leaf_air_conductance_w_k'] * leaf_factor * (t_leaf - t_air)
     wall_air = g['wall_air_conductance_w_k'] * wall_factor * (t_wall - t_air)
     substrate_air = g['substrate_air_conductance_w_k'] * substrate_factor * (t_sub - t_air)
@@ -184,7 +185,6 @@ def _substep(s: dict[str, torch.Tensor], forcing: dict[str, torch.Tensor],
                + dehumidifier / h * LATENT_HEAT_VAPORIZATION * e['dehumidifier_latent_return_fraction']
                - cooler_power + latent_coil
                - humidifier / h * LATENT_HEAT_VAPORIZATION * e['humidifier_air_cooling_fraction']
-               - revap / h * LATENT_HEAT_VAPORIZATION
                + heat_vent + leaf_air + wall_air + substrate_air) * h / air_capacity)
     dt_leaf = ((light_leaf - leaf_air + leaf_flux / h * LATENT_HEAT_VAPORIZATION
                 - transp / h * LATENT_HEAT_VAPORIZATION) * h / g['leaf_heat_capacity_j_k'])
@@ -192,10 +192,24 @@ def _substep(s: dict[str, torch.Tensor], forcing: dict[str, torch.Tensor],
                 + wall_flux / h * LATENT_HEAT_VAPORIZATION) * h / g['wall_heat_capacity_j_k'])
     dt_sub = ((-substrate_air - soil_evap / h * LATENT_HEAT_VAPORIZATION) * h / g['substrate_heat_capacity_j_k'])
     new_air, new_wall, new_leaf, new_sub = t_air + dt_air, t_wall + dt_wall, t_leaf + dt_leaf, t_sub + dt_sub
-    excess = torch.clamp(vapor_new - _saturation_density(new_air) * v, min=0)
-    vapor_new = vapor_new - excess
-    fog = fog + excess
-    new_air = new_air + excess * LATENT_HEAT_VAPORIZATION / air_capacity
+    # Conserved coupled latent energy / saturation, matching the scalar oracle.
+    fog = s['fog_condensate_kg']
+    temperature_to_mass = air_capacity / LATENT_HEAT_VAPORIZATION
+    low = torch.maximum(-fog * (-torch.expm1(-h / FOG_EVAPORATION_TIME_S)),
+                        (-39.9999 - new_air) * temperature_to_mass)
+    high = torch.minimum(vapor_new, (79.9999 - new_air) * temperature_to_mass)
+    x = torch.clamp(vapor_new - _saturation_density(new_air) * v, min=low, max=high)
+    for _ in range(8):
+        equilibrium_t = new_air + x * LATENT_HEAT_VAPORIZATION / air_capacity
+        sat = _saturation_density(equilibrium_t)
+        slope = sat * (17.625 * 243.04 / (equilibrium_t + 243.04) ** 2
+                       - 1.0 / (equilibrium_t + 273.15))
+        residual_phase = x + sat * v - vapor_new
+        derivative = 1.0 + slope * v * LATENT_HEAT_VAPORIZATION / air_capacity
+        x = torch.clamp(x - residual_phase / derivative, min=low, max=high)
+    vapor_new = vapor_new - x
+    fog = fog + x
+    new_air = new_air + x * LATENT_HEAT_VAPORIZATION / air_capacity
 
     mol_air = f['atmospheric_pressure_pa'] * v / (8.314462618 * (t_air + 273.15))
     co2_injection = (e['co2_injection_g_h'] / 3600.0 * f['co2_doser'] / 44.01) * 1_000_000.0 / mol_air
@@ -301,6 +315,8 @@ def simulate_batch(parameters: Sequence[GrowboxPhysics], states: Sequence[Growbo
         valid = torch.isfinite(torch.stack(tuple(s.values()))).all() & torch.isfinite(residual).all()
         valid &= ((temperatures >= -40) & (temperatures <= 80)).all()
         valid &= (s['air_vapor_kg'] >= 0).all() & (s['substrate_water_kg'] >= 0).all()
+        valid &= (s['air_vapor_kg'] <= (1.0 + (1e-6 if dtype == torch.float32 else 1e-8))
+                  * _saturation_density(s['air_temperature_c']) * g['air_volume_m3']).all()
         if not bool(valid.item()):
             raise ValueError('tensor physics diverged or violated a physical bound')
         # Transfer only at the public boundary: no intermediate device->CPU sync.
