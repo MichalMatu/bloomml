@@ -51,10 +51,9 @@ The canonical benchmark history and new-Mac comparison procedure are in `docs/PE
 
 ## Resume order
 
-## Active offline research branch — simulator / Kaggle (2026-11-03)
+## Odrębny tor badawczy BloomML (tylko research branch)
 
-Separate from the production main branch, thermodynamic research continues on `research/simulator-fidelity-kaggle-20261103`. For continuity use `docs/checkpoints/2026-11-03-kaggle-bloomml-compute-handoff.md`, `docs/checkpoints/2026-11-03-r2-torch-parity-sprint.md` and `docs/simulator/KAGGLE_EXECUTION.md`. **Dual-T4 GPU physics R2 pilot PASSED** on Kaggle (2026-11-03; code commit `84ee2245550b095422a9e5dd6c74834bd1ecc8f4`): 256 independent scenarios × 8 ticks per GPU, both CUDA runs plus CPU-oracle parity and water balance confirmed by downloaded Kaggle manifest. This is an uncalibrated research model, not production qualification; R4 condensation/enthalpy convergence and R6 real-data calibration remain open. Production Rule authority, physical hardware, Growclip and `main` remain unchanged.
-
+Nie traktuj tego dokumentu o **produkcyjnym sterowniku** jako aktualnej roadmapy badań symulatora. Bieżące R0–R8, wyniki dwóch T4, ograniczenia naukowe i brak własnych logów czujników: [RESEARCH_STATUS.md](simulator/RESEARCH_STATUS.md). Testy i obserwowalność: [QUALITY_AND_OBSERVABILITY.md](simulator/QUALITY_AND_OBSERVABILITY.md). Firmware, main i Growclip bez zmian.
 
 When the M1 Pro / 32 GB machine is available:
 
