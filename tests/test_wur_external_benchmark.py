@@ -15,7 +15,8 @@ from tools.ml.wur_external_benchmark import (
 
 def synthetic_archive(path: Path, *, n_days: int = 12, missing_house: str = "",
                       duplicate: bool = False, missing_column: bool = False,
-                      nan_measurement: bool = False, extra_weather_missing: bool = False) -> None:
+                      nan_measurement: bool = False, extra_weather_missing: bool = False,
+                      extreme_value: bool = False) -> None:
     with ZipFile(path, "w", compression=ZIP_DEFLATED) as z:
         for site in [*SITES, "Weather"]:
             if site == missing_house:
@@ -45,6 +46,10 @@ def synthetic_archive(path: Path, *, n_days: int = 12, missing_house: str = "",
                                    VentLee=5)
                         if nan_measurement and step == 2:
                             row["CO2air"] = "NaN"
+                        if extreme_value and site == "Reference" and day == n_days - 1 and step == 10:
+                            row["Tair"] = "-1.0"
+                            row["Rhair"] = "7.7"
+                            row["CO2air"] = "2200"
                     wr.writerow({key: row[key] for key in keys})
             z.writestr(f"{site}/Weather.csv" if site == "Weather" else
                        f"{site}/GreenhouseClimate.csv", output.getvalue())
@@ -99,6 +104,15 @@ class TestWurMirrorBenchmark(unittest.TestCase):
         self.assertLess(a["coverage"]["co2_ppm"], 1)
         self.assertEqual(a["invalid_numeric_values"].get("CO2air", 0), 0)
         self.assertLess(a["baseline"]["co2_ppm@5min"]["n"], 3 * 25)
+
+    def test_extreme_physical_measurements_are_preserved_but_flagged(self):
+        r = self.run_audit(extreme_value=True)
+        reference = next(x for x in r["sites"] if x["site"] == "Reference")
+        self.assertEqual(reference["extreme_physical_review_counts"]["Tair"], 1)
+        self.assertEqual(reference["extreme_physical_review_counts"]["Rhair"], 1)
+        self.assertEqual(reference["extreme_physical_review_counts"]["CO2air"], 1)
+        self.assertEqual(reference["coverage"]["temperature_c"], 1.0)
+        self.assertTrue(any("extreme" in w for w in reference["warnings"]))
 
     def test_weather_na_does_not_turn_into_false_observation(self):
         r = self.run_audit(extra_weather_missing=True)
