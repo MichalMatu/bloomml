@@ -48,6 +48,7 @@ Chcemy przewidywać temperaturę powietrza, liści, ścian i podłoża, wilgotno
 ## Gdzie wejść
 
 - [Wageningen: jakość, CO₂/PAR i test transferu](WUR_DATASET_EVALUATION.md)
+- [Checkpoint: sześć szklarni WUR + negatywny wynik transferu](../checkpoints/2026-11-04-wur-2019-dataset-benchmark.md)
 - [Audyt zewnętrznych danych i baseline](PUBLIC_DATASETS.md)
 - [Mapa kodu, granice i jakość](QUALITY_AND_OBSERVABILITY.md)
 - [Kaggle / Local Agent](KAGGLE_EXECUTION.md)
