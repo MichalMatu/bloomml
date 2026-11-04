@@ -39,7 +39,7 @@ Hardware evidence belongs to exact executable SHAs. A software build or simulato
 
 ## Research and legacy-contract documentation
 
-**Aktywny tor BloomML (research branch):** [START HERE — symulator R0–R8](simulator/RESEARCH_STATUS.md), [audyt modułów / jakość / observability](simulator/QUALITY_AND_OBSERVABILITY.md), [Kaggle 2× T4](simulator/KAGGLE_EXECUTION.md). Do wznowienia w kolejnym czacie: [checkpoint 2026-11-04](checkpoints/2026-11-04-bloomml-research-clean-handoff.md). Poniższa dokumentacja produkcji jest **osobnym obszarem**, nie bieżącym planem eksperymentów.
+**Aktywny tor BloomML (research branch):** [START HERE — symulator R0–R8](simulator/RESEARCH_STATUS.md), [audyt modułów / jakość / observability](simulator/QUALITY_AND_OBSERVABILITY.md), [Kaggle 2× T4](simulator/KAGGLE_EXECUTION.md). Do wznowienia w kolejnym czacie: [najnowszy pełny checkpoint 2026-11-04 — ML/control readiness](checkpoints/2026-11-04-bloomml-ml-control-readiness-complete-checkpoint.md). Poniższa dokumentacja produkcji jest **osobnym obszarem**, nie bieżącym planem eksperymentów.
 
 The repository contains two different ML/data-contract generations. Do not mix them:
 
