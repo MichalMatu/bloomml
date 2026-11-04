@@ -69,7 +69,7 @@ class TestWurForecastProbe(unittest.TestCase):
     def test_original_source_not_qualified_as_same_bytes(self):
         synthetic_archive(self.path)
         r = probe_archive(self.path, expected_sha256="")
-        self.assertIn("ORIGINAL_VERIFICATION_PENDING", r["training_approval"])
+        self.assertEqual(r["training_approval"], "DIAGNOSTIC_TRANSFER_ONLY_NOT_PRODUCTION")
         self.assertEqual(r["original_byte_equivalence"], "NOT_VERIFIED")
 
 
