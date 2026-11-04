@@ -1,62 +1,19 @@
-# BloomML / symulator fizyczny — START HERE
+# BloomML — aktualny status badań (START HERE)
 
-**Stan: 2026-11-04.** Repo `MichalMatu/bloomml`, branch `research/simulator-fidelity-kaggle-20261103`. Jest to badawczy model klimatu growboxa (0D, jedna dobrze wymieszana strefa), **nie cyfrowy bliźniak skalibrowany pomiarami**. **Nie mamy jeszcze realnych logów czujników.**
+**2026-11-04** · research branch `research/simulator-fidelity-kaggle-20261103`. **Jeden aktualny checkpoint do wznowienia MPC:** [MPC complete resume](../checkpoints/2026-11-04-bloomml-mpc-resume-complete.md). **Plan:** [MPC_ROADMAP.md](MPC_ROADMAP.md). Nie mieszać starszego v4 research z climate-v6 produkcji.
 
-**Najnowszy kompletny checkpoint (model + datasety + gotowość sterowania):** [2026-11-04-bloomml-ml-control-readiness-complete-checkpoint.md](../checkpoints/2026-11-04-bloomml-ml-control-readiness-complete-checkpoint.md). **ML obecnie nie jest dopuszczony do fizycznego sterowania**; WUR T60 przegrywa z persistence w 6/6 komór. Względne 0,8–6,4% oznacza wzrost MAE względem baseline, nie % odchylenia temperatury.
+| Obszar | Zweryfikowane | Obecny gate |
+| --- | --- | --- |
+| R4 / fizyka 0D | CPU model, bilans wody, Torch FP64 parity pilot; R4 V2 8192 komór na **2×T4**, 24 424 020 podkroków, RH min 6.65%, 25 przypadków CO₂>2000 ppm | **Numerycznie PASS w opisanym zakresie; fizyczna wierność UNKNOWN** |
+| Zewnętrzne dane | NUTRICONTROL 319 008 rekordów / 3 CSV, WUR mirror 286 854 pomiarów / 6 szklarni; na WUR trend T60 gorzej niż persistence **6/6** | Tylko zewnętrzny benchmark; nie kalibruje własnego growboxa |
+| MPC A–C | Modułowe urządzenia, search, laboratorium; 60-min epizod MPC T/RH/CO₂ MAE 1.1168°C / 5.7107 pp / 11.3987 ppm | Jedna trajektoria PASS; macierz 11 scenariuszy × 2 seedy: MPC **3/22 PASS, 19/22 FAIL** |
+| Safety / ostatni commit | Hard-stop i interlocki dopisane na `9258ae41...` | **Exact-SHA retest UNKNOWN — pierwszy krok** |
+| MPC D — Kaggle | R4 physics już wykonane na 2×T4 | **Duża macierz MPC NOT RUN; gate lokalny otwarty** |
+| MPC E — shadow | Pasywne DTO/testy z odrzuceniem i brakiem potwierdzenia | Bez firmware i fizycznego ACK |
 
-## Po co to robimy
+**Decyzja:** badawczy software gotowy do dalszej pracy; MPC nie jest zakwalifikowany dla wszystkich scenariuszy, rzeczywista wierność modelu UNKNOWN, sterowanie sprzętem BLOCKED. Najpierw [P0.1 retest i analiza 19/22 porażek](MPC_ROADMAP.md), potem multi-hour/day E2E, **Kaggle 2×T4** i dopiero fizyczna walidacja na rzeczywistych danych.
 
-Chcemy przewidywać temperaturę powietrza, liści, ścian i podłoża, wilgotność, parę/mgłę/kondensat, CO₂, VPD, bilans wody oraz wpływ lamp, ogrzewania, chłodzenia, cyrkulacji i wyciągu. Celem jest model, który można *najpierw* zweryfikować na fizyce i pomiarach, a dopiero później wykorzystać do przygotowania danych ML dla ESP32-S3 w trybie shadow.
+Dokumenty szczegółowe, bez przepisywania danych:
+[Fizyka i granice](THERMODYNAMIC_CORE.md) · [MPC kontrakt](MPC_RESEARCH.md) · [Quality i evidence R4](QUALITY_AND_OBSERVABILITY.md) · [Kaggle flow](KAGGLE_EXECUTION.md) · [WUR](WUR_DATASET_EVALUATION.md) · [dataset ranking](PUBLIC_DATASETS.md).
 
-## Co już działa
-
-- **CPU reference:** deterministyczny solver termodynamiczny, bilanse i testy skrajnych przypadków (R0).
-- **Torch batched:** obliczenia tych samych równań na CPU i GPU; niezależne partie na `cuda:0` i `cuda:1` (R2).
-- **Kaggle:** zweryfikowano dwa rzeczywiste Tesla T4, a w dwóch dużych przebiegach R4 wykonano po **8192 scenariusze / 24 424 020 podkroków**. V1 ujawnił fałszywe osuszanie; V2 po poprawce wykazał minimalne RH **6,65%** (zamiast 0,0133%), maksymalny błąd bilansu wody ok. **3,8e-14 kg**. Oba GPU `COMPLETE`.
-- **Weryfikacja lokalna:** 51/51 testów istniejącego rdzenia; nowy zestaw walidatora evidence i zależności doprowadził testy badawcze do **63/63 PASS w sandboxie**. Weryfikacja GPU dotyczy udokumentowanego SHA V2: `05953e0139cfc31c7ba1fde6ba181d6a90bb9fb3`, a nie automatycznie wszystkich późniejszych commitów dokumentacji.
-- **Obserwowalność:** manifest źródłowego SHA, seed, czasów i pamięci GPU, liczby scenariuszy, dryfu CPU↔CUDA, bilansu wody, T/RH/CO₂ oraz liczników ekstremów. Nowy audyt `tools/ml/research_evidence.py` raportuje `NUMERICAL_EVIDENCE_PASS` bez fałszywej deklaracji walidacji empirycznej.
-
-## Co pozostaje otwarte
-
-- Nie ma kalibracji ani niezależnych pomiarów z growboxa; **nie wolno twierdzić, że przewidywania są rzeczywiste lub nadają się już do treningu produkcyjnego**.
-- Pełny bilans suchego powietrza i entalpii układu otwartego, zmierzone krzywe wentylatora/filtra, charakterystyka osuszacza, fizjologia roślin i przestrzenność — nadal uproszczone.
-- 25 z 8192 scenariuszy V2 osiągnęło CO₂ powyżej 2000 ppm. To obserwacja do dalszej kontroli, nie sukces agronomiczny.
-- Nie wykonano uczciwego benchmarku *ten sam host CPU vs GPU* ani szerokiego testu FP32; **nie raportujemy przyspieszenia ani zalecenia FP32**.
-- `growbox_dynamics.py` (~600 linii) wymaga planowej dekompozycji z testami charakterystyki; CPU i tensor mają dwa zapisy części równań i ryzyko driftu.
-
-## Kolejność prac R0–R8
-
-| Etap | Stan / warunek |
-| --- | --- |
-| R0 | **PASS numerycznie:** rdzeń 0D i inwarianty; bez kalibracji |
-| R1 | **DONE:** dostęp do prawdziwych T4, CPU oracle, Kaggle |
-| R2 | **DONE dla FP64 pilota i stressu:** rzeczywisty solver 2× GPU, ograniczona próbka parity; pełne FP32 i benchmark otwarte |
-| R3 | **CZĘŚCIOWO:** importer SD istnieje, logów realnych obecnie brak |
-| R4 | **CZĘŚCIOWO PASS:** kondensacja/energia, charakterystyka wyciągu opcjonalna, osuszacz skorygowany; pełna entalpia nie |
-| R5 | **WARUNKOWO:** multizone dopiero przy dowodach gradientów |
-| R6 | **BLOKADA:** kalibracja i test na osobnych dniach wymagają realnych pomiarów |
-| R7 | **BADANIA SYNTETYCZNE wykonane**, ale trening na realistycznych danych wstrzymany do R6 |
-| R8 | **NIE ROZPOCZĘTO:** TinyML shadow-only po kwalifikacji |
-
-## Zewnętrzne datasety — sprint discovery + pierwszy baseline (2026-11-04)
-
-**Discovery wykonany:** [ranking i raport wyników na realnych plikach](PUBLIC_DATASETS.md). Pierwszy source: **NUTRICONTROL CC BY 4.0**, przypięte 3 CSV, łącznie **319 008 wierszy**: Álava 80 548, Cartagena 69 792, Navarra 168 668. Kontrola sha256, dat, braków i rzeczywisty baseline persistence na końcowych 20% dni: Álava MAE temperatury 15 min **0,384°C**, 60 min **1,169°C**. Cartagena RH tylko 39,6% kompletna; brak CO₂/PPFD we wszystkich tych trzech plikach.
-
-- **Kod i testy:** `tools/ml/external_greenhouse_benchmark.py`, `tests/test_external_greenhouse_benchmark.py` — **7/7 PASS na Mac Local Agent**; tylko Python stdlib, bez interpolowania, bez przecieku chronologicznego, bez przyjmowania niezweryfikowanej strefy czasowej.
-- **Wageningen 2019:** [pełna ocena mirrora i negatywny eksperyment transferu](WUR_DATASET_EVALUATION.md) — **286 854 rzeczywistych rekordów klimatu + 47 809 pogody**, 6 komór, CO₂/T/RH/PAR co 5 min; **16/16 testów PASS** na Macu; 99,85% kompletności. Pierwszy model trendu trenowany na 5 innych komorach i testowany na 6. **Przegrywa z persistence dla T60 we wszystkich sześciu**. Kopia Kaggle ma CC0 i pinned SHA, ale nie potwierdzono byte equivalence z 4TU (API timeout).
-- **Następny krok:** uzyskać oficjalny WUR 7z i dokumentację czujników, osobno audytować Korea 2026 `measured` vs `simulated`; dopiero wtedy próbować modelu z bieżącą/past weather, światłem i *potwierdzonymi* sygnałami aktuatorów, bez future leakage. Żadnego zatwierdzenia do produkcji.
-- **Granica:** tylko zewnętrzna domena pomiarów, benchmark = persistence, nie wynik symulatora, **brak własnych logów i kalibracji**, zero treningu produkcyjnego.
-
-## Gdzie wejść
-
-- [Wageningen: jakość, CO₂/PAR i test transferu](WUR_DATASET_EVALUATION.md)
-- [Checkpoint: sześć szklarni WUR + negatywny wynik transferu](../checkpoints/2026-11-04-wur-2019-dataset-benchmark.md)
-- [Audyt zewnętrznych danych i baseline](PUBLIC_DATASETS.md)
-- [Mapa kodu, granice i jakość](QUALITY_AND_OBSERVABILITY.md)
-- [Kaggle / Local Agent](KAGGLE_EXECUTION.md)
-- [Fizyka i założenia](THERMODYNAMIC_CORE.md)
-- [Najnowszy kompletny checkpoint do wznowienia](../checkpoints/2026-11-04-bloomml-ml-control-readiness-complete-checkpoint.md)
-- [Historyczny checkpoint przed WUR](../checkpoints/2026-11-04-bloomml-research-clean-handoff.md)
-- [Dowód ciężkiego runu R4](../checkpoints/2026-11-04-r4-dual-t4-stress.md)
-
-**Granica bezpieczeństwa:** praca tylko na branchu badawczym, bez zmian `main`, firmware, Growclip. Produkcyjne Rule/OutputSupervisor pozostają autorytetem. Stary v4/v6 toolchain i UI nie są aktywnym zakresem tego projektu.
+**Bezpieczeństwo:** wyłącznie sandbox/CPU/Kaggle na badawczej gałęzi. Nie zmieniać `main`, Growclip, firmware, Rule ani OutputSupervisor. Zewnętrzna szklarnia ≠ pomiar z własnego growboxa. Nie uruchamiać dużych obliczeń bez konkretnego pytania i planu walidacji.

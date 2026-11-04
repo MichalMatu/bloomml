@@ -2,6 +2,8 @@
 
 **Scope:** `tools/ml/physics/`, `tools/ml/kaggle*_runner.py`, `tools/ml/research_evidence.py`, `tests/test_growbox*.py`, `tests/test_kaggle*.py`, `tests/test_research_evidence.py`. Nie dotyczy urządzeń, firmware, UI ani Growclip. Stan 2026-11-04; [jedyny bieżący status](RESEARCH_STATUS.md).
 
+**Uwaga aktualizacyjna:** poniższe bramy i liczniki 63/63 dotyczą **rdzenia fizyki R4 i oznaczonych SHA**, nie walidacji nowego MPC. Dla aktualnej jakości sterowania, wyników 19/22 FAIL, bieżących testów i dalszego flow Kaggle użyj [MPC checkpoint](../checkpoints/2026-11-04-bloomml-mpc-resume-complete.md) i [MPC roadmap](MPC_ROADMAP.md). Statusy matematyki, sterowania, kalibracji i sprzętu są odrębne.
+
 ## Granice i odpowiedzialności
 
 | Moduł | Jedyny główny cel | Uwagi jakościowe |

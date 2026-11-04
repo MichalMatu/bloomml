@@ -12,11 +12,11 @@ The deployed product must remain standalone on the ESP32-S3. External foundation
 
 ## Active work
 
-## BloomML — osobny tor badań na branchu (nie produkcja)
+## BloomML — osobna aktywna roadmapa MPC (research branch)
 
-**Jeden aktualny punkt wejścia:** [symulator / RESEARCH_STATUS.md](simulator/RESEARCH_STATUS.md) — R0–R8, aktualne osiągnięcia i następne zadania. Testy i modułowość: [QUALITY_AND_OBSERVABILITY.md](simulator/QUALITY_AND_OBSERVABILITY.md). **Checkpoint:** [2026-11-04](checkpoints/2026-11-04-bloomml-research-clean-handoff.md).
+**Po wznowieniu zacznij od [kompletnego checkpointu 2026-11-04](checkpoints/2026-11-04-bloomml-mpc-resume-complete.md) i [MPC_ROADMAP.md](simulator/MPC_ROADMAP.md).** To jedyne aktywne kolejności dla toru badawczego. Produkcyjne zadania CrowPanel/climate-v6 poniżej są odrębną roadmapą i nie należą do MPC sprintu.
 
-W skrócie: prawdziwy dwukartowy Kaggle R4 (8192 scenariusze, >24 mln podkroków) i poprawki kondensacji/osuszania **PASS numerycznie**, ale brak rzeczywistych danych, więc brak kalibracji. Następny etap to ocena publicznych zbiorów danych (GitHub i źródła naukowe), z oddzielnym oznaczeniem cudzej szklarni. **Nie ma prac nad produkcyjną automatyką w tym torze.**
+Stan: działający modułowy MPC i laboratorium R4; 60-min epizod PASS, ale trudna macierz **19/22 MPC FAIL**. Ostatni hardening `9258ae41...` wymaga exact-SHA retestu. Kolejność: **safety retest → failure attribution / reachable set → wielogodzinne/wielodniowe CPU E2E → CPU/GPU parity+benchmark → Kaggle 2×T4 duży eksperyment MPC → pasywne shadow i empiryczna walidacja**. Duży R4 GPU physics run już zakończony, ale **Kaggle MPC jeszcze NIE RUN**; nie mylić tych wyników. Bez własnych danych wierność fizyki UNKNOWN, hardware BLOCKED; nigdy nie zmieniać `main`, firmware, Rule ani OutputSupervisor przy tej pracy.
 
 ### 1. Clay/menu/button/simulator display stage
 
