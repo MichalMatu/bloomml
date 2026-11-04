@@ -38,7 +38,7 @@ Chcemy przewidywać temperaturę powietrza, liści, ścian i podłoża, wilgotno
 
 ## Zewnętrzne datasety — sprint discovery + pierwszy baseline (2026-11-04)
 
-**Discovery wykonany:** [ranking i raport wyników na realnych plikach](PUBLIC_DATASETS.md). Pierwszy source: **NUTRICONTROL CC BY 4.0**, przypięte 3 CSV z 318 008? faktyczna liczba sprawdzonych wierszy **319 008**: Álava 80 548, Cartagena 69 792, Navarra 168 668. Kontrola sha256, dat, braków i rzeczywisty baseline persistence na końcowych 20% dni: Álava MAE temperatury 15 min **0,384°C**, 60 min **1,169°C**. Cartagena RH tylko 39,6% kompletna; brak CO₂/PPFD we wszystkich tych trzech plikach.
+**Discovery wykonany:** [ranking i raport wyników na realnych plikach](PUBLIC_DATASETS.md). Pierwszy source: **NUTRICONTROL CC BY 4.0**, przypięte 3 CSV, łącznie **319 008 wierszy**: Álava 80 548, Cartagena 69 792, Navarra 168 668. Kontrola sha256, dat, braków i rzeczywisty baseline persistence na końcowych 20% dni: Álava MAE temperatury 15 min **0,384°C**, 60 min **1,169°C**. Cartagena RH tylko 39,6% kompletna; brak CO₂/PPFD we wszystkich tych trzech plikach.
 
 - **Kod i testy:** `tools/ml/external_greenhouse_benchmark.py`, `tests/test_external_greenhouse_benchmark.py` — **7/7 PASS na Mac Local Agent**; tylko Python stdlib, bez interpolowania, bez przecieku chronologicznego, bez przyjmowania niezweryfikowanej strefy czasowej.
 - **Następny krok:** przetestować oryginalne archiwum Wageningen AGC 2019 **CC0** (CO₂/PAR, 6 komór i urządzenia); później Korea 2026 do walidacji T/RH. Metadane kandydatów sprawdzone, ale surowych plików Wageningen i Korei nie importowano.
