@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 import math
 from .contracts import Command, MPCConfig, SafetyEnvelope, Targets
-from .devices import DeviceLimits, DeviceState, fallback, safe_request, transition
+from .devices import DeviceLimits, DeviceState, fallback, hard_stops, safe_request, transition
 from .optimizer import optimize
 
 
@@ -94,7 +94,10 @@ def run_episode(physics, initial_state, forcing_at, targets_at, *, steps: int,
         approved, rejects = safe_request(request, temperature_c=plant.state.air_temperature_c,
                                          rh_pct=obs.rh_pct, co2_ppm=plant.state.co2_ppm,
                                          limits=envelope)
-        stop = frozenset(n for n in request.as_dict() if getattr(request, n) > 0 and getattr(approved, n) == 0)
+        stop = hard_stops(temperature_c=plant.state.air_temperature_c,
+                          rh_pct=obs.rh_pct, co2_ppm=plant.state.co2_ppm,
+                          limits=envelope) | frozenset(
+            n for n in request.as_dict() if getattr(request, n) > 0 and getattr(approved, n) == 0)
         virtual_faults = faulted_at(now) if faulted_at else frozenset()
         previous = devices.applied
         devices, actuator_rejects = transition(devices, approved, cfg.step_s, limits,

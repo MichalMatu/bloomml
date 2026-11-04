@@ -11,6 +11,11 @@ class DeviceState:
     on_s: tuple[float, ...] = (0.,) * len(CHANNELS)
     off_s: tuple[float, ...] = (1e6,) * len(CHANNELS)
 
+    def __post_init__(self) -> None:
+        if (len(self.on_s) != len(CHANNELS) or len(self.off_s) != len(CHANNELS)
+                or any(not math.isfinite(v) or v < 0 for v in self.on_s + self.off_s)):
+            raise ValueError('invalid virtual device dwell history')
+
 
 @dataclass(frozen=True)
 class DeviceLimits:
@@ -19,6 +24,29 @@ class DeviceLimits:
     minimum_off_s: float = 60.0
     maxima: Command = Command(1, 1, 1, 1, 1, 1, 1, 1)
 
+    def __post_init__(self) -> None:
+        if (not all(math.isfinite(v) and v >= 0 for v in
+                    (self.slew_fraction_per_s, self.minimum_on_s, self.minimum_off_s))
+                or self.slew_fraction_per_s > 1.):
+            raise ValueError('invalid virtual device limits')
+
+
+def hard_stops(*, temperature_c: float, rh_pct: float, co2_ppm: float,
+               limits: SafetyEnvelope = SafetyEnvelope()) -> frozenset[str]:
+    """Fail-closed stops act on previously ON devices, regardless of the new request."""
+    stops = set()
+    if temperature_c >= limits.temperature_max_c:
+        stops.update(('heater', 'lamp_dimmer'))
+    if temperature_c <= limits.temperature_min_c:
+        stops.add('cooler')
+    if rh_pct >= limits.rh_max_pct:
+        stops.add('humidifier')
+    if rh_pct <= limits.rh_min_pct:
+        stops.add('dehumidifier')
+    if co2_ppm >= limits.co2_max_ppm:
+        stops.add('co2_doser')
+    return frozenset(stops)
+
 
 def safe_request(command: Command, *, temperature_c: float, rh_pct: float,
                  co2_ppm: float, limits: SafetyEnvelope = SafetyEnvelope()) -> tuple[Command, tuple[str, ...]]:
@@ -26,25 +54,29 @@ def safe_request(command: Command, *, temperature_c: float, rh_pct: float,
     values = command.as_dict()
     reasons = []
     if values['heater'] > 0 and values['cooler'] > 0:
-        values['cooler'] = 0.0
+        values['heater' if temperature_c >= limits.temperature_max_c else 'cooler'] = 0.0
         reasons.append('heat_cool_conflict')
     if values['co2_doser'] > 0 and values['exhaust_fan'] > 0:
-        values['exhaust_fan'] = 0.0
+        values['co2_doser' if co2_ppm >= limits.co2_max_ppm else 'exhaust_fan'] = 0.0
         reasons.append('co2_dosing_exhaust_conflict')
     if values['humidifier'] > 0 and values['dehumidifier'] > 0:
-        values['dehumidifier'] = 0.0
+        values['humidifier' if rh_pct >= limits.rh_max_pct else 'dehumidifier'] = 0.0
         reasons.append('humid_dehumid_conflict')
     if temperature_c >= limits.temperature_max_c:
         for n in ('heater', 'lamp_dimmer'):
             if values[n]: reasons.append('temperature_high:' + n)
             values[n] = 0.0
     if temperature_c <= limits.temperature_min_c:
+        if values['cooler']: reasons.append('temperature_low:cooler')
         values['cooler'] = 0.0
     if rh_pct >= limits.rh_max_pct:
+        if values['humidifier']: reasons.append('rh_high:humidifier')
         values['humidifier'] = 0.0
     if rh_pct <= limits.rh_min_pct:
+        if values['dehumidifier']: reasons.append('rh_low:dehumidifier')
         values['dehumidifier'] = 0.0
     if co2_ppm >= limits.co2_max_ppm:
+        if values['co2_doser']: reasons.append('co2_high:co2_doser')
         values['co2_doser'] = 0.0
     return Command(**values), tuple(reasons)
 
@@ -60,9 +92,14 @@ def transition(state: DeviceState, requested: Command, dt_s: float,
     vals, ons, offs, rejected = {}, [], [], []
     for i, name in enumerate(CHANNELS):
         old = getattr(state.applied, name)
-        desired = min(getattr(requested, name), getattr(limits.maxima, name))
+        nominal = getattr(requested, name)
+        desired = min(nominal, getattr(limits.maxima, name))
+        if desired < nominal:
+            rejected.append(name + ':max_capacity')
         hard_stop = name in emergency_stop or name in faulted
         if hard_stop:
+            if name in emergency_stop and old > 0:
+                rejected.append(name + ':safety_stop')
             desired = 0.0
         elif old > 0 and desired == 0 and state.on_s[i] < limits.minimum_on_s:
             desired = old
@@ -72,7 +109,10 @@ def transition(state: DeviceState, requested: Command, dt_s: float,
             rejected.append(name + ':minimum_off')
         if not hard_stop:
             delta = limits.slew_fraction_per_s * dt_s
-            desired = max(old - delta, min(old + delta, desired))
+            limited = max(old - delta, min(old + delta, desired))
+            if abs(limited - desired) > 1e-12:
+                rejected.append(name + ':slew_limit')
+            desired = limited
         desired = max(0.0, min(1.0, desired))
         vals[name] = desired
         if desired > 0:

@@ -102,3 +102,16 @@ No adapter, transport, firmware write or output execution is implemented.
 
 These extension files must be separately committed and verified on their exact
 source SHA before describing their scenario-run evidence as COMPLETE.
+
+## Adversarial matrix outcome and next gate
+
+At source `2ad2177943c4e3a50a4ad094bf939600f1ce14bf`, the Mac Local Agent
+`la-bloomml-mpc-scenario-matrix-20261104-v1` ran **33/33 targeted tests PASS**
+and a complete **11 × 2 × 3 = 66-trial** diagnostic CPU matrix. MPC tracking
+quality gate: **3/22 PASS, 19/22 FAIL**; threshold/hysteresis both 0/22 PASS.
+In hot/wet starts, the threshold controller actually beat MPC on *temperature
+MAE* despite failing the overall multi-target gate. All MPC trials had zero
+sampled hard envelope violations; stale sensor cases correctly fell back.
+This is a reproducible negative result, not grounds for running an unqualified
+Kaggle scale-out. Detailed evidence and shortcomings are in
+[the MPC A–E checkpoint](../checkpoints/2026-11-04-bloomml-mpc-sprint-a-e-research-gate.md).

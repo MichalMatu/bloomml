@@ -62,6 +62,17 @@ class SafetyEnvelope:
     co2_max_ppm: float = 1800.0
     max_sensor_age_s: float = 180.0
 
+    def __post_init__(self) -> None:
+        if (not all(math.isfinite(v) for v in (
+                self.temperature_min_c, self.temperature_max_c,
+                self.rh_min_pct, self.rh_max_pct,
+                self.co2_max_ppm, self.max_sensor_age_s))
+                or not -40 <= self.temperature_min_c < self.temperature_max_c <= 80
+                or not 0 <= self.rh_min_pct < self.rh_max_pct <= 100
+                or not 300 <= self.co2_max_ppm <= 100000
+                or self.max_sensor_age_s <= 0):
+            raise ValueError('invalid research safety envelope')
+
 
 @dataclass(frozen=True)
 class MPCConfig:

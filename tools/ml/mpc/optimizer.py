@@ -9,7 +9,7 @@ import math
 import random
 import time
 from .contracts import CHANNELS, Command, Decision, MPCConfig, SafetyEnvelope, Targets
-from .devices import DeviceLimits, DeviceState, fallback, safe_request, transition
+from .devices import DeviceLimits, DeviceState, fallback, hard_stops, safe_request, transition
 
 
 @dataclass
@@ -110,8 +110,10 @@ def optimize(physics, state, forcing, targets: Targets, devices: DeviceState,
                     safe, _ = safe_request(desired, temperature_c=node.state.air_temperature_c,
                                            rh_pct=observation.rh_pct, co2_ppm=node.state.co2_ppm,
                                            limits=envelope)
-                    stop = frozenset(n for n in CHANNELS if getattr(safe, n) == 0 and
-                                     getattr(desired, n) > 0)
+                    stop = hard_stops(temperature_c=node.state.air_temperature_c,
+                                      rh_pct=observation.rh_pct, co2_ppm=node.state.co2_ppm,
+                                      limits=envelope) | frozenset(
+                        n for n in CHANNELS if getattr(safe, n) == 0 and getattr(desired, n) > 0)
                     new_devices, _ = transition(node.devices, safe, cfg.step_s, device_limits,
                                                  faulted=faulted, emergency_stop=stop)
                     model, _ = _measure(physics, node.state, forcing, new_devices.applied)
