@@ -1,5 +1,7 @@
 # BloomML — COMPLETE RESEARCH HANDOFF / checkpoint 2026-11-04
 
+> **HISTORYCZNY CHECKPOINT — zastąpiony:** [najnowszy kompletny checkpoint BloomML: symulator, zewnętrzne datasety, ML i gotowość sterowania](2026-11-04-bloomml-ml-control-readiness-complete-checkpoint.md). Ten dokument zachowuje dowody starszych etapów R0–R4 i nie powinien być traktowany jako ostatni plan działania.
+
 > **AKTUALIZACJA: kolejny sprint publicznych datasetów został zamknięty** — przejdź do [2026-11-04-public-datasets-sprint.md](2026-11-04-public-datasets-sprint.md) i [PUBLIC_DATASETS.md](../simulator/PUBLIC_DATASETS.md). Zweryfikowano trzy autentyczne CSV NUTRICONTROL, 319 008 wierszy, 7 testów i benchmark persistence. Niniejszy plik zachowuje wcześniejszy stan modelu R4, nie jest ostatnim wynikiem datasety/forecast.
 
 **Czytaj od tego pliku w następnej rozmowie.** Jeden punkt wejścia statusu: [RESEARCH_STATUS.md](../simulator/RESEARCH_STATUS.md). Jakość/architektura/obserwowalność: [QUALITY_AND_OBSERVABILITY.md](../simulator/QUALITY_AND_OBSERVABILITY.md). Obsługa Kaggle/Local Agent: [KAGGLE_EXECUTION.md](../simulator/KAGGLE_EXECUTION.md). Historia eksperymentu: [R4 dual-T4](2026-11-04-r4-dual-t4-stress.md).
