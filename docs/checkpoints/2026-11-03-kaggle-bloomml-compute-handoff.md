@@ -1,5 +1,7 @@
 # BloomML — trwały checkpoint: symulator → Kaggle T4×2
 
+> **ARCHIWUM / zastąpione 2026-11-04:** ten historyczny handoff opisuje stan R1–R2 i zawiera nieaktualne sformułowania o braku obliczeń GPU oraz kolejności zadań. Nie traktować go jako bieżącej roadmapy. **Aktualny start:** [RESEARCH_STATUS.md](../simulator/RESEARCH_STATUS.md), [kompletny checkpoint 2026-11-04](2026-11-04-bloomml-research-clean-handoff.md) i [R4 evidence](2026-11-04-r4-dual-t4-stress.md). Historyczne ślady i R0–R8 zachowane dla audytu.
+
 **AKTUALIZACJA 2026-11-03, po sprincie R2:** REAL DUAL-GPU PHYSICS PILOT PASS. Prywatny Kaggle notebook `meeehooow/bloomml-gpu-physics-r2` wykonał 512 scenariuszy × 8 kroków na dwóch Tesla T4, parity CPU↔CUDA (pilot 8 na kartę) i bilans wody PASS, manifest z SHA `84ee2245550b095422a9e5dd6c74834bd1ecc8f4` pobrany i sprawdzony przez Local Agenta. Pełne wyniki i ograniczenia w [`2026-11-03-r2-torch-parity-sprint.md`](2026-11-03-r2-torch-parity-sprint.md). **R1 wykonany, R2 pilot wykonany; R4 fizyka ekstremów i R6 kalibracja OTWARTE.** Nie traktuj starszych statusów poniżej jako aktualnych bez tej aktualizacji.
 
 **Data:** 2026-11-03. **Repo:** MichalMatu/bloomml. **Branch:** research/simulator-fidelity-kaggle-20261103. **Autorytet źródeł:** GitHub (konkretny commit SHA, nie sam branch). **Środowisko obliczeń intensywnych:** Kaggle, GPU NVIDIA T4 ×2. **Zakres:** wyłącznie offline research; Growclip, firmware i main bez zmian.
