@@ -1,5 +1,7 @@
 # BloomML — public greenhouse datasets: sprint handoff 2026-11-04
 
+> **Kontynuacja wykonana:** pełny odczyt kopii WUR 2019 (6 szklarni / CO₂/PAR) i pierwszy test transferu zapisano w [checkpoint WUR](2026-11-04-wur-2019-dataset-benchmark.md). Ten plik zachowuje wcześniejszy stan NUTRICONTROL; stary punkt „WUR następny” jest historyczny.
+
 **Wykonano wyszukiwanie publicznych danych, audyt rzeczywistych plików i mierzalny benchmark.** Pełen katalog z licencjami i wynikami: [PUBLIC_DATASETS.md](../simulator/PUBLIC_DATASETS.md). Aktywny zakres: [RESEARCH_STATUS.md](../simulator/RESEARCH_STATUS.md). Badania na branchu `research/simulator-fidelity-kaggle-20261103`, wyłącznie offline. Produkcyjny `main`, firmware, Growclip oraz Rule/OutputSupervisor **niezmienione**.
 
 ## Wynik
