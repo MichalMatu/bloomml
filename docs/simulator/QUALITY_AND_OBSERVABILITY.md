@@ -52,6 +52,16 @@ Local Agent sklonował kod z SHA `4a0d66a4322fa98576b41e80afb57fe5e137288f`, spr
 
 Mac `pytest` był **niedostępny** — 63/63 testów uruchomiono w Linux Sandbox na snapshotcie R4 z nowym modułem evidence; nie należy raportować tych testów jako wykonanych na Macu lub jako nowego runu Kaggle. Instalacje w PlatformIO nie były wykonywane.
 
+## Publiczne pomiary jako oddzielna domena (2026-11-04)
+
+**Źródło prawdy:** [PUBLIC_DATASETS.md](PUBLIC_DATASETS.md), [checkpoint dataset sprintu](../checkpoints/2026-11-04-public-datasets-sprint.md). Importer `tools/ml/external_greenhouse_benchmark.py` jest oddzielny od `tools/ml/physics` i od produkcji; tylko Python stdlib, CSV -> pomiar z provenance -> odłożone dni -> baseline persistence -> raport. Nie ma zapisu parametrów solvera, automatyzacji i sieci.
+
+- **7/7 PASS na Mac Local Agent** (stdlib unittest) + **3 rzeczywiste pliki CC BY 4.0, 319 008 wierszy** z walidacją SHA256. Prawdziwy benchmark T/RH na chronologicznie odłożonych dniach 15/60min. Ten nowy wynik nie jest kolejnym testem GPU ani fizycznym dowodem BloomML.
+- **Wymuszenia truth boundary:** `provenance=measured_external_processed_not_own_growbox`, `physical_model_calibrated=false`, `training_approval=NOT_APPROVED_EXTERNAL_DOMAIN`. Brak `timezone` w źródle to `source_naive_timezone_unverified`, nigdy domyślne UTC. Przy braku pomiaru brak wartości, nie imputacja.
+- **Zmienna aktuatora:** obecność `WINDOW_*`/`HEATERS` nie dowodzi zmierzonego przepływu powietrza ani poboru energii. Filtry braków dla RH trzeba ocenić przed akceptacją celu modelowania; poniżej 80% coverage generowany warning. Zewnętrzny benchmark nie uprawnia do treningu kontrolera.
+- **Gates przeciw leakage:** podział po kolejnych **dniach**, testowe punkty startowe i docelowe nie pochodzą z treningu, tylko dokładny horyzont 15 lub 60 min. Dla 1 i 5 min przy danych 15min status `unsupported`; żadnego udawanego oversamplingu. Każdy kolejny model musi używać *identycznego* holdoutu i porównania do persistence.
+- **Przywracanie:** `PYTHONPATH=. python -m unittest -v tests.test_external_greenhouse_benchmark`; `PYTHONPATH=. python -m tools.ml.external_greenhouse_benchmark --site alava --file <csv> --expected-sha256 20873873821550b73b9afe95a364c9ac8c572d325143befcd0885650212e3fbd`. Nie commitować danych surowych do Git.
+
 ## Otwarte ryzyka / jakość naukowa
 
 - **P0:** brak danych terenowych i niepełna entalpia układu otwartego; brak kalibracji modeli wentylatora/filtra, osuszacza, roślin. Wyniki są tylko symulacjami.
