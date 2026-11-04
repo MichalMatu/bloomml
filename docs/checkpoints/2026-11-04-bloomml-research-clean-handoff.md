@@ -30,6 +30,8 @@ Po zapisaniu kodu i dokumentów Local Agent sklonował branch w izolowanym katal
 
 Ślad: `agent-control:.agent/results/la-bloomml-research-checkpoint-evidence-20261104-v1.json` (done/exit 0, `BLOOMML_CLEAN_CHECKPOINT_PREFLIGHT|PASS`). Kolejne commity dokumentacji nie zmieniają równoważności tego raportu z ocenionym kodem. Przed nowymi zmianami należy sprawdzić świeży HEAD.
 
+**Spójność nawigacji:** sprawdzono na GitHub **32 lokalne odnośniki Markdown** w ośmiu aktywnych dokumentach (README/status/roadmap/quality/checkpoint/Kaggle); **0 brakujących celów**. Zachowano historyczne materiały bez przepisywania lub usuwania z repozytorium.
+
 ## Czego nie mamy (STOP dla zbyt optymistycznych wniosków)
 
 - **Brak realnych logów czujników użytkownika.** Nie ma kalibracji ani testu modelu na oddzielnych dniach obserwacji. Wyjścia z symulatora to `synthetic_uncalibrated`, a nie pomiary.
