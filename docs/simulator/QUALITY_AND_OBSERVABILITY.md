@@ -46,6 +46,12 @@ PYTHONPATH=. python -m tools.ml.research_evidence /path/to/r4_stress_manifest.js
 
 Wynik `NUMERICAL_EVIDENCE_PASS` oznacza spójny **zapis** obliczeń. Błędne GPU, brak provenance, niespójne sumy, NaN/Inf, przekroczony bilans, sfałszowana deklaracja kalibracji → `REJECTED` i exit code 2. Ostrzeżenia agronomiczne nie są ukrywane. Tę samą wersję SHA i manifest można sprawdzić w `agent-control` (patrz [checkpoint](../checkpoints/2026-11-04-r4-dual-t4-stress.md)).
 
+## Weryfikacja opublikowanego kodu (Mac, 2026-11-04)
+
+Local Agent sklonował kod z SHA `4a0d66a4322fa98576b41e80afb57fe5e137288f`, sprawdził `compileall` i AST import-boundary (**PASS**), pobrał **oryginalny prywatny** manifest Kaggle R4 V2 i wykonał `python3 -m tools.ml.research_evidence`: **NUMERICAL_EVIDENCE_PASS**, 2 ostrzeżenia CO₂ > 2000 ppm, brak potwierdzenia danych rzeczywistych. Wynik: `agent-control:.agent/results/la-bloomml-research-checkpoint-evidence-20261104-v1.json` (done, exit 0).
+
+Mac `pytest` był **niedostępny** — 63/63 testów uruchomiono w Linux Sandbox na snapshotcie R4 z nowym modułem evidence; nie należy raportować tych testów jako wykonanych na Macu lub jako nowego runu Kaggle. Instalacje w PlatformIO nie były wykonywane.
+
 ## Otwarte ryzyka / jakość naukowa
 
 - **P0:** brak danych terenowych i niepełna entalpia układu otwartego; brak kalibracji modeli wentylatora/filtra, osuszacza, roślin. Wyniki są tylko symulacjami.
