@@ -42,6 +42,17 @@ class MPCPhysicsIntegrationTest(unittest.TestCase):
         self.assertTrue(all(r['origin']=='synthetic_uncalibrated' for r in samples))
         self.assertTrue(all(set(r['applied'])==set(r['proposed']) for r in samples))
 
+    def test_vpd_targets_use_distinct_metric_and_not_fake_rh(self):
+        vpd_goals = Targets(temperature_c=24, vpd_kpa=1.1, co2_ppm=750,
+                            ppfd_umol_m2_s=200)
+        result, rows = run_episode(self.physics, self.state, lambda _: self.forcing,
+                                   lambda _: vpd_goals, steps=3, cfg=self.cfg,
+                                   source_commit='1feaa6af3d2657faa3a3cbb54ee7cfcc24cc6d2a')
+        self.assertIsNone(result.rh_mae_pp)
+        self.assertIsNotNone(result.vpd_mae_kpa)
+        self.assertTrue(all(r['targets']['rh_pct'] is None for r in rows))
+        self.assertTrue(all(r['targets']['vpd_kpa'] == 1.1 for r in rows))
+
     def test_longer_thermal_response_without_claiming_calibration(self):
         model = GrowboxThermodynamics(self.physics,self.state)
         cold = self.forcing

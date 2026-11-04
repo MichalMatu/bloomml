@@ -60,3 +60,45 @@ Time limits are checked between full reference-physics evaluations, so are
 best-effort wall-clock budgets, not hard real-time preemption.
 The threshold baseline is memoryless; the hysteresis baseline now remembers
 which virtual devices are on and uses a Schmitt-trigger deadband.
+
+## Completed 60-minute original-R4 CPU closed loop
+
+The **exact-SHA** Mac evidence `agent-control:.agent/results/la-bloomml-mpc-r4-hourly-20261104-v2.json`
+for source `02ac7e244272db69e6649a37fd9c5ad272185723` reports **23/23** tests PASS;
+first test job v1 had one incorrect fixture expecting UNKNOWN despite an actual tolerance
+failure (22/23 pass), and was corrected without weakening the gate.
+The 60 × 60 s test used an ambient-temperature step and target change:
+
+| Metric | MPC | Threshold | Stateful hysteresis |
+| --- | ---: | ---: | ---: |
+| T MAE (C) | 1.1168 | 6.3600 | 5.2187 |
+| RH MAE (pp) | 5.7107 | 21.6017 | 24.1824 |
+| CO2 MAE (ppm) | 11.3987 | 140.0813 | 137.7907 |
+| Nameplate energy proxy (Wh) | 223.60 | 380.16 | 379.59 |
+| Switches | 29 | 355 | 349 |
+| Sampled envelope violations | 0 | 1 | 22 |
+| Synthetic quality gate | PASS | FAIL | FAIL |
+
+Max one-step temperature prediction discrepancy for this specific run was 0.01383 C;
+that is **in-model residual**, not prediction error against real measurements.
+Water residuals were below ~1.1e-14 kg on all policies. Both baselines can violate
+virtual envelopes under disturbance; do not conceal those failures or extrapolate
+this single simulation to other devices, seasons or real plants.
+
+## Scenario and shadow research extensions
+
+Use `python -m tools.ml.mpc.scenario_matrix --steps 12 --step-s 60 --seeds 1729 --output-dir build/mpc-matrix`
+to evaluate **11 diagnostic scenarios**, including cold/hot start, ambient cold/heat,
+RH/CO2 shifts, setpoint change, actuator fault, stale sensor, limited device
+capacity and competing targets. All strategies share the same initial state,
+forcing and virtual faults for each seed. The output includes a per-scenario,
+per-policy quality verdict and trajectory hash; negative trials remain FAIL.
+
+`tools/ml/mpc/shadow_contract.py` and its tests are *passive research DTOs* for
+`MPC proposal -> hypothetical Rule verdict -> hypothetical Supervisor feedback`.
+A `SIMULATED_ACK` cannot imply physical acknowledgement; mismatched IDs, stale data,
+absent execution evidence, rejection and timeout are distinguishable outcomes.
+No adapter, transport, firmware write or output execution is implemented.
+
+These extension files must be separately committed and verified on their exact
+source SHA before describing their scenario-run evidence as COMPLETE.
