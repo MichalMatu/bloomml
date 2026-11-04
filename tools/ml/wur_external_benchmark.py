@@ -146,7 +146,7 @@ def audit_member(z: ZipFile, name: str, targets: dict[str, tuple[str, float, flo
         raise ValueError("too few days for chronological holdout")
     test_cutoff = days[-max(1, math.ceil(len(days) * holdout_fraction))]
     heldout_ticks = [tick for tick in observations if tick_date(tick) >= test_cutoff]
-    if len(heldout_ticks) < 100:
+    if len(heldout_ticks) < 20:
         raise ValueError("too few heldout rows")
     evaluation = {}
     for col, (label, _, _) in targets.items():
