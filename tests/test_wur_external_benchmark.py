@@ -68,14 +68,14 @@ class TestWurMirrorBenchmark(unittest.TestCase):
         self.assertEqual(r["original_archive_byte_equivalence"], "NOT_VERIFIED")
         self.assertFalse(r["physical_growbox_calibration"])
         self.assertFalse(r["timezone_confirmed"])
-        self.assertIn("MIRROR", r["training_approval"].upper().replace("EXPLORATORY_ONLY_ORIGINAL_VERIFICATION_PENDING", "MIRROR"))
+        self.assertEqual(r["training_approval"], "EXPLORATORY_ONLY_ORIGINAL_VERIFICATION_PENDING")
         self.assertTrue(r["provenance"].startswith("measured_external"))
         self.assertIn("setpoints_not_proven_physical_airflow", r["control_column_semantics"])
         self.assertEqual(r["weather"]["source_columns"], 5)
         for row in r["sites"]:
             self.assertEqual(row["weather_matching_exact_timestamps"], 12 * 26)
             self.assertEqual(row["coverage"]["co2_ppm"], 1.0)
-            self.assertEqual(row["source_columns"], 8)
+            self.assertEqual(row["source_columns"], 9)
 
     def test_persistence_5_15_60_minutes_per_day(self):
         r = self.run_audit()
@@ -122,7 +122,7 @@ class TestWurMirrorBenchmark(unittest.TestCase):
 
     def test_reject_too_short_time_series(self):
         with self.assertRaisesRegex(ValueError, "too few days"):
-            self.run_audit(n_days=2)
+            self.run_audit(n_days=4)
 
     def test_excel_serial_is_not_silently_claimed_utc(self):
         self.assertEqual(excel_tick("43815.00000"), 43815 * 288)
