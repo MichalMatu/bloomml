@@ -41,11 +41,13 @@ Chcemy przewidywać temperaturę powietrza, liści, ścian i podłoża, wilgotno
 **Discovery wykonany:** [ranking i raport wyników na realnych plikach](PUBLIC_DATASETS.md). Pierwszy source: **NUTRICONTROL CC BY 4.0**, przypięte 3 CSV, łącznie **319 008 wierszy**: Álava 80 548, Cartagena 69 792, Navarra 168 668. Kontrola sha256, dat, braków i rzeczywisty baseline persistence na końcowych 20% dni: Álava MAE temperatury 15 min **0,384°C**, 60 min **1,169°C**. Cartagena RH tylko 39,6% kompletna; brak CO₂/PPFD we wszystkich tych trzech plikach.
 
 - **Kod i testy:** `tools/ml/external_greenhouse_benchmark.py`, `tests/test_external_greenhouse_benchmark.py` — **7/7 PASS na Mac Local Agent**; tylko Python stdlib, bez interpolowania, bez przecieku chronologicznego, bez przyjmowania niezweryfikowanej strefy czasowej.
-- **Następny krok:** przetestować oryginalne archiwum Wageningen AGC 2019 **CC0** (CO₂/PAR, 6 komór i urządzenia); później Korea 2026 do walidacji T/RH. Metadane kandydatów sprawdzone, ale surowych plików Wageningen i Korei nie importowano.
+- **Wageningen 2019:** [pełna ocena mirrora i negatywny eksperyment transferu](WUR_DATASET_EVALUATION.md) — **286 854 rzeczywistych rekordów klimatu + 47 809 pogody**, 6 komór, CO₂/T/RH/PAR co 5 min; **16/16 testów PASS** na Macu; 99,85% kompletności. Pierwszy model trendu trenowany na 5 innych komorach i testowany na 6. **Przegrywa z persistence dla T60 we wszystkich sześciu**. Kopia Kaggle ma CC0 i pinned SHA, ale nie potwierdzono byte equivalence z 4TU (API timeout).
+- **Następny krok:** uzyskać oficjalny WUR 7z i dokumentację czujników, osobno audytować Korea 2026 `measured` vs `simulated`; dopiero wtedy próbować modelu z bieżącą/past weather, światłem i *potwierdzonymi* sygnałami aktuatorów, bez future leakage. Żadnego zatwierdzenia do produkcji.
 - **Granica:** tylko zewnętrzna domena pomiarów, benchmark = persistence, nie wynik symulatora, **brak własnych logów i kalibracji**, zero treningu produkcyjnego.
 
 ## Gdzie wejść
 
+- [Wageningen: jakość, CO₂/PAR i test transferu](WUR_DATASET_EVALUATION.md)
 - [Audyt zewnętrznych danych i baseline](PUBLIC_DATASETS.md)
 - [Mapa kodu, granice i jakość](QUALITY_AND_OBSERVABILITY.md)
 - [Kaggle / Local Agent](KAGGLE_EXECUTION.md)
