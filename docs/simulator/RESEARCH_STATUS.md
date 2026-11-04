@@ -2,6 +2,8 @@
 
 **Stan: 2026-11-04.** Repo `MichalMatu/bloomml`, branch `research/simulator-fidelity-kaggle-20261103`. Jest to badawczy model klimatu growboxa (0D, jedna dobrze wymieszana strefa), **nie cyfrowy bliźniak skalibrowany pomiarami**. **Nie mamy jeszcze realnych logów czujników.**
 
+**Najnowszy kompletny checkpoint (model + datasety + gotowość sterowania):** [2026-11-04-bloomml-ml-control-readiness-complete-checkpoint.md](../checkpoints/2026-11-04-bloomml-ml-control-readiness-complete-checkpoint.md). **ML obecnie nie jest dopuszczony do fizycznego sterowania**; WUR T60 przegrywa z persistence w 6/6 komór. Względne 0,8–6,4% oznacza wzrost MAE względem baseline, nie % odchylenia temperatury.
+
 ## Po co to robimy
 
 Chcemy przewidywać temperaturę powietrza, liści, ścian i podłoża, wilgotność, parę/mgłę/kondensat, CO₂, VPD, bilans wody oraz wpływ lamp, ogrzewania, chłodzenia, cyrkulacji i wyciągu. Celem jest model, który można *najpierw* zweryfikować na fizyce i pomiarach, a dopiero później wykorzystać do przygotowania danych ML dla ESP32-S3 w trybie shadow.
@@ -53,7 +55,8 @@ Chcemy przewidywać temperaturę powietrza, liści, ścian i podłoża, wilgotno
 - [Mapa kodu, granice i jakość](QUALITY_AND_OBSERVABILITY.md)
 - [Kaggle / Local Agent](KAGGLE_EXECUTION.md)
 - [Fizyka i założenia](THERMODYNAMIC_CORE.md)
-- [Kompletny checkpoint dla następnego czatu](../checkpoints/2026-11-04-bloomml-research-clean-handoff.md)
+- [Najnowszy kompletny checkpoint do wznowienia](../checkpoints/2026-11-04-bloomml-ml-control-readiness-complete-checkpoint.md)
+- [Historyczny checkpoint przed WUR](../checkpoints/2026-11-04-bloomml-research-clean-handoff.md)
 - [Dowód ciężkiego runu R4](../checkpoints/2026-11-04-r4-dual-t4-stress.md)
 
 **Granica bezpieczeństwa:** praca tylko na branchu badawczym, bez zmian `main`, firmware, Growclip. Produkcyjne Rule/OutputSupervisor pozostają autorytetem. Stary v4/v6 toolchain i UI nie są aktywnym zakresem tego projektu.
