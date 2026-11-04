@@ -19,7 +19,7 @@
 
 ## Pilotaż na realnych, przypiętych plikach NUTRICONTROL
 
-Publiczny GitHub commit źródła: `6dece0d2c7483982610e4d2de225db3c4649b935`. Przetworzona seria ma rozdzielczość **15 minut**; brak imputacji deklarowany przez autorów. Trzy pliki pobrane i ocenione przez Mac Local Agent; po pomiarze pliki surowe **usunięto z katalogu tymczasowego**. Utrwalone tylko sumy SHA256, liczności, pokrycie i metryki. Wyszukiwanie czasu nie pokazało duplikatów ani cofania w obrębie żadnego pliku, ale format `dateTime` jest **naive**, nie przypisywać automatycznie UTC ani Europe/Madrid.
+Publiczny GitHub commit źródła: `6dece0d2c7483982610e4d2de225db3c4649b935`; **oficjalny tag `V1.0.0` ma te same Git blob SHA dla wszystkich trzech użytych CSV**, co potwierdzono niezależnie przez GitHub API (tag commit `f875925e7c1933f978fde15775a8988c26fcbe23`). Przetworzona seria ma rozdzielczość **15 minut**; brak imputacji deklarowany przez autorów. Trzy pliki pobrane i ocenione przez Mac Local Agent; po pomiarze pliki surowe **usunięto z katalogu tymczasowego**. Utrwalone tylko sumy SHA256, liczności, pokrycie i metryki. Álava ma dodatkowo **169 przerw 30-minutowych i 5 przerw 45-minutowych** w szeregu dat; pozostałe dwie komory mają równy interwał znaczników 15 minut (nie oznacza to kompletności wartości). Wyszukiwanie czasu nie pokazało duplikatów ani cofania w obrębie żadnego pliku, ale format `dateTime` jest **naive**, nie przypisywać automatycznie UTC ani Europe/Madrid.
 
 | Komora | Wiersze | T kompletne | RH kompletne | Aktory/ustawienia | Ocena |
 | --- | ---: | ---: | ---: | --- | --- |
