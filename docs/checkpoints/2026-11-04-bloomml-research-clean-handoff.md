@@ -22,6 +22,14 @@
 7. **Observability:** dodano `tools/ml/research_evidence.py`, read-only fail-closed audit schema/source SHA, dwóch CUDA, sum scenariuszy, parity, bilansu masy i zakresów T/RH/CO₂. Sygnalizuje RH<5% i CO₂>2000 ppm jako warnings; **nigdy** nie potwierdza walidacji empirycznej.
 8. **Cleanup dokumentacji:** zamiast nakładających się opisów R1/R2/R4 w README i roadmapie utworzono pojedynczy `docs/simulator/RESEARCH_STATUS.md`; opis modułów i quality w `QUALITY_AND_OBSERVABILITY.md`; skrócono `docs/simulator/README.md` oraz `KAGGLE_EXECUTION.md`, produkcyjne `docs/PROJECT_ROADMAP.md` / `CURRENT_STATUS.md` mają jedynie krótkie przekierowanie do badań. **Nie usuwano kodu ani historycznych dowodów**.
 
+## Dodatkowa kontrola dokładnego checkoutu — Mac Local Agent
+
+Po zapisaniu kodu i dokumentów Local Agent sklonował branch w izolowanym katalogu, zweryfikował **checkout SHA `4a0d66a4322fa98576b41e80afb57fe5e137288f`**, kompilację `research_evidence.py` i jego testów oraz brak niedozwolonych zależności w 6 modułach fizyki — **PASS**. Uruchomił nowy walidator na **oryginalnym prywatnym R4 V2 manifeście** pobranym przez Kaggle CLI: `NUMERICAL_EVIDENCE_PASS`, 8192 scenariusze, 2 CUDA, 1 474 560 ticków, 2 ostrzeżenia dotyczące CO₂>2000ppm (13 na GPU0, 12 na GPU1), `real_world_fidelity=UNKNOWN`.
+
+**Uczciwe ograniczenie:** `pytest` nie był zainstalowany w środowisku Python Mac Local Agenta, dlatego **nie** uruchomiono tam pełnego zestawu. 63/63 lokalnych testów w ChatGPT Linux Sandbox dotyczyło odpowiedniego snapshotu kodu R4 + nowego audytu; exact-checkout Mac potwierdził składnię i wynik audytu, ale nie jest alternatywnym uruchomieniem 63 testów. Nie instalowano pakietów do PlatformIO.
+
+Ślad: `agent-control:.agent/results/la-bloomml-research-checkpoint-evidence-20261104-v1.json` (done/exit 0, `BLOOMML_CLEAN_CHECKPOINT_PREFLIGHT|PASS`). Kolejne commity dokumentacji nie zmieniają równoważności tego raportu z ocenionym kodem. Przed nowymi zmianami należy sprawdzić świeży HEAD.
+
 ## Czego nie mamy (STOP dla zbyt optymistycznych wniosków)
 
 - **Brak realnych logów czujników użytkownika.** Nie ma kalibracji ani testu modelu na oddzielnych dniach obserwacji. Wyjścia z symulatora to `synthetic_uncalibrated`, a nie pomiary.
