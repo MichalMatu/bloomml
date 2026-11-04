@@ -62,6 +62,12 @@ Mac `pytest` był **niedostępny** — 63/63 testów uruchomiono w Linux Sandbox
 - **Gates przeciw leakage:** podział po kolejnych **dniach**, testowe punkty startowe i docelowe nie pochodzą z treningu, tylko dokładny horyzont 15 lub 60 min. Dla 1 i 5 min przy danych 15min status `unsupported`; żadnego udawanego oversamplingu. Każdy kolejny model musi używać *identycznego* holdoutu i porównania do persistence.
 - **Przywracanie:** `PYTHONPATH=. python -m unittest -v tests.test_external_greenhouse_benchmark`; `PYTHONPATH=. python -m tools.ml.external_greenhouse_benchmark --site alava --file <csv> --expected-sha256 20873873821550b73b9afe95a364c9ac8c572d325143befcd0885650212e3fbd`. Nie commitować danych surowych do Git.
 
+### WUR 2019 — niezależny przykład transferu między domenami
+
+[Raport WUR](WUR_DATASET_EVALUATION.md), [checkpoint](../checkpoints/2026-11-04-wur-2019-dataset-benchmark.md). **16/16 tests PASS na Mac Local Agent**, 6 szklarni i 286 854 rzeczywistych rekordów w publicznej kopii Kaggle (archive SHA-256 przypięty). CSV nie mają zaufanej strefy czasu, `Tot_PAR` wymaga potwierdzenia znaczenia, `sp/vip` nie są dowodem fizycznego wykonania. Wszystkie cele `measured_external_via_unverified_third_party_mirror`; oficjalny 4TU 7z nadal **nieporównany**, `training_approval` nie dopuszcza produkcji. Parser ignoruje brak NaN bez imputacji, flaguje anomalie zamiast je maskować.
+
+**Transfer test:** stały wzór uczony wyłącznie na pierwszych 80% dni innych pięciu szklarni, oceniany na szóstej i ostatnich 20% dni; ten sam zestaw pomiarów co persistence. Dla T60 **6/6 porażek** (MAE +0,8–6,4%), CO₂60 wynik mieszany. **Nie kwalifikować modelu** na podstawie małych dodatnich wyników wybranych foldów. Odrębny od testów fizyki GPU.
+
 ## Otwarte ryzyka / jakość naukowa
 
 - **P0:** brak danych terenowych i niepełna entalpia układu otwartego; brak kalibracji modeli wentylatora/filtra, osuszacza, roślin. Wyniki są tylko symulacjami.
