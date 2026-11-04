@@ -3,6 +3,7 @@
 **Start: [AKTUALNY STAN / R0–R8](RESEARCH_STATUS.md)**. Jeden punkt wejścia zamiast powtarzania roadmapy w starych checkpointach. Aktualny tor to **fizyczny solver 0D CPU↔PyTorch GPU**, a nie firmware, UI, stary v4 dataset ani sterowanie produkcyjne.
 
 - [WUR 2019: sześć szklarni, CO₂/PAR, porównanie prognoz i ograniczenia](WUR_DATASET_EVALUATION.md)
+- **[AKTUALNY KOMPLETNY CHECKPOINT — model, dane, ML i sterowanie](../checkpoints/2026-11-04-bloomml-ml-control-readiness-complete-checkpoint.md)**
 - [Checkpoint WUR — resume](../checkpoints/2026-11-04-wur-2019-dataset-benchmark.md)
 - [Zewnętrzne datasety: ranking, prawa, badania 319 008 realnych wierszy i baseline](PUBLIC_DATASETS.md)
 - [Checkpoint sprintu publicznych danych](../checkpoints/2026-11-04-public-datasets-sprint.md)
