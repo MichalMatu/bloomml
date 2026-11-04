@@ -39,8 +39,12 @@ class ObservabilityTest(unittest.TestCase):
         self.assertEqual(rows[0]['virtual_execution_status'], 'faulted_simulation')
 
     def test_without_source_sha_gate_is_unknown_not_pass(self):
-        m,_=run_episode(self.physics,self.state,self.forcing,self.targets,
+        # Start with already acceptable targets, so UNKNOWN is solely provenance.
+        met=lambda _: Targets(temperature_c=22, rh_pct=55, co2_ppm=450,
+                               ppfd_umol_m2_s=0)
+        m,_=run_episode(self.physics,self.state,self.forcing,met,
                          steps=1,cfg=self.config,policy='threshold')
+        self.assertEqual(m.outside_tolerance_steps,0)
         self.assertEqual(m.status,'UNKNOWN')
 
     def test_missing_sha_with_actual_failure_is_fail_not_unknown(self):
