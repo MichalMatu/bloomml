@@ -39,8 +39,7 @@ Hardware evidence belongs to exact executable SHAs. A software build or simulato
 
 ## Research and legacy-contract documentation
 
-**Current research continuation (2026-11-03):** [BloomML Kaggle T4×2 checkpoint and R0–R8 roadmap](checkpoints/2026-11-03-kaggle-bloomml-compute-handoff.md), [Kaggle setup](simulator/KAGGLE_EXECUTION.md) and [thermodynamic model checkpoint](checkpoints/2026-11-03-thermodynamics-convection-fidelity.md) belong to the separate research branch. The Kaggle notebook is notebooks/BloomML_Kaggle_T4x2.ipynb; do not confuse this work with the current production climate-v6 runtime.
-
+**Aktywny tor BloomML (research branch):** [START HERE — symulator R0–R8](simulator/RESEARCH_STATUS.md), [audyt modułów / jakość / observability](simulator/QUALITY_AND_OBSERVABILITY.md), [Kaggle 2× T4](simulator/KAGGLE_EXECUTION.md). Do wznowienia w kolejnym czacie: [checkpoint 2026-11-04](checkpoints/2026-11-04-bloomml-research-clean-handoff.md). Poniższa dokumentacja produkcji jest **osobnym obszarem**, nie bieżącym planem eksperymentów.
 
 The repository contains two different ML/data-contract generations. Do not mix them:
 
