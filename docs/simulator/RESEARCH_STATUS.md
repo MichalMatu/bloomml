@@ -36,12 +36,17 @@ Chcemy przewidywać temperaturę powietrza, liści, ścian i podłoża, wilgotno
 | R7 | **BADANIA SYNTETYCZNE wykonane**, ale trening na realistycznych danych wstrzymany do R6 |
 | R8 | **NIE ROZPOCZĘTO:** TinyML shadow-only po kwalifikacji |
 
-## Następny sprint bez własnych logów
+## Zewnętrzne datasety — sprint discovery + pierwszy baseline (2026-11-04)
 
-**Wyszukać publiczne datasety szklarni / komór wzrostowych w GitHub i repozytoriach naukowych**, ocenić licencje, oryginalność pomiarów, jednostki, zegary i rejestrowane działania. Zbudować bezpieczny kontrakt importu z oznaczeniem `external_domain`; dane cudzej szklarni **nie są** automatycznie kalibracją naszego growboxa. Następnie sprawdzić generalizację i porównać z persistence bez przecieku czasowego. Żadnych datasetów jeszcze nie zatwierdzono.
+**Discovery wykonany:** [ranking i raport wyników na realnych plikach](PUBLIC_DATASETS.md). Pierwszy source: **NUTRICONTROL CC BY 4.0**, przypięte 3 CSV z 318 008? faktyczna liczba sprawdzonych wierszy **319 008**: Álava 80 548, Cartagena 69 792, Navarra 168 668. Kontrola sha256, dat, braków i rzeczywisty baseline persistence na końcowych 20% dni: Álava MAE temperatury 15 min **0,384°C**, 60 min **1,169°C**. Cartagena RH tylko 39,6% kompletna; brak CO₂/PPFD we wszystkich tych trzech plikach.
+
+- **Kod i testy:** `tools/ml/external_greenhouse_benchmark.py`, `tests/test_external_greenhouse_benchmark.py` — **7/7 PASS na Mac Local Agent**; tylko Python stdlib, bez interpolowania, bez przecieku chronologicznego, bez przyjmowania niezweryfikowanej strefy czasowej.
+- **Następny krok:** przetestować oryginalne archiwum Wageningen AGC 2019 **CC0** (CO₂/PAR, 6 komór i urządzenia); później Korea 2026 do walidacji T/RH. Metadane kandydatów sprawdzone, ale surowych plików Wageningen i Korei nie importowano.
+- **Granica:** tylko zewnętrzna domena pomiarów, benchmark = persistence, nie wynik symulatora, **brak własnych logów i kalibracji**, zero treningu produkcyjnego.
 
 ## Gdzie wejść
 
+- [Audyt zewnętrznych danych i baseline](PUBLIC_DATASETS.md)
 - [Mapa kodu, granice i jakość](QUALITY_AND_OBSERVABILITY.md)
 - [Kaggle / Local Agent](KAGGLE_EXECUTION.md)
 - [Fizyka i założenia](THERMODYNAMIC_CORE.md)
