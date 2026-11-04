@@ -7,15 +7,23 @@ from .devices import DeviceLimits, DeviceState, fallback, safe_request, transiti
 from .optimizer import optimize
 
 
-def threshold(state, observation, targets: Targets, *, max_ppfd: float, deadband: float = 0.) -> Command:
+def threshold(state, observation, targets: Targets, *, max_ppfd: float, deadband: float = 0.,
+              prior: Command = Command()) -> Command:
+    # Stateful Schmitt trigger only when deadband > 0; threshold baseline has no memory.
+    def low(value: float, goal: float, was_on: bool) -> float:
+        return float(value < goal + deadband if was_on else value < goal - deadband)
+
+    def high(value: float, goal: float, was_on: bool) -> float:
+        return float(value > goal - deadband if was_on else value > goal + deadband)
+
     dh = (targets.rh_pct - observation.rh_pct) if targets.rh_pct is not None else (
         (observation.air_vpd_kpa - targets.vpd_kpa) * 20)
-    return Command(heater=float(state.air_temperature_c < targets.temperature_c - deadband),
-                   cooler=float(state.air_temperature_c > targets.temperature_c + deadband),
-                   humidifier=float(dh > 5 + deadband),
-                   dehumidifier=float(dh < -5 - deadband),
-                   co2_doser=float(state.co2_ppm < targets.co2_ppm - 70),
-                   exhaust_fan=float(state.co2_ppm > targets.co2_ppm + 100) * .4,
+    return Command(heater=low(state.air_temperature_c, targets.temperature_c, prior.heater > 0),
+                   cooler=high(state.air_temperature_c, targets.temperature_c, prior.cooler > 0),
+                   humidifier=high(dh, 5., prior.humidifier > 0),
+                   dehumidifier=low(dh, -5., prior.dehumidifier > 0),
+                   co2_doser=low(state.co2_ppm, targets.co2_ppm - 70., prior.co2_doser > 0),
+                   exhaust_fan=.4 * high(state.co2_ppm, targets.co2_ppm + 100., prior.exhaust_fan > 0),
                    circulation_fan=.25,
                    lamp_dimmer=min(1., max(0., targets.ppfd_umol_m2_s / max(1e-9, max_ppfd))))
 
@@ -68,13 +76,18 @@ def run_episode(physics, initial_state, forcing_at, targets_at, *, steps: int,
                                 sensor_age_s=missing_age,
                                 faulted=faulted_at(now) if faulted_at else frozenset())
             request, status, reason = decision.requested, decision.status, decision.reason
+            predictions, evaluations, predicted_cost = (decision.predictions, decision.evaluations,
+                                                       decision.predicted_cost)
+            uncertainty = decision.uncertainty
         else:
             request = fallback() if missing_age > envelope.max_sensor_age_s else threshold(
                 plant.state, obs, targets,
                 max_ppfd=(physics.lighting.rated_power_w * physics.lighting.photon_efficacy_umol_j
                           * physics.lighting.canopy_capture_fraction / physics.geometry.canopy_area_m2),
-                deadband=1.0 if policy == 'hysteresis' else 0.)
+                deadband=1.0 if policy == 'hysteresis' else 0.,
+                prior=devices.applied if policy == 'hysteresis' else Command())
             status, reason = ('BLOCKED', 'stale_sensor') if missing_age > envelope.max_sensor_age_s else ('PASS', policy)
+            predictions, evaluations, predicted_cost, uncertainty = (), 0, None, 'baseline_no_forecast'
         if status != 'PASS':
             fallback_count += 1
             failures.append(f'{tick}:{reason}')
@@ -82,9 +95,10 @@ def run_episode(physics, initial_state, forcing_at, targets_at, *, steps: int,
                                          rh_pct=obs.rh_pct, co2_ppm=plant.state.co2_ppm,
                                          limits=envelope)
         stop = frozenset(n for n in request.as_dict() if getattr(request, n) > 0 and getattr(approved, n) == 0)
+        virtual_faults = faulted_at(now) if faulted_at else frozenset()
         previous = devices.applied
         devices, actuator_rejects = transition(devices, approved, cfg.step_s, limits,
-                             faulted=faulted_at(now) if faulted_at else frozenset(), emergency_stop=stop)
+                             faulted=virtual_faults, emergency_stop=stop)
         switches += sum((getattr(previous, n) > 0) != (getattr(devices.applied, n) > 0)
                         for n in previous.as_dict())
         plant.step(replace(forcing, **devices.applied.as_dict()), cfg.step_s)
@@ -112,13 +126,28 @@ def run_episode(physics, initial_state, forcing_at, targets_at, *, steps: int,
                        + 40 * devices.applied.humidifier + 25 * devices.applied.co2_doser)
         energy += power_proxy * cfg.step_s / 3600
         max_water = max(max_water, abs(plant.water_balance_residual_kg()))
+        first_forecast = predictions[0] if predictions else None
+        one_step_error = ({'temperature_c': plant.state.air_temperature_c - first_forecast['temperature_c'],
+                           'rh_pct': next_obs.rh_pct - first_forecast['rh_pct'],
+                           'co2_ppm': plant.state.co2_ppm - first_forecast['co2_ppm'],
+                           'ppfd_umol_m2_s': next_obs.ppfd_umol_m2_s - first_forecast['ppfd_umol_m2_s']}
+                          if first_forecast else None)
         rows.append({'tick': tick, 'time_s': now, 'targets': vars(targets),
                      'state': {'temperature_c': plant.state.air_temperature_c,
                                'rh_pct': next_obs.rh_pct, 'co2_ppm': plant.state.co2_ppm,
                                'ppfd_umol_m2_s': next_obs.ppfd_umol_m2_s},
                      'proposed': request.as_dict(), 'applied': devices.applied.as_dict(),
                      'rejected': list(rejects + actuator_rejects), 'status': status,
-                     'reason': reason, 'water_residual_kg': plant.water_balance_residual_kg(),
+                     'reason': reason, 'predictions': predictions,
+                     'prediction_uncertainty': uncertainty, 'prediction_cost': predicted_cost,
+                     'one_step_prediction_error': one_step_error,
+                     'optimizer_evaluations': evaluations,
+                     'virtual_execution_status': 'faulted_simulation' if virtual_faults else 'simulated_applied',
+                     'virtual_device_faults': sorted(virtual_faults),
+                     'water_residual_kg': plant.water_balance_residual_kg(),
+                     'water_inventory_kg': plant.state.total_water_kg(),
+                     'cumulative_external_water_kg': plant.state.cumulative_net_external_water_kg,
+                     'cumulative_added_water_kg': plant.state.cumulative_added_water_kg,
                      'energy_proxy_wh_cumulative': energy,
                      'origin': 'synthetic_uncalibrated', 'source_commit': source_commit or 'UNKNOWN',
                      'seed': cfg.seed, 'sensor_age_s': missing_age,
@@ -127,8 +156,8 @@ def run_episode(physics, initial_state, forcing_at, targets_at, *, steps: int,
     def rmse(x): return math.sqrt(sum(v*v for v in x)/len(x)) if x else None
     import re
     sha_ok = bool(source_commit and re.fullmatch(r'[0-9a-f]{40}', source_commit))
-    status = ('UNKNOWN' if not sha_ok else 'FAIL' if failures or violated or
-              outside > int(0.2 * steps) else 'PASS')
+    status = ('FAIL' if failures or violated or outside > int(0.2 * steps)
+              else 'UNKNOWN' if not sha_ok else 'PASS')
     metrics = EpisodeMetrics(status, steps, mae(errors_t), rmse(errors_t),
         mae(errors_h), rmse(errors_h), mae(errors_vpd), mae(errors_co2),
         rmse(errors_co2), mae(errors_ppfd), outside, violated, switches,

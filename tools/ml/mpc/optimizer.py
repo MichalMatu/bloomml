@@ -29,7 +29,7 @@ def _measure(physics, state, forcing, command):
 
 
 def _cost(state, obs, targets: Targets, command: Command, old: Command,
-          cfg: MPCConfig, physics) -> float:
+          cfg: MPCConfig, physics, envelope: SafetyEnvelope) -> float:
     # Dimensionless squared residuals, per-variable engineering tolerances.
     result = ((state.air_temperature_c - targets.temperature_c) / 2.0) ** 2
     humidity = (obs.rh_pct - targets.rh_pct) / 10 if targets.rh_pct is not None else (
@@ -53,11 +53,11 @@ def _cost(state, obs, targets: Targets, command: Command, old: Command,
     result += cfg.switching_weight * sum((getattr(command, n) > 0) != (getattr(old, n) > 0)
                                           for n in CHANNELS)
     # Envelope violations should dominate ordinary tracking costs.
-    result += 1e3 * (max(0., 12 - state.air_temperature_c) ** 2
-                     + max(0., state.air_temperature_c - 36) ** 2
-                     + max(0., obs.rh_pct - 90) ** 2
-                     + max(0., 20 - obs.rh_pct) ** 2
-                     + max(0., state.co2_ppm - 1800) ** 2)
+    result += 1e3 * (max(0., envelope.temperature_min_c - state.air_temperature_c) ** 2
+                     + max(0., state.air_temperature_c - envelope.temperature_max_c) ** 2
+                     + max(0., obs.rh_pct - envelope.rh_max_pct) ** 2
+                     + max(0., envelope.rh_min_pct - obs.rh_pct) ** 2
+                     + max(0., state.co2_ppm - envelope.co2_max_ppm) ** 2)
     return result
 
 
@@ -119,7 +119,7 @@ def optimize(physics, state, forcing, targets: Targets, devices: DeviceState,
                     new_obs = model.observe(replace(forcing, **new_devices.applied.as_dict()))
                     evaluations += 1
                     score = _cost(new_state, new_obs, targets, new_devices.applied,
-                                  node.devices.applied, cfg, physics)
+                                  node.devices.applied, cfg, physics, envelope)
                     if not math.isfinite(score):
                         continue
                     prediction = {'step': depth + 1, 'temperature_c': new_state.air_temperature_c,

@@ -26,3 +26,37 @@ Gates before broad Kaggle: full R4 integration tests under a checked-out exact S
 
 Future shadow boundary (research contract only):
 `MPC proposal + source SHA + observed_at + sensor validity + confidence -> Rule verdict -> OutputSupervisor execution intent -> actual acceptance/rejection/timeout/acknowledgement -> fallback`. No production code has been altered.
+
+## Verification after first published research slice (2026-11-04)
+
+The first exact-SHA Mac Local Agent integration at `1feaa6af3d2657faa3a3cbb54ee7cfcc24cc6d2a`
+completed **12/12** targeted unit + original R4 integration tests (`la-bloomml-mpc-r4-integration-pilot-20261104-v2`, exit 0).
+The initial 6 × 30s synthetic disturbance/setpoint episode gave MPC T/RH/CO2 MAE
+0.800 C / 2.504 pp / 60.117 ppm, versus 2.809 C / 13.707 pp / 115.680 ppm for the
+memoryless threshold baseline; baseline and deadband control happened to agree in that
+short episode. MPC energy **nameplate proxy** was 9.587 Wh vs 18.186 Wh (not metered).
+There were zero sampled envelope violations for all three policies. The pilot is not
+statistically representative or physical fidelity evidence.
+
+The following incremental changes require their own exact-SHA integration run:
+- true stateful hysteresis (Schmitt trigger) instead of a memoryless deadband;
+- per-step projected-versus-actual residual and explicit virtual device execution
+  status (`simulated_applied` / `faulted_simulation`), never a physical ACK;
+- independent R4 directional-response and two-hour conservation tests;
+- safety cost uses the supplied custom envelope, not hidden hardcoded constants;
+- an observed failure returns `FAIL` even if SHA provenance is missing; merely
+  incomplete otherwise valid provenance returns `UNKNOWN`.
+
+### Observation limits
+
+This is an *open-loop prediction inside a closed-loop controller*: the optimizer
+holds today's known external forcing fixed for its short horizon; the lab may
+change the forcing at the next control tick. The next-step residual quantifies
+that discrepancy but **does not** establish confidence intervals, calibrated
+model uncertainty, real sensor freshness or observed physical execution.
+A simulated actuator is deterministic and always reports its own application.
+Sensor dropout currently gates on sample age, not lagged state reconstruction.
+Time limits are checked between full reference-physics evaluations, so are
+best-effort wall-clock budgets, not hard real-time preemption.
+The threshold baseline is memoryless; the hysteresis baseline now remembers
+which virtual devices are on and uses a Schmitt-trigger deadband.
