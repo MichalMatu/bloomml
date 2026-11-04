@@ -1,70 +1,17 @@
-# Growbox simulator research
+# BloomML — badania symulatora growboxa
 
-Status: active research/tooling area for the older broad v4 growbox contract, not the production climate-v6 runtime contract.
+**Start: [AKTUALNY STAN / R0–R8](RESEARCH_STATUS.md)**. Jeden punkt wejścia zamiast powtarzania roadmapy w starych checkpointach. Aktualny tor to **fizyczny solver 0D CPU↔PyTorch GPU**, a nie firmware, UI, stary v4 dataset ani sterowanie produkcyjne.
 
-Source contract for this directory: `schemas/environment-controller.json` (v4, 128 features, 15 outputs, up to four pots).
+- [Architektura modułów, testy i observability](QUALITY_AND_OBSERVABILITY.md)
+- [Jak wykonać / zweryfikować Kaggle 2×T4](KAGGLE_EXECUTION.md)
+- [Założenia fizyczne i ograniczenia](THERMODYNAMIC_CORE.md)
+- [Najnowszy checkpoint do wznowienia w nowym czacie](../checkpoints/2026-11-04-bloomml-research-clean-handoff.md)
+- [Dowód R4 — 8192 komór, >24 mln podkroków](../checkpoints/2026-11-04-r4-dual-t4-stress.md)
 
-Production firmware/controller ownership is documented in `../ARCHITECTURE.md` and uses `schemas/environment-controller.v6.json`. Do not mix the two contracts.
+**Aktualny rezultat:** dwa rzeczywiste Tesla T4 przeliczyły identyczne obciążenie R4 przed i po naprawie sztucznego osuszania. Powtórzony run V2 ma bilans wody i próbkę parity CPU↔GPU PASS, ale 25 scenariuszy CO₂>2000 ppm. **Realnych logów nie ma; fizyczna wierność i dane do treningu nadal niezakwalifikowane.**
 
-## New coupled thermodynamic research core
+**Następne działanie:** audyt i dobór publicznych datasetów szklarni/komór uprawowych (GitHub + repozytoria naukowe), z kontrolą licencji, pochodzenia, jednostek, odstępów czasu i zakresu działania aktuatorów. Zewnętrzna szklarnia to osobna domena — nie udajemy, że jest pomiarem naszego growboxa.
 
-See [THERMODYNAMIC_CORE.md](THERMODYNAMIC_CORE.md) for the research-only SI
-heat/vapor/CO2/plant model with lamp energy, PPFD/DLI, dewpoint, leaf VPD,
-condensation, solar heat and provenance-aware measurement inputs. The new
-reference implementation is **not yet** the production v6 simulator or a
-physically calibrated digital twin. Firmware and Rule control remain unchanged.
+Starsze dokumenty `CALIBRATION.md`, `FORMULAS.md`, `PHYSICS_SCOPE.md`, `VALIDATION.md`, `IO_INVENTORY.md`, `SLOT_MAP.md`, `TWIN_VIEW.md`, `SOURCES.md` i `DEPENDENCIES.md` pozostają **referencją/historycznym narzędziem v4**; nie stanowią aktualnego planu tego toru. Produkcyjny climate-v6 opisany jest osobno w `../ARCHITECTURE.md`.
 
-## What this simulator is for
-
-**Kaggle compute continuity:** read [the full dual-T4 handoff/roadmap](../checkpoints/2026-11-03-kaggle-bloomml-compute-handoff.md) and [Kaggle operator guide](KAGGLE_EXECUTION.md). The research physics remains on CPU; both Kaggle T4 GPUs will be used for batched experiments only after the backend is implemented and CPU↔GPU parity passes. Notebook and output-manifest entrypoints are versioned in the research branch.
-
-
-- lumped growbox air and pot-substrate physics research;
-- deterministic synthetic trajectories;
-- open-loop calibration tooling;
-- deviations/foresight experiments;
-- optional PyVista scientific twin visualization;
-- legacy/broad v4 dataset/model experiments.
-
-It is not physical qualification and does not override production Rule authority.
-
-## Main entry points
-
-```text
-tools/ml/simulator.py
-tools/ml/physics/
-tools/ml/calibration.py
-tools/ml/calibrate_simulator.py
-tools/ml/deviations.py
-tools/ml/foresight.py
-tools/ml/twin/
-```
-
-Useful commands:
-
-```bash
-python -m tools.ml.probe_simulator
-python -m tools.ml.calibrate_simulator protocol
-python -m tools.ml.calibrate_simulator demo --out-dir build/calibration-demo
-python -m tools.ml.twin_view --live
-```
-
-## Current research direction
-
-The next useful simulator step is calibration against real growbox trajectories, not another broad synthetic training sweep. Fit a small number of physically interpretable coefficients, re-run directional/closed-loop checks, then reconsider training only if the calibrated data creates a concrete hypothesis.
-
-## Documents in this directory
-
-| Document | Purpose |
-| --- | --- |
-| `CALIBRATION.md` | real-box -> lumped-parameter fitting protocol |
-| `FORMULAS.md` | physics equations/parameter notes |
-| `PHYSICS_SCOPE.md` | allowed simulator scope |
-| `VALIDATION.md` | directional/behavior validation |
-| `IO_INVENTORY.md` | v4 128-feature / 15-output inventory |
-| `SLOT_MAP.md` | external model symbols -> v4 slots |
-| `SOURCES.md` | research sources/licenses |
-| `DEPENDENCIES.md` | research dependency/catalog notes |
-| `TWIN_VIEW.md` | PyVista visualization |
-
-For production/current work start from `../README.md` and `../CURRENT_STATUS.md`, not from this directory.
+**Granica:** wyłącznie branch `research/simulator-fidelity-kaggle-20261103`, bez zmian `main`, firmware, Growclip i uprawnień Rule/OutputSupervisor.
