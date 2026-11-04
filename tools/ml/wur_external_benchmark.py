@@ -98,6 +98,7 @@ def audit_member(z: ZipFile, name: str, targets: dict[str, tuple[str, float, flo
         raise ValueError("unexpected uncompressed CSV size")
     observations: dict[int, dict] = {}
     missing, invalid, measured_ranges, actuation = Counter(), Counter(), {}, Counter()
+    extreme = Counter()  # review flags, not arbitrary deletion of real measurements
     previous = None
     first = last = None
     gaps = Counter()
@@ -131,6 +132,13 @@ def audit_member(z: ZipFile, name: str, targets: dict[str, tuple[str, float, flo
                     else:
                         measured_ranges[col][0] = min(measured_ranges[col][0], val)
                         measured_ranges[col][1] = max(measured_ranges[col][1], val)
+                if val is not None and (
+                    (col == "Tair" and (val < 5 or val > 45))
+                    or (col == "Rhair" and val < 10)
+                    or (col == "CO2air" and val > 2000)
+                    or (col == "Tot_PAR" and val > 2500)
+                ):
+                    extreme[col] += 1
                 values[col] = val
             for col in control_fields:
                 if col in columns:
@@ -169,6 +177,8 @@ def audit_member(z: ZipFile, name: str, targets: dict[str, tuple[str, float, flo
         extra_warnings.append("source timestamp gaps, no interpolation")
     if any(invalid.values()):
         extra_warnings.append("invalid numeric values skipped, never imputed")
+    if any(extreme.values()):
+        extra_warnings.append("extreme plausible but suspicious greenhouse values; review source provenance")
     summary = {
         "member": name, "rows": total, "source_columns": len(columns),
         "first_source_excel_serial_tick": first,
@@ -178,6 +188,7 @@ def audit_member(z: ZipFile, name: str, targets: dict[str, tuple[str, float, flo
         "source_tick_deltas_5min": dict(gaps.most_common(10)),
         "missing_values": dict(missing),
         "invalid_numeric_values": dict(invalid),
+        "extreme_physical_review_counts": dict(extreme),
         "coverage": cover, "observed_ranges": measured_ranges,
         "control_column_nonmissing": dict(actuation),
         "holdout_cutoff_naive_day": test_cutoff, "holdout_rows": len(heldout_ticks),
