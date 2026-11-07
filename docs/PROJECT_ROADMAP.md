@@ -14,8 +14,8 @@ The deployed product must remain standalone on the ESP32-S3. External foundation
 
 The target is not two admin panels and another training loop. See `PRODUCT_DIRECTION.md` for the decided user journey and scope boundaries. Never treat the research v4 panel, browser v5 JSON/3D, and production climate-v6 as interchangeable contracts.
 
-1. **P0, unify requirements and a versioned DeviceProfile contract:** inventory physical inputs/output roles, targets, schedule, limits, NVS/persistence and replay/diagnostic evidence; write validation and migration tests before changing any UI.
-2. **P1, one minimal operator setup-to-result slice:** choose existing UI elements, apply a validated profile through the proper runtime/output owners, reboot/recover, see real measurements/output truth. No second admin backend.
+1. **P0 PARTIAL — real I/O map + v1 draft:** `CONFIGURATION_FLOW.md` documents roles and limitations; `schemas/device-profile.v1.schema.json`, Mint sample and strict browser draft at `/` are present. Browser v5 moved to `/lab/v5`. Firmware application and validation gates are NOT done.
+2. **P1 NEXT — close the actual setup-to-runtime slice:** typed validated firmware profile → coherent schedule/target snapshot → durable, recoverable NVS → apply/readback → real measurements/output truth in existing panel/e-ink. No second admin backend; no unsafe dynamic RF role mapping.
 3. **P2, capture actual own-growbox trajectories** with sensor provenance and applied/observed outputs; calibrate physics and compare deterministic Rule/persistence/PID baselines.
 4. **P3, qualify ML/MPC in shadow:** robust hard-case matrix, held-out trajectories, fault/fallback, bounded ESP32-S3 inference and physical sign-off; only then consider explicit active authority.
 

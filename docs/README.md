@@ -8,10 +8,11 @@ For normal product work read, in order:
 
 1. `../AGENTS.md` — repository/work-mode and safety rules.
 2. `CURRENT_STATUS.md` — what is finished, what is active, and what must not be reopened without new evidence.
-3. `PRODUCT_DIRECTION.md` — what the operator product is and which panels are only research/developer tools.
-4. `ARCHITECTURE.md` — ownership and runtime boundaries.
-5. `PROJECT_ROADMAP.md` — current order of work.
-6. The subsystem document for the change. For the current display stage that is `DISPLAY_UI_PORT.md`.
+3. `CONFIGURATION_FLOW.md` — one canonical sensor/parameter/control/output matrix and DeviceProfile v1 state.
+4. `PRODUCT_DIRECTION.md` — what the operator product is and which panels are only research/developer tools.
+5. `ARCHITECTURE.md` — ownership and runtime boundaries.
+6. `PROJECT_ROADMAP.md` — current order of work.
+7. The subsystem document for the change. For the current display stage that is `DISPLAY_UI_PORT.md`.
 
 `PROJECT_LAYOUT.md` is the repository map. `IO_MAP.md` is the compact I/O/runtime map.
 
@@ -20,6 +21,7 @@ For normal product work read, in order:
 | Document | Role |
 | --- | --- |
 | `CURRENT_STATUS.md` | active baseline and next work |
+| `CONFIGURATION_FLOW.md` | canonical current and target sensor→target→output mapping |
 | `PRODUCT_DIRECTION.md` | canonical product UX/contract direction and ML qualification gates |
 | `AUDIT_STATUS.md` | scoped audit results, evidence limits and open full-audit gates |
 | `NEXT_CHAT.md` | single follow-on sprint without repeating closed audit work |

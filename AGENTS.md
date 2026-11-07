@@ -20,10 +20,11 @@ For a fresh task read, in order:
 1. `AGENTS.md`
 2. `docs/README.md`
 3. `docs/CURRENT_STATUS.md`
-4. `docs/PRODUCT_DIRECTION.md` (operator product, schema boundaries)
-5. `docs/ARCHITECTURE.md`
-6. `docs/PROJECT_ROADMAP.md`
-7. the specific subsystem document for the change; current display work uses `docs/DISPLAY_UI_PORT.md`
+4. `docs/CONFIGURATION_FLOW.md` (one supported sensor/target/output map and draft-vs-runtime truth)
+5. `docs/PRODUCT_DIRECTION.md` (operator product, schema boundaries)
+6. `docs/ARCHITECTURE.md`
+7. `docs/PROJECT_ROADMAP.md`
+8. the specific subsystem document for the change; current display work uses `docs/DISPLAY_UI_PORT.md`
 
 Then fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any write or Local Agent task.
 

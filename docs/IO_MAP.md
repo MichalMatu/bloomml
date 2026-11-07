@@ -1,6 +1,6 @@
 # I/O map
 
-Compact production-oriented map. Full contract details live in schemas; research simulator inventory is separate.
+Compact production-oriented summary. **Canonical product configuration and actual signal→actuator matrix:** [CONFIGURATION_FLOW.md](CONFIGURATION_FLOW.md). Full ML-inference details live in schemas; research simulator inventory is separate.
 
 ## Production sources of truth
 

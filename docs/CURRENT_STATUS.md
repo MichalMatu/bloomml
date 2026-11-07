@@ -19,9 +19,13 @@ Status: **production feature/performance work remains paused pending the new-hos
 
 The current architecture split remains intentional: `ClimatePolicy.*` owns stateless Rule generation/arbitration/safety policy, while `ClimateRuntimeController.*` owns stateful trend/effective-action estimation, ML orchestration and execution reconciliation.
 
+## Operator configuration draft — 2026-11-07
+
+The first **offline** DeviceProfile v1 editor is now on the browser homepage (`/`): declarations for current TP357/SCD41/Xiaomi/DS3231 sources and the three fixed RF433 outputs, RH-or-VPD targets, day/night schedule and strict JSON import/export. The legacy research v5 editor is at `/lab/v5`; 3D is geometry-only. See [CONFIGURATION_FLOW.md](CONFIGURATION_FLOW.md) for the complete supported/unsupported matrix. **Firmware still uses the fixed Mint schedule; there is no profile apply, NVS storage or live browser status. No tests/builds were run for this sprint at the operator's direction.**
+
 ## Product-convergence baseline
 
-The target is **one operator setup/status workflow**: real sensors/outputs -> desired targets/schedules/safety -> offline autonomous controller -> observed state and diagnostics. This does not exist end-to-end yet. The serial `tools/panel/` UI is a v4 developer/demo service; the browser `web/` page exports v5 research JSON and separately previews 3D geometry; production firmware is climate-v6 with fixed real-input composition. See `PRODUCT_DIRECTION.md` before extending any panel.
+The target is **one operator setup/status workflow**: real sensors/outputs -> desired targets/schedules/safety -> offline autonomous controller -> observed state and diagnostics. The validated browser draft is present, but the safe runtime apply/readback leg does not exist yet. The serial `tools/panel/` UI is a v4 developer/demo service; the browser `web/` now uses a separate v1 operator draft at `/`, retains v5 at `/lab/v5` and provides geometry-only 3D; production firmware is climate-v6 with fixed real-input composition. See `PRODUCT_DIRECTION.md` before extending any panel.
 
 The former research branch's R4/Kaggle/MPC files and full commit history are now on `main`. Its 19/22 hard MPC scenario failures and missing physical fidelity prevent production promotion; see `docs/simulator/RESEARCH_STATUS.md`.
 

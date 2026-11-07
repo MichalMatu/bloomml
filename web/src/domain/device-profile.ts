@@ -43,7 +43,7 @@ export interface DeviceProfile {
 }
 
 export function createDefaultDeviceProfile(): DeviceProfile {
-  return structuredClone(defaultProfile) as DeviceProfile
+  return structuredClone(defaultProfile) as unknown as DeviceProfile
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -46,3 +46,7 @@ Two-parent merge `fadf6614e54264ad9f45ca19ce8699683322bb23` retains previous pro
 ### Exact-main cleanup verification
 
 At main `8ed884a56c91fcd8650796cdb3db7ea4cbf37312`, Local Agent result `agent-control:.agent/results/la-bloomml-main-consolidation-20261107-v2.json` confirms: Git ancestry PASS, 69/75 research-changed paths byte-identical (the remaining six are intentionally reconciled/updated Markdown), production code unchanged, Python research compileall PASS, **37 MPC unittest PASS**, **18 dataset unittest PASS**, clean checkout, and successful remote deletion of `research/simulator-fidelity-kaggle-20261103` via normal `git push --delete`. Remaining branches: `main`, `agent-control`, `gh-pages`. This is scoped verification, **not** firmware or all-tests PASS.
+
+## 2026-11-07 configuration draft sprint
+
+Mapped actual TP357/SCD41/Xiaomi/DS3231 inputs, fixed RF433 sockets and day/night Mint control from source, then added an offline `DeviceProfile` v1 schema, example and simpler browser draft on `/` (research v5 retained under `/lab/v5`). One canonical matrix: `docs/CONFIGURATION_FLOW.md`. No profile apply/NVS/live readback in firmware. At operator request **NO test suites, typechecks or heavy builds were executed for this sprint**; newly added source remains UNVERIFIED until a separately requested qualification.

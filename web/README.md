@@ -1,75 +1,34 @@
-# Growbox browser configurator
+# BloomML — browser setup, research editor and 3D
 
-React + TypeScript + Vite frontend for the BloomML project.
+One simple operator entry point, preserving research tools:
 
-Public research/design surfaces (not a deployed operator-admin backend):
+- `/` — **device profile v1 draft**: sensors, the 3 fixed physical RF433 output roles, day/night T and RH/VPD targets, schedule, validation, JSON import/export.
+- `/lab/v5` — original **research** hardware editor (228 features, 25 outputs); not a firmware config.
+- `/chamber-3d` — independent geometry preview; not the physical environment simulator and not synchronized with the device profile.
 
-- `/` — schema-driven hardware / JSON configurator
-- `/chamber-3d` — interactive React Three Fiber growbox chamber configurator
+Published base: https://michalmatu.github.io/bloomml/ . Routes use the `/bloomml/` Vite base path.
 
-Live deployment:
+## One place to understand it
 
-- https://michalmatu.github.io/bloomml/
-- https://michalmatu.github.io/bloomml/chamber-3d
+**[CONFIGURATION_FLOW.md](../docs/CONFIGURATION_FLOW.md)** contains the real sensor→target→output matrix, scope and integration order.
 
-## Contract boundary
+- Operator JSON contract: `../schemas/device-profile.v1.schema.json`.
+- Current compiled-in Mint defaults mirrored in the example: `../profiles/crowpanel-mint.v1.json`.
+- Strict draft parsing/validation: `src/domain/device-profile.ts`.
+- Offline draft page: `src/pages/setup-page.tsx`.
+- Research editor remains on v5: `schema/environment-controller.v5.json`.
+- Firmware's `../schemas/environment-controller.v6.json` is an **ML inference** contract (44 features, 6 decisions), not the operator profile.
+- The v4 research schema and the Python physics/MPC lab are separate.
 
-The browser uses its own explicit bundled contract snapshot:
-
-`schema/environment-controller.v5.json`
-
-That contract is **schema v5: up to 9 pot slots, 228 model features and 25 outputs**.
-
-The repository-root `schemas/environment-controller.json` is the older **research v4** contract (128 inputs / 15 outputs), not the current production firmware interface. Production uses `schemas/environment-controller.v6.json` (44 ML inputs / 6 outputs), which is an inference contract, not a complete editable device profile. The v5 browser export is a research hardware template and **cannot be uploaded directly to production climate-v6**. A versioned production profile adapter must be designed and validated first.
-
-`src/domain/schema.ts` validates the browser-side schema version and dimensions at startup so an accidental contract mismatch fails visibly.
-
-## Stack
-
-- React 19
-- TypeScript
-- Vite
-- Three.js / React Three Fiber / drei
-- Tailwind CSS / shadcn UI / Radix
-- Vitest / ESLint
+**Important:** `deployment_status=draft_not_applied`. No browser-to-ESP32 connection, profile NVS, live sensor status, arbitrary RF remapping or device readback exists in this page. Declared `installed` is not a sensor probe. Production still runs the hard-coded Mint schedule. The old v5 JSON is not converted or uploaded to firmware.
 
 ## Development
 
-Requires Node.js 22 and pnpm 11.10.0.
+React 19 + TypeScript, Vite, Tailwind/Radix, optional Three/R3F. Node 22 and pnpm 11.10.0.
 
-```bash
-corepack enable
-corepack prepare pnpm@11.10.0 --activate
-pnpm install --frozen-lockfile
-pnpm dev
-```
-
-From the repository root:
-
-```bash
+```sh
 pnpm --dir web install --frozen-lockfile
 pnpm --dir web dev
 ```
 
-## Quality gate
-
-```bash
-pnpm --dir web typecheck
-pnpm --dir web lint
-pnpm --dir web test
-pnpm --dir web build
-```
-
-Frontend checks remain separate from firmware/controller checks so one surface cannot silently redefine another contract.
-
-## Routing and GitHub Pages
-
-Vite uses the repository base path `/bloomml/`. The 3D route is lazy-loaded so Three.js does not need to load for the JSON configurator.
-
-## 3D chamber
-
-The chamber view contains parametric geometry for the enclosure, pots, lights and fans. It helps visualize hardware configuration and dimensions; it is not CFD or a plant-growth simulation.
-
-The scientific simulator/twin under `tools/ml/twin/` is a separate Python/PyVista engineering tool.
-
-For current repository status and branch policy see [`docs/CURRENT_STATUS.md`](../docs/CURRENT_STATUS.md) and [`docs/HISTORY.md`](../docs/HISTORY.md).
+Existing typecheck/lint/test/build commands remain available, but **no tests or heavy builds were run during this configuration draft sprint at the operator's request**; deployment remains unverified.

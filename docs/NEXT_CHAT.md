@@ -1,21 +1,28 @@
-# BloomML — handoff after branch consolidation (2026-11-07)
+# BloomML — next step after configuration profile draft (2026-11-07)
 
-## Source and operating policy
+## Read this first
 
-- ONE development branch: `main` for production, offline research, tests and documentation. `agent-control` remains Local Agent's control branch; `gh-pages` remains the publishing branch.
-- Merge checkpoint: `fadf6614e54264ad9f45ca19ce8699683322bb23` with original product parent `5e4db5af736e9c18d69d451496694fa6aff11743` and original research parent `73de11be282d40d03767275cc6a0891e58ed23f8`. Always fetch fresh current `main`.
-- Historical research branch names in dated checkpoints are provenance, not active work instructions. Before Local Agent commands read `AGENTS.md` and `agent-control:.agent/status/daemon.json`. No Codex, Work or GitHub Actions.
+- `AGENTS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/CURRENT_STATUS.md`, `docs/ARCHITECTURE.md`, `docs/PRODUCT_DIRECTION.md`.
+- Fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any write or Local Agent operation.
+- Development only on `main`. Retain `agent-control` for Local Agent and `gh-pages` for publication. No Codex, Work or GitHub Actions.
+- Do not redo old tests, heavy builds, hardware gates or repeat the 110-commit research merge. Current operator expressly asked to defer those.
 
-## What is preserved
+## Completed this sprint
 
-`main` contains Rule-authoritative ESP-IDF firmware and offline R4 physics, Kaggle GPU notebooks/runners, public dataset benchmarks, MPC devices/optimizer/lab, passive shadow DTO and tests. No runtime connection was made from MPC to hardware outputs; no v4/v5/v6 schema conversion, production training dependency or `OutputSupervisor` change.
+- One canonical map: `docs/CONFIGURATION_FLOW.md`, deriving the actual sensor, actuator and environmental parameters from firmware source.
+- Draft schema `schemas/device-profile.v1.schema.json`, sample `profiles/crowpanel-mint.v1.json`, strict offline draft validator/editor.
+- Browser `/` = simple profile; `/lab/v5` = original 228-field research editor; `/chamber-3d` unchanged preview.
+- Profile can be imported and exported as `draft_not_applied`; it **cannot be sent or applied to the ESP32-S3**. Do not claim runtime integration or real live status.
+- Production Rule, RF433, NVS output supervisor and e-ink behavior unchanged. No tests/compilations executed for this new source; software status **UNVERIFIED**.
 
-Current research entry points: `docs/simulator/RESEARCH_STATUS.md`, `docs/simulator/MPC_ROADMAP.md`. Original Kaggle R4 work is historical DONE. MPC's older 60-minute episode PASS does not erase 19/22 FAIL challenging cases. 2026-11-04 Local Agent report gives 37/37 unit PASS on `9258ae41` while the hard-case matrix remains 19/22 FAIL. Empirical growbox calibration and physical qualification are absent.
+## Single next sprint: safe runtime application
 
-## Single next product sprint
+1. Introduce a typed, bounded, versioned production profile parser/validator using `schemas/device-profile.v1.schema.json`; do not treat JSON as an ML v4/v5/v6 feature vector.
+2. Keep actual fixed RF433 endpoints and sensor sources until a safe remapping mechanism exists. Feed validated targets/clock/schedule/capability flags into existing runtime ownership, sharing exactly one snapshot for schedule lamp + climate targets.
+3. Implement separate profile NVS persistence with version/recovery/rollback; preserve existing output state/policy NVS, strict safety and Rule authority.
+4. Add readback of active applied profile hash, actual sensor validity/age, desired Rule and shadow proposal, applied vs attempted output, fault state. Only after real device API exists attach the existing browser page's preview/apply/readback and status; keep e-ink observer-only.
+5. New physical qualification remains explicitly OPEN until separately authorized. Avoid repetitive broad gates.
 
-Design one versioned production `DeviceProfile` contract for configured sensor roles, output mappings, environmental targets, schedules and safety. Inventory the current hardcoded production I/O, ownership/persistence and validation/migration seams, then add focused tests before changing UI. Do not build a third panel.
+## Known limitations
 
-## Open gates
-
-Full exact-main clean-room C++/ESP-IDF build, complete current-source test suite, physical SCD41/buttons/outputs, ML hardware safety and own-growbox data are OPEN/UNKNOWN. Branch removal was confirmed on the remote (Local Agent task `la-bloomml-main-consolidation-20261107-v2`, exit 0): ancestry + source equivalence, Python compileall, 37 MPC unit tests and 18 dataset unit tests PASS at `8ed884a56c91fcd8650796cdb3db7ea4cbf37312`; `research/simulator-fidelity-kaggle-20261103` was deleted. Three branches remain: `main`, `agent-control`, `gh-pages`. This does not close firmware or adversarial MPC quality gates.
+SCD41 is currently used for CO₂ **only**; T/RH come from TP357 BLE. Xiaomi BLE supplies outside T/RH; DS3231 supplies time. Runtime has three RF433 roles: exhaust, scheduled light, humidifier. CO₂ dose, heater/cooler/dehumidifier, PPFD/DLI, irrigation and active MPC are **not** working production features. MPC research still has 19/22 hard-case FAILs and no empirical growbox calibration.

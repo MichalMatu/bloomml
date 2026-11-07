@@ -8,6 +8,8 @@ The CrowPanel 2.9-inch SSD1680 display path has an integrated software baseline.
 
 Clay display Phases 1-6 are integrated, including dirty-region partial transfer, native button input and a read-only four-page chooser; outstanding physical qualification is not a software integration failure. The C++20 Clay 0.14 renderer writes into the single SSD1680 backend-owned framebuffer behind the existing asynchronous display transaction.
 
+**Operator setup draft:** [single sensor→target→output flow](docs/CONFIGURATION_FLOW.md) · [v1 schema](schemas/device-profile.v1.schema.json). Browser `/` is a validated offline profile editor, `/lab/v5` is research, `/chamber-3d` is geometry. **ESP32 profile application is not implemented yet.**
+
 Canonical source branch: `main` for product code and offline research. The former `research/simulator-fidelity-kaggle-20261103` history was merged in full without enabling experimental MPC on hardware. Keep `agent-control` for Local Agent and `gh-pages` for publication.
 
 **Product direction:** one operator flow for installed sensors/outputs, targets, safe autonomous control and monitoring. Today `tools/panel/` is a local **v4 demo/serial** panel, `web/` is a **v5 research** configurator and geometric 3D preview, while production firmware uses **climate-v6**. These schemas are not interchangeable. See [product direction](docs/PRODUCT_DIRECTION.md), [audit ledger](docs/AUDIT_STATUS.md) and [next-chat handoff](docs/NEXT_CHAT.md).

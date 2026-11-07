@@ -17,9 +17,9 @@ The machine does the rest **only within proven capabilities**. A transparent det
 
 | Surface | Intended audience | Current implementation | Direction |
 | --- | --- | --- | --- |
-| Production setup + status | Growbox operator | **Not unified yet**; current firmware has fixed source composition and observer-only e-ink | ONE future operator flow for hardware, targets, safety and monitoring |
+| Production setup + status | Growbox operator | **One offline v1 setup draft** on browser `/`; firmware still fixed Mint and e-ink observer-only | Add safe profile apply/persistence/readback and live status through existing runtime owners |
 | Local hardware/demo service | Developer/technician | `tools/panel/`, serial protocol with **research v4** scenario controls | Developer diagnostics only; never represent as the production configuration backend |
-| Browser configuration + 3D | Research/design | `web/`, bundled **research v5**, JSON export and geometric 3D visualization | Reuse UX/components after a versioned production configuration adapter exists; 3D is optional |
+| Research v5 + 3D | Research/design | `web/` now keeps v5 on `/lab/v5`; `/chamber-3d` is optional independent geometry | Keep as clearly marked research/design surfaces, not a physical simulation or device backend |
 | Physics / ML / MPC lab | Research/development | `tools/ml/`, simulator, replay, Kaggle and runtime-isolated MPC | Offline qualification, training, failure analysis; no runtime dependency |
 | E-ink | Device operator | `src/climate/display/` | Status/diagnostics observer; not a control-authority owner |
 
@@ -29,7 +29,7 @@ The machine does the rest **only within proven capabilities**. A transparent det
 - Browser research v5: `web/schema/environment-controller.v5.json`, 228 features / 25 outputs.
 - Production climate-v6: `schemas/environment-controller.v6.json`, 44 ML features / 6 climate outputs. This is an inference contract, **not yet a complete operator device-profile API**.
 
-The missing product piece is a small, versioned, validated **operator device profile** (real sensor identity/role, output role/transport, targets, schedules, physical limits). It must be mapped through existing application/runtime/output owners, not implemented by sharing experimental schemas or exposing raw RF. Define and test its interface before building a new UI.
+The v1 **draft** of the missing product piece is now a small, versioned, validated **operator device profile** (real sensor identity/role, output role/transport, targets, schedules, physical limits). It must be mapped through existing application/runtime/output owners, not implemented by sharing experimental schemas or exposing raw RF. The offline draft UI exists; the firmware adapter and fresh tests/build qualification remain open. See [CONFIGURATION_FLOW.md](CONFIGURATION_FLOW.md) before any additional implementation.
 
 ## Runtime authority and safety
 
