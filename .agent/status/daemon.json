@@ -1,9 +1,9 @@
 {
   "version": 1,
   "daemon_version": "4.20.16",
-  "state": "idle",
-  "pid": 68577,
-  "updated_at": "2026-11-07T17:13:14.622651+00:00",
+  "state": "running",
+  "pid": 71196,
+  "updated_at": "2026-11-07T17:14:38.800866+00:00",
   "self_revision": "012d6af7984d7d904c3427ac7825dfdd0b258a00",
   "poll_seconds": 15,
   "self_update_seconds": 60,
@@ -16,7 +16,7 @@
   "memory_limit_mb_default": 4096,
   "memory_limit_mb_min": 0,
   "memory_limit_mb_max": 16384,
-  "current_task_id": null,
+  "current_task_id": "la-bloomml-general-audit-panel-qa-20261107-v2",
   "current_attempt_id": null,
   "current_task_digest": null,
   "host_claims": {
@@ -43,8 +43,8 @@
   "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
   "work_mode": "managed",
   "execution_model": "multi_repository_worker",
-  "worker_pid": 68577,
+  "worker_pid": 71196,
   "supervisor_pid": 85330,
-  "last_task_id": "la-bloomml-general-audit-panel-qa-20261107-v1",
+  "active_resources": [],
   "execution_variant": "parallel"
 }
