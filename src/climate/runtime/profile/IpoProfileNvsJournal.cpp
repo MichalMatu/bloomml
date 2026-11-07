@@ -191,4 +191,52 @@ IpoJournalStatus IpoProfileNvsJournal::commit(
   return IpoJournalStatus::Ok;
 }
 
+IpoJournalStatus IpoProfileNvsJournal::rollbackTo(
+    std::uint32_t expected_current_generation,
+    std::uint32_t previous_generation) noexcept {
+  const auto before = load();
+  if (before.status != IpoJournalStatus::Ok ||
+      before.profile.generation != expected_current_generation ||
+      previous_generation >= expected_current_generation) {
+    return IpoJournalStatus::GenerationConflict;
+  }
+  nvs_handle_t handle{};
+  if (nvs_open(kNamespace, NVS_READWRITE, &handle) != ESP_OK)
+    return IpoJournalStatus::StorageUnavailable;
+  std::uint8_t selected = 0xffU;
+  const esp_err_t marker = nvs_get_u8(handle, kActiveKey, &selected);
+  if (marker != ESP_OK || selected > 1U) {
+    nvs_close(handle);
+    return IpoJournalStatus::Corrupt;
+  }
+
+  esp_err_t result = ESP_OK;
+  if (previous_generation == 0U) {
+    // Isolated IPO namespace only; output persistence is never erased.
+    // Both slots and selector must disappear or the next boot would see a
+    // torn transaction rather than a genuine NotFound state.
+    result = nvs_erase_all(handle);
+  } else {
+    DurableIpoProfile previous{};
+    const std::uint8_t other = static_cast<std::uint8_t>(1U - selected);
+    if (decodeSlot(handle, other, previous) != IpoProfileCodecStatus::Ok ||
+        previous.generation != previous_generation) {
+      nvs_close(handle);
+      return IpoJournalStatus::ReadbackFailed;
+    }
+    result = nvs_set_u8(handle, kActiveKey, other);
+  }
+  if (result == ESP_OK) result = nvs_commit(handle);
+  nvs_close(handle);
+  if (result != ESP_OK) return IpoJournalStatus::WriteFailed;
+
+  const auto verified = load();
+  if (previous_generation == 0U)
+    return verified.status == IpoJournalStatus::NotFound
+               ? IpoJournalStatus::Ok : IpoJournalStatus::ReadbackFailed;
+  return verified.status == IpoJournalStatus::Ok &&
+                 verified.profile.generation == previous_generation
+             ? IpoJournalStatus::Ok : IpoJournalStatus::ReadbackFailed;
+}
+
 } // namespace growbox::app::climate_io::runtime::profile

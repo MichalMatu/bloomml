@@ -14,6 +14,7 @@
 #include "climate/runtime/RuntimeAdapters.h"
 #include "climate/runtime/RuntimeBuildConfig.h"
 #include "climate/runtime/profile/IpoProfileNvsJournal.h"
+#include "climate/runtime/profile/IpoProfileActivationTransaction.h"
 #include "climate/runtime/console/Stage28ServiceConsole.h"
 #include "climate/runtime/core/RealInputRuntimeComposition.h"
 #include "climate/runtime/core/RealInputRuntimeCoordinator.h"
@@ -140,6 +141,13 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
                                           ? ipo_boot_store.profile.generation : 0U));
 
   static runtime::RuntimeScheduleProfileOwner profile_owner;
+  // The owner exists in the firmware for truthful active-vs-stored
+  // diagnostics, but the gate intentionally denies physical activation.
+  // Do NOT replace it with a permissive gate without exact-SHA hardware
+  // qualification and a supervisor-controlled output interlock.
+  static runtime::profile::ClosedIpoActivationGate ipo_activation_gate;
+  static runtime::profile::IpoProfileActivationTransaction ipo_activation(
+      ipo_journal, profile_owner, ipo_boot_store, ipo_activation_gate);
   runtime::RuntimeInsideSource inside(
       ble, scd41, &ipo_reference, &profile_owner);
   runtime::RuntimeNearbySource outside(
@@ -164,7 +172,7 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
        &execution_status.output_ready, &storage_logger, &runtime_timing,
        &output_owner.automationControl(), &output_owner.manualControl(),
        &output_owner.maintenanceControl(), &profile_owner, &ipo_boot_store,
-       &inside, &outside},
+       &inside, &outside, &ipo_activation},
       ble, scd41, clock, rf_diagnostics);
   const bool service_console_ready = service_console.begin();
 

@@ -130,6 +130,10 @@ public:
   }
 
   bool hasPreparedCandidate() const noexcept { return ready_; }
+  // Read-only within the exclusive transaction owner's preview lifetime.
+  const DurableIpoProfile* preparedProfile() const noexcept {
+    return ready_ ? &prepared_ : nullptr;
+  }
 
 private:
   IpoProfileNvsJournal& journal_;

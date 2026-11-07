@@ -11,6 +11,7 @@
 #include "climate/runtime/profile/IpoProfileNvsJournal.h"
 #include "climate/runtime/profile/IpoProfileDiagnosticNames.h"
 #include "climate/runtime/profile/IpoProfileReadback.h"
+#include "climate/runtime/profile/IpoProfileActivationTransaction.h"
 #include "climate/runtime/RuntimeAdapters.h"
 #include "climate/storage/Stage27TelemetryLogger.h"
 
@@ -159,9 +160,17 @@ void Stage28ServiceConsoleSystemCommands::printStatus(std::uint64_t now_ms) noex
   const auto outside_health = config_.nearby_source != nullptr
       ? config_.nearby_source->lastSelections()
       : std::array<::growbox::ipo::SignalSelection, 2U>{};
+  const auto active_truth = config_.profile_activation != nullptr
+      ? config_.profile_activation->readback()
+      : config_.schedule_profile != nullptr && config_.profile_store != nullptr
+          ? profile::buildIpoProfileReadback(
+                *config_.schedule_profile, *config_.profile_store)
+          : profile::IpoProfileReadback{};
+  const char* active_kind = active_truth.active_is_operator_v2 ? "operator_v2"
+      : active_truth.active_is_builtin_mint ? "builtin_mint" : "unqualified_ram";
   sink_.writeFormatted(
       "ipo_health inside_t=%s inside_rh=%s inside_co2=%s "
-      "outside_t=%s outside_rh=%s store=%s active=builtin_mint applied_v2=0\r\n",
+      "outside_t=%s outside_rh=%s store=%s active=%s applied_v2=%d\r\n",
       profile::signalSelectionStatusName(inside_health[0].status),
       profile::signalSelectionStatusName(inside_health[1].status),
       profile::signalSelectionStatusName(inside_health[2].status),
@@ -169,7 +178,7 @@ void Stage28ServiceConsoleSystemCommands::printStatus(std::uint64_t now_ms) noex
       profile::signalSelectionStatusName(outside_health[1].status),
       config_.profile_store != nullptr
           ? profile::journalStatusName(config_.profile_store->status)
-          : "not_inspected");
+          : "not_inspected", active_kind, active_truth.active_is_operator_v2);
 
   // Source selection comes from the previous completed control sample. No
   // fabricated readings or implicit confirmation of a physical RF output.
@@ -202,14 +211,13 @@ void Stage28ServiceConsoleSystemCommands::printStatus(std::uint64_t now_ms) noex
   // Read-only profile journal state at boot. It is NEVER an active profile
   // acknowledgement and does not trigger any NVS writes or output commands.
   if (config_.schedule_profile != nullptr && config_.profile_store != nullptr) {
-    const auto truth = profile::buildIpoProfileReadback(
-        *config_.schedule_profile, *config_.profile_store);
+    const auto& truth = active_truth;
     sink_.writeFormatted(
         "ipo_readback active_kind=%s active_ram_generation=%lu "
         "active_schedule_hash=%08lx stored_generation=%lu "
         "stored_record_crc32=%08lx stored_crc_valid=%d backup=%d "
         "store_status=%s operator_v2_applied=%d can_apply=0\r\n",
-        truth.active_is_builtin_mint ? "builtin_mint" : "unqualified_ram",
+        active_kind,
         static_cast<unsigned long>(truth.active_ram_generation),
         static_cast<unsigned long>(truth.active_schedule_hash),
         static_cast<unsigned long>(truth.stored_generation),
@@ -221,9 +229,10 @@ void Stage28ServiceConsoleSystemCommands::printStatus(std::uint64_t now_ms) noex
     const auto& store = *config_.profile_store;
     sink_.writeFormatted(
         "ipo_store status=%u stored=%d backup=%d stored_generation=%lu "
-        "runtime_source=builtin_mint profile_v2_applied=0\r\n",
+        "runtime_source=%s profile_v2_applied=%d\r\n",
         static_cast<unsigned>(store.status), store.stored, store.selected_backup,
-        static_cast<unsigned long>(store.stored ? store.profile.generation : 0U));
+        static_cast<unsigned long>(store.stored ? store.profile.generation : 0U),
+        active_kind, active_truth.active_is_operator_v2);
   }
 
 
@@ -233,13 +242,15 @@ void Stage28ServiceConsoleSystemCommands::printStatus(std::uint64_t now_ms) noex
     const auto& owner = *config_.schedule_profile;
     const auto& profile = owner.active();
     sink_.writeFormatted(
-        "ipo_profile source=builtin_mint generation=%lu schedule_hash=%08lx valid=%d "
-        "persisted=0 profile_v2_applied=0 mode=%s day_hour=%u night_hour=%u "
+        "ipo_profile source=%s generation=%lu schedule_hash=%08lx valid=%d "
+        "persisted=%d profile_v2_applied=%d mode=%s day_hour=%u night_hour=%u "
         "day_t=%.2f day_rh=%.2f day_vpd=%.2f "
         "night_t=%.2f night_rh=%.2f night_vpd=%.2f "
         "exhaust=%d humidifier=%d\r\n",
-        static_cast<unsigned long>(owner.generation()),
+        active_kind, static_cast<unsigned long>(owner.generation()),
         static_cast<unsigned long>(runtimeScheduleFingerprint(profile)), owner.valid(),
+        active_truth.active_is_operator_v2 && active_truth.stored_record_valid,
+        active_truth.active_is_operator_v2,
         profile.humidity_mode == ::growbox::climate::HumidityControlMode::Vpd ? "VPD" : "RH",
         static_cast<unsigned>(profile.day_start_hour),
         static_cast<unsigned>(profile.night_start_hour),
@@ -250,6 +261,17 @@ void Stage28ServiceConsoleSystemCommands::printStatus(std::uint64_t now_ms) noex
         static_cast<double>(profile.night.relative_humidity_pct),
         static_cast<double>(profile.night.air_vpd_kpa),
         profile.exhaust_fan_available, profile.humidifier_available);
+  }
+
+  if (config_.profile_activation != nullptr) {
+    sink_.writeFormatted(
+        "ipo_activation result=%u failure=%u active=%s store_valid=%d "
+        "active_schedule_hash=%08lx applied_v2=%d gate=hardware_unqualified\r\n",
+        static_cast<unsigned>(config_.profile_activation->lastResult()),
+        static_cast<unsigned>(config_.profile_activation->lastFailure()),
+        active_kind, active_truth.stored_record_valid,
+        static_cast<unsigned long>(active_truth.active_schedule_hash),
+        active_truth.active_is_operator_v2);
   }
 
   if (config_.timing_metrics != nullptr) {

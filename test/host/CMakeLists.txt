@@ -748,3 +748,17 @@ target_include_directories(
 target_compile_features(ipo_profile_tests PRIVATE cxx_std_17)
 target_compile_options(ipo_profile_tests PRIVATE -Wall -Wextra -Wpedantic)
 add_test(NAME ipo_profile_tests COMMAND ipo_profile_tests)
+
+# Transactional IPO v2 activation host-only fault-injection tests. Uses a
+# fake storage/qualification gate and does NOT compile ESP-IDF or RF drivers.
+add_executable(ipo_activation_tests
+  "${PROJECT_ROOT}/test/test_ipo_activation/test_main.cpp"
+)
+target_include_directories(ipo_activation_tests PRIVATE
+  "${PROJECT_ROOT}/lib/ipo_profile/src"
+  "${PROJECT_ROOT}/lib/environment_control/src"
+  "${PROJECT_ROOT}/src"
+)
+target_compile_features(ipo_activation_tests PRIVATE cxx_std_17)
+target_compile_options(ipo_activation_tests PRIVATE -Wall -Wextra -Wpedantic)
+add_test(NAME ipo_activation_tests COMMAND ipo_activation_tests)

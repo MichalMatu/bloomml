@@ -28,7 +28,7 @@ class RfDiagnostics;
 class RuntimeScheduleProfileOwner;
 class RuntimeInsideSource;
 class RuntimeNearbySource;
-namespace profile { struct IpoJournalReadResult; }
+namespace profile { struct IpoJournalReadResult; class IpoProfileActivationTransaction; }
 
 class Stage28ServiceConsole final : public ServiceConsoleTextSink {
 public:
@@ -45,6 +45,7 @@ public:
     const profile::IpoJournalReadResult* profile_store{nullptr};
     const RuntimeInsideSource* inside_source{nullptr};
     const RuntimeNearbySource* nearby_source{nullptr};
+    const profile::IpoProfileActivationTransaction* profile_activation{nullptr};
   };
 
   Stage28ServiceConsole(Config config, native::BleClimateScanner& ble,

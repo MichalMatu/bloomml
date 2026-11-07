@@ -32,6 +32,12 @@ public:
   // Expected generation prevents stale overwrites. No output state mutation.
   IpoJournalStatus commit(const DurableIpoProfile& candidate,
                           std::uint32_t expected_generation) noexcept;
+
+  // Roll back only the last committed successor under the single-owner gate.
+  // Generation 0 means the namespace was empty before the transaction.
+  // This does NOT apply or actuate an output.
+  IpoJournalStatus rollbackTo(std::uint32_t expected_current_generation,
+                              std::uint32_t previous_generation) noexcept;
 };
 
 } // namespace growbox::app::climate_io::runtime::profile

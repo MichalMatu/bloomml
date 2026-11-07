@@ -12,7 +12,7 @@ namespace growbox::app::climate_io::runtime::profile {
 struct IpoProfileReadback final {
   bool runtime_valid{false};
   bool active_is_builtin_mint{true};
-  bool active_is_operator_v2{false};  // no v2 apply authority in this version
+  bool active_is_operator_v2{false};  // only a qualified transaction may prove this
   std::uint32_t active_ram_generation{0U};
   std::uint32_t active_schedule_hash{0U};
   IpoJournalStatus journal_status{IpoJournalStatus::StorageUnavailable};
@@ -46,7 +46,7 @@ inline IpoProfileReadback buildIpoProfileReadback(
     }
   }
   // Critically: stored_record_valid is NEVER runtime-activation evidence.
-  // The installed source is still Mint regardless of NVS contents.
+  // Callers without a verified transaction marker must report no active v2.
   return result;
 }
 
