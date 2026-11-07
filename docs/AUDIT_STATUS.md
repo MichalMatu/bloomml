@@ -67,3 +67,7 @@ Strict cJSON device-profile v2 decoder (schema/fields/ID and CrowPanel admission
 ## 2026-11-07 IPO Runtime Bridge 4 qualification
 
 Read-only IPO NVS boot inspection, reference-graph filtering of actual TP357/SCD41/Xiaomi observations and UART source-validity provenance added. No use of journal commit, profile activation or new actuator driver. This *does* affect real-source freshness semantics and is untested/unbuilt/undeployed per user's previous instruction; cannot mark production safety as PASS for modified code. Checkpoint: `docs/checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md`.
+
+## 2026-11-07 B5 IPO Quality Gate (source, **unqualified**)
+
+Changed strict board admission: CO₂ input required, exhaust capability cannot be false; bounded raw reading count/float projection; 32 KiB UTF-8 JSON parser alignment and browser reference-only compatibility report with precise size/byte-label checks. Added cached NVS record CRC32, separate active-vs-stored readback and human-readable UART status. Added focused portable C++ and Vitest tests only. **No test execution, typecheck, lint, builds or physical flash** at operator request; PASS is NOT claimed. See `docs/checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md`.

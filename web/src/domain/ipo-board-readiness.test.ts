@@ -76,6 +76,15 @@ describe("DeviceProfile v2 / physical CrowPanel admission preview", () => {
     expect(status.applyEnabled).toBe(false)
   })
 
+  it("detects a UTF-8 label accepted as Unicode text but too long for C++ bytes", () => {
+    const p = createDefaultIpoProfile()
+    p.devices[0].label = "ż".repeat(41) // 41 Unicode chars, 82 bytes
+    expect(validateIpoProfile(p)).toEqual([])
+    const status = assessCrowPanelProfile(p)
+    expect(status.matchesCurrentFirmware).toBe(false)
+    expect(status.reasons.join(" ")).toContain("80 bajtów")
+  })
+
   it("the parser size budget is defined in UTF-8 bytes, not JS UTF-16 chars", () => {
     const p = createDefaultIpoProfile()
     p.devices[0].label = "Wewnątrz — mięta"

@@ -30,7 +30,7 @@ Then fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any
 
 Historical Stage27/Stage28 handoffs, temporary prompts and superseded audits are not live documentation. Use `docs/HISTORY.md`, `docs/CHANGELOG.md` and Git history when historical evidence is needed.
 
-IPO v2 is an isolated draft: `schemas/device-profile.v2.schema.json`, `web/src/domain/ipo-*.ts`, and unlinked `lib/ipo_profile/src/IpoGraph.h`. These do not authorize hardware writes or replace existing Rule, Safety and OutputSupervisor. Dynamic adapters, safe NVS apply/readback and qualification are OPEN.
+IPO v2 browser configuration remains **draft-only**. The portable `lib/ipo_profile/` graph and reference-source selector are now compiled into the real-input source path; the profile NVS journal is read at boot **for diagnostics only**. The JSON profile staging/apply code is dormant. This never authorizes hardware writes or replaces Rule, LampSafety or OutputSupervisor. Broad driver mapping, safe NVS activation/readback/rollback and exact-SHA qualification are OPEN. See `docs/CONFIGURATION_FLOW.md` and current checkpoint.
 
 Research documents such as `DATA_CONTRACT.md`, `CONFIG_MATRIX.*` and `docs/simulator/*` may describe the older v4 128-feature/15-output toolchain. Do not treat them as the production climate-v6 runtime contract unless the task explicitly targets that research toolchain.
 

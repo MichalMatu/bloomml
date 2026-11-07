@@ -17,6 +17,14 @@
 6. `Stage28ServiceConsole status` rozróżnia `ipo_store` (zapis), `ipo_profile` (aktywny Mint/schedule_hash) i `ipo_input` (valid, source id, age, fallback poprzedniego cyklu). Żadne z nich nie potwierdza fizycznego stanu RF433.
 7. Dokumentacja prawdy: `docs/CONFIGURATION_FLOW.md`; checkpoint `docs/checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md`.
 
+## Zamknięte po Bridge 4 — B5 IPO Quality Gate
+
+- `IpoBoardAdmission` wymaga kwalifikowanego wejścia CO₂ obok TP357 T/RH i RTC; brak źródła mimo safety-link odrzuca profil. `IpoSignalSelector` ogranicza liczbę wejść i blokuje overflow przy konwersji do `float`. `IpoProfileWire` blokuje deklarację niedostępnego wyciągu.
+- `IpoProfileJsonDecode` limit UTF-8 32 KiB; `web/src/domain/ipo-board-readiness.ts` plus istniejący edytor `/` pokazują preflight obecnego CrowPanel, 80 bajtów na etykietę, miejsca i brak możliwości apply. Eksport kompaktowego JSON z tym samym limitem.
+- Jedna observer-only projekcja `IpoProfileReadback` pokazuje active Mint RAM vs stored NVS. NVS odczyt buforuje CRC32 zapisanego rekordu, a konsola ma czytelne `ipo_health` + `ipo_readback` bez dodatkowego dużego bufora na stosie i bez zmiany dotychczasowych wierszy.
+- Dodano `test/test_ipo_profile/test_main.cpp` (C++) oraz `web/src/domain/ipo-board-readiness.test.ts` (Vitest) — **testów nie wykonywano**; nie powtarzać ich implementacji.
+- Dokładny zakres w `docs/checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md`.
+
 ## Jeden następny sprint
 
 - Przed aktywacją fizyczną wykonać **skoncentrowaną** kwalifikację nowych ścieżek: valid/stale TP357 i SCD41, Rule+lamp Safety, kodowanie i power-loss NVS, rozróżnienie stored/active, ponowny start. Nie powtarzać starych historycznych testów; gdy operator nadal wyklucza testy, pozostać przy kodzie dormant/read-only.

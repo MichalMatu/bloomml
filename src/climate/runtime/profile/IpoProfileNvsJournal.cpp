@@ -25,7 +25,8 @@ bool keyPresent(nvs_handle_t handle, const char* key) noexcept {
 }
 
 IpoProfileCodecStatus decodeSlot(nvs_handle_t handle, std::uint8_t slot,
-                                 DurableIpoProfile& profile) noexcept {
+                                 DurableIpoProfile& profile,
+                                 std::uint32_t* fingerprint = nullptr) noexcept {
   profile = {};
   std::size_t size = 0U;
   if (nvs_get_blob(handle, slotKey(slot), nullptr, &size) != ESP_OK ||
@@ -39,7 +40,13 @@ IpoProfileCodecStatus decodeSlot(nvs_handle_t handle, std::uint8_t slot,
       read_size != size) {
     return IpoProfileCodecStatus::InvalidLength;
   }
-  return decodeIpoProfile(bytes.bytes.data(), bytes.size, profile);
+  const auto status = decodeIpoProfile(bytes.bytes.data(), bytes.size, profile);
+  if (status == IpoProfileCodecStatus::Ok && fingerprint != nullptr) {
+    // Cached at NVS boot read so status/diagnostics do not allocate or encode
+    // a second large profile buffer on the service-console task stack.
+    *fingerprint = profileCrc32(bytes.bytes.data(), bytes.size);
+  }
+  return status;
 }
 
 bool matchesEncoded(nvs_handle_t handle, std::uint8_t slot,
@@ -82,10 +89,12 @@ IpoJournalReadResult IpoProfileNvsJournal::load() noexcept {
   }
 
   DurableIpoProfile selected{};
-  if (decodeSlot(handle, active, selected) == IpoProfileCodecStatus::Ok) {
+  if (decodeSlot(handle, active, selected, &result.stored_record_fingerprint) ==
+      IpoProfileCodecStatus::Ok) {
     result.status = IpoJournalStatus::Ok;
     result.profile = selected;
     result.stored = true;
+    result.stored_fingerprint_valid = true;
     nvs_close(handle);
     return result;
   }
@@ -93,12 +102,13 @@ IpoJournalReadResult IpoProfileNvsJournal::load() noexcept {
   // Never promote or overwrite corrupt state on read. Allow a known-good slot
   // to be reported for separate operator-approved recovery.
   DurableIpoProfile previous{};
-  if (decodeSlot(handle, static_cast<std::uint8_t>(1U - active), previous) ==
-      IpoProfileCodecStatus::Ok) {
+  if (decodeSlot(handle, static_cast<std::uint8_t>(1U - active), previous,
+                 &result.stored_record_fingerprint) == IpoProfileCodecStatus::Ok) {
     result.status = IpoJournalStatus::RecoveredFromBackup;
     result.profile = previous;
     result.stored = true;
     result.selected_backup = true;
+    result.stored_fingerprint_valid = true;
   } else {
     result.status = IpoJournalStatus::Corrupt;
   }

@@ -19,6 +19,8 @@ struct IpoJournalReadResult {
   DurableIpoProfile profile{};
   bool stored{false};
   bool selected_backup{false};
+  std::uint32_t stored_record_fingerprint{0U}; // CRC32 of complete encoded record
+  bool stored_fingerprint_valid{false};
 };
 
 class IpoProfileNvsJournal final {

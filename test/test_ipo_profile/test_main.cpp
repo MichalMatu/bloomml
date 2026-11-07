@@ -1,6 +1,7 @@
 #include "IpoBoardAdmission.h"
 #include "IpoSignalSelector.h"
 #include "climate/runtime/profile/IpoProfileWire.h"
+#include "climate/runtime/profile/IpoProfileReadback.h"
 
 #include <cassert>
 #include <cmath>
@@ -182,10 +183,46 @@ void testFullTypedWireRoundtripAndCorruption() {
          profile::IpoProfileCodecStatus::InvalidLength);
   assert(profile::decodeIpoProfile(blob.bytes.data(), blob.size - 1U, decoded) !=
          profile::IpoProfileCodecStatus::Ok);
+  p.schedule.exhaust_fan_available = false;
+  assert(profile::encodeIpoProfile(p, blob) ==
+         profile::IpoProfileCodecStatus::InvalidSchedule);
+  p.schedule.exhaust_fan_available = true;
   p.graph.actuators[0].safe_off = false;
   assert(profile::encodeIpoProfile(p, blob) ==
          profile::IpoProfileCodecStatus::InvalidGraph);
   assert(blob.size == 0U);
+}
+
+void testStoredProfileIsNotActiveProfileEvidence() {
+  runtime::RuntimeScheduleProfileOwner active{};
+  profile::IpoJournalReadResult store{};
+  store.status = profile::IpoJournalStatus::Ok;
+  store.stored = true;
+  store.profile.graph = ipo::makeCrowPanelMintReferenceGraph();
+  store.profile.schedule = runtime::makeMintRuntimeScheduleProfile();
+  store.profile.generation = 11U;
+  store.stored_record_fingerprint = 0x1234ABCDU;
+  store.stored_fingerprint_valid = true;
+  const auto truth = profile::buildIpoProfileReadback(active, store);
+  assert(truth.runtime_valid);
+  assert(truth.active_is_builtin_mint);
+  assert(!truth.active_is_operator_v2);
+  assert(truth.active_ram_generation == 0U);
+  assert(truth.stored_record_valid);
+  assert(truth.stored_generation == 11U);
+  assert(truth.stored_fingerprint_valid);
+  assert(truth.stored_record_fingerprint == 0x1234ABCDU);
+
+  store.status = profile::IpoJournalStatus::RecoveredFromBackup;
+  store.selected_backup = true;
+  const auto backup = profile::buildIpoProfileReadback(active, store);
+  assert(backup.stored_is_backup && !backup.active_is_operator_v2);
+
+  store.status = profile::IpoJournalStatus::Corrupt;
+  const auto corrupt = profile::buildIpoProfileReadback(active, store);
+  assert(!corrupt.stored_record_valid);
+  assert(!corrupt.stored_fingerprint_valid);
+  assert(!corrupt.active_is_operator_v2);
 }
 
 } // namespace
@@ -199,5 +236,6 @@ int main() {
   testSymbolicOnlyArbitration();
   testScheduleBoundariesAndOwner();
   testFullTypedWireRoundtripAndCorruption();
+  testStoredProfileIsNotActiveProfileEvidence();
   return 0;
 }

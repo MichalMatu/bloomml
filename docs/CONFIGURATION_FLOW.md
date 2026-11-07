@@ -103,3 +103,11 @@ W real-input runtime źródła `RuntimeInsideSource` i `RuntimeNearbySource` ter
 Na boot dodano **wyłącznie odczyt** osobnego IPO NVS journal. Nawet gdy znajduje poprawne zapisane bajty, nie podłącza ich do Rule, harmonogramu ani OutputSupervisor. Istniejąca konsola `status` pokazuje `ipo_store` (stan pamięci i generację, `applied=0`) osobno od `ipo_profile` (aktualne cele Mint w RAM) i `ipo_input` (ważność, wiek, źródło ostatnich pomiarów). Żadne urządzenie wykonawcze nie otrzymuje komend z tego magazynu. Nadal nie ma urządzeniowego API dla przeglądarki ani potwierdzenia fizycznego stanu RF433.
 
 **Uwaga dot. bezpieczeństwa:** warunkowanie świeżością pomiaru może zmieniać zachowanie Rule. Zmian nie kompilowano, nie testowano i nie wgrywano na ESP32 na życzenie operatora. Przed dopuszczeniem fizycznej aktywacji wymagana jest dedykowana, wąska kwalifikacja tej nowej ścieżki, a nie ponawianie historycznych testów badawczych.
+
+## B5 — granica „profil poprawny” vs „działa na tym sprzęcie”
+
+W konfiguratorze `/` pojawiła się **jawna ocena zgodności** `ipo-board-readiness.ts`, niezależna od ogólnej poprawności grafu. Potrafi opisać nowe wyjścia i czujniki bez ograniczenia przyszłych możliwości IPO, ale obecny CrowPanel nadal może ich nie umieć obsługiwać. Ocena sprawdza faktyczne drivery/adresy, **obowiązkowe wejście SCD41 CO₂**, procesy, komplet linków bezpieczeństwa, trzy wyjścia RF433 i minima ON/OFF. Zwraca wyłącznie informację, `applyEnabled=false` — nie uzyskuje pozwolenia na fizyczne wykonanie.
+
+Do wersji źródłowej firmware dodano byte-bound JSON 32 KiB oraz odrzucanie `exhaust_fan_available=false` dla obecnej pojedynczej drogi wentylacji. Eksport `/` jest zwarty i liczy bajty UTF-8 bez dodawanego końcowego LF; przy znacznikach Unicode etykiet aktualny C++ parser ogranicza je do 80 bajtów UTF-8. NVS odczyt przy starcie buforuje niekryptograficzny CRC32 całego zapisanego rekordu, a `IpoProfileReadback` odróżnia je od `schedule_hash` bieżącego Mint w RAM. `status` drukuje `ipo_health` oraz `ipo_readback`, lecz nie jest API live dla przeglądarki ani potwierdzeniem przełączenia RF433.
+
+Zapisano nowy host C++ i Vitest zestaw **regresji tego zakresu**. Nie uruchamiano ich ani kompilacji/flashowania, więc gate wykonawczy pozostaje OPEN. Zob. [checkpoint B5](checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md).

@@ -124,7 +124,11 @@ inline IpoProfileCodecStatus validateDurableIpoProfile(
   if (snapshot.generation == 0U ||
       ::growbox::ipo::validateGraph(snapshot.graph) != ::growbox::ipo::GraphStatus::Ok)
     return IpoProfileCodecStatus::InvalidGraph;
-  if (!validateRuntimeScheduleProfile(snapshot.schedule))
+  // Even if the process graph contains CO2-safety -> exhaust, disabling the
+  // only physical exhaust capability would make that safety path ineffective.
+  // The current CrowPanel adapter must reject such a stored candidate.
+  if (!validateRuntimeScheduleProfile(snapshot.schedule) ||
+      !snapshot.schedule.exhaust_fan_available)
     return IpoProfileCodecStatus::InvalidSchedule;
   if (!::growbox::ipo::assessCrowPanelReference(snapshot.graph).matches_compiled_board)
     return IpoProfileCodecStatus::UnsupportedBoard;

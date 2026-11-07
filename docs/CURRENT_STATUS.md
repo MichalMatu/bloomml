@@ -4,6 +4,12 @@ Data: **2026-11-07** · Repo: `MichalMatu/bloomml` · branch: `main`.
 
 **Status:** IPO v2 runtime bridge **SOURCE IMPLEMENTED / UNVERIFIED**. Poprzednie wyniki sprzętowe dotyczą wcześniejszego kodu i nie kwalifikują zmian z 7 listopada. Kod nie został skompilowany, przetestowany ani wgrany na ESP32 w tym sprincie — zgodnie z dyspozycją operatora. **Nie twierdzić, że nowy firmware jest już wdrożony.**
 
+## IPO Quality Gate B5 — kod źródłowy, bez wykonania (2026-11-07)
+
+Dopisano wymagane źródło **SCD41 CO₂** do dopuszczenia obecnego CrowPanel; ograniczono liczbę surowych pomiarów w selektorze i zapobieżono overflow `double → float`; nieaktywny firmware parser JSON v2 ma jawny limit **32 KiB** dopasowany do maksymalnego grafu. Kandydat ze świadomie wyłączonym wyciągiem nie przejdzie trwałej walidacji profilu. W `/` pokazujemy teraz **osobno** poprawność grafu, zgodność z rzeczywistą referencyjną mapą CrowPanel i rozmiar UTF-8, zawsze bez przycisku `apply`. Odczyt statusu w firmware rozdziela Mint w RAM i zapis w NVS; fingerprint NVS buforowany przy starcie, nie kodowany ponownie na stosie konsoli. Powstały dedykowane testy host C++ i web Vitest — **nie były uruchamiane**. Wciąż brak aktywnego profilu operatora i hardware qualification.
+
+Dokładne zmiany i dalszy zakres: [checkpoint B5](checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md).
+
 ## Jaka jest prawda produkcyjna
 
 - Sterowanie: deterministyczny **Rule**; ML/MPC tylko Shadow/research. Żadnego automatycznego awansu ML.

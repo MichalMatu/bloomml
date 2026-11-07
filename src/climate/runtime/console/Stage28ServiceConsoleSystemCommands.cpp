@@ -9,6 +9,8 @@
 #include "climate/runtime/schedule/EuropeWarsawTime.h"
 #include "climate/runtime/schedule/RuntimeScheduleProfile.h"
 #include "climate/runtime/profile/IpoProfileNvsJournal.h"
+#include "climate/runtime/profile/IpoProfileDiagnosticNames.h"
+#include "climate/runtime/profile/IpoProfileReadback.h"
 #include "climate/runtime/RuntimeAdapters.h"
 #include "climate/storage/Stage27TelemetryLogger.h"
 
@@ -148,6 +150,27 @@ void Stage28ServiceConsoleSystemCommands::printStatus(std::uint64_t now_ms) noex
       static_cast<unsigned long>(task_captured), task_status != nullptr);
 
   status_contributor_.printStatusDetails();
+  // Concise machine-readable status names; numeric legacy lines remain
+  // unchanged for existing diagnostics parsers. Unknown sensor age must not
+  // be mistaken for a confirmed fresh reading.
+  const auto inside_health = config_.inside_source != nullptr
+      ? config_.inside_source->lastSelections()
+      : std::array<::growbox::ipo::SignalSelection, 3U>{};
+  const auto outside_health = config_.nearby_source != nullptr
+      ? config_.nearby_source->lastSelections()
+      : std::array<::growbox::ipo::SignalSelection, 2U>{};
+  sink_.writeFormatted(
+      "ipo_health inside_t=%s inside_rh=%s inside_co2=%s "
+      "outside_t=%s outside_rh=%s store=%s active=builtin_mint applied_v2=0\r\n",
+      profile::signalSelectionStatusName(inside_health[0].status),
+      profile::signalSelectionStatusName(inside_health[1].status),
+      profile::signalSelectionStatusName(inside_health[2].status),
+      profile::signalSelectionStatusName(outside_health[0].status),
+      profile::signalSelectionStatusName(outside_health[1].status),
+      config_.profile_store != nullptr
+          ? profile::journalStatusName(config_.profile_store->status)
+          : "not_inspected");
+
   // Source selection comes from the previous completed control sample. No
   // fabricated readings or implicit confirmation of a physical RF output.
   if (config_.inside_source != nullptr) {
@@ -178,6 +201,22 @@ void Stage28ServiceConsoleSystemCommands::printStatus(std::uint64_t now_ms) noex
 
   // Read-only profile journal state at boot. It is NEVER an active profile
   // acknowledgement and does not trigger any NVS writes or output commands.
+  if (config_.schedule_profile != nullptr && config_.profile_store != nullptr) {
+    const auto truth = profile::buildIpoProfileReadback(
+        *config_.schedule_profile, *config_.profile_store);
+    sink_.writeFormatted(
+        "ipo_readback active_kind=%s active_ram_generation=%lu "
+        "active_schedule_hash=%08lx stored_generation=%lu "
+        "stored_record_crc32=%08lx stored_crc_valid=%d backup=%d "
+        "store_status=%s operator_v2_applied=%d can_apply=0\r\n",
+        truth.active_is_builtin_mint ? "builtin_mint" : "unqualified_ram",
+        static_cast<unsigned long>(truth.active_ram_generation),
+        static_cast<unsigned long>(truth.active_schedule_hash),
+        static_cast<unsigned long>(truth.stored_generation),
+        static_cast<unsigned long>(truth.stored_record_fingerprint),
+        truth.stored_fingerprint_valid, truth.stored_is_backup,
+        profile::journalStatusName(truth.journal_status), truth.active_is_operator_v2);
+  }
   if (config_.profile_store != nullptr) {
     const auto& store = *config_.profile_store;
     sink_.writeFormatted(

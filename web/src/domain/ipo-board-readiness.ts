@@ -22,8 +22,6 @@ export type CrowPanelProfileReadiness = {
   reasons: string[]
 }
 
-type DeviceDescriptor = { driver: string; locator: string }
-
 const acceptedLocators: Readonly<Record<string, readonly string[]>> = {
   "ble.tp357": ["runtime:tp357"],
   "ble.xiaomi": ["runtime:xiaomi"],
@@ -98,6 +96,12 @@ export function assessCrowPanelProfile(profile: IpoProfileV2): CrowPanelProfileR
 
   const devices = new Map(profile.devices.map((d) => [d.id, d]))
   for (const device of profile.devices) {
+    // cJSON firmware validation uses byte-oriented strlen(UTF-8), unlike
+    // browser/schema string-length validation. A Unicode label can pass the
+    // generic editor yet exceed the target's per-field byte budget.
+    if (new TextEncoder().encode(device.label).length > 80) {
+      reasons.push(device.id + ": nazwa przekracza 80 bajtów UTF-8 dla firmware.")
+    }
     const locators = acceptedLocators[device.driver]
     // The current firmware decoder rejects unknown locators even on a disabled device.
     if (!locators?.includes(device.locator)) {

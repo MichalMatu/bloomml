@@ -239,7 +239,7 @@ export function IpoSetupPage() {
     if (!valid) { setMessage("Najpierw popraw błędy konfiguracji."); return }
     // Compact JSON is the form bounded by the ESP32 firmware parser, unlike
     // pretty-printed drafts whose whitespace can exceed the device limit.
-    const blob = new Blob([JSON.stringify(profile) + "\n"], { type: "application/json" })
+    const blob = new Blob([JSON.stringify(profile)], { type: "application/json" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
