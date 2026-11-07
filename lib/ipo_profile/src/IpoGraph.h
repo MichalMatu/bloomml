@@ -1,7 +1,7 @@
 // BloomML IPO Foundation v2: portable, bounded, NO hardware I/O.
-// This module is intentionally not linked to production runtime yet. Its proposals
-// MUST be passed through validated runtime profile ownership, Safety and
-// OutputSupervisor before any future physical execution.
+// The graph is linked to real-input for read-only admission/diagnostics.
+// Its proposals MUST pass through validated runtime profile ownership, Safety
+// and OutputSupervisor before any future physical execution.
 #pragma once
 
 #include <array>

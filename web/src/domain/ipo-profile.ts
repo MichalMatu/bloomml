@@ -330,7 +330,7 @@ export function assessIpoProfile(profile: IpoProfileV2): string[] {
     }
   }
   if (profile.links.length === 0) warnings.push("Brak połączeń procesów z wyjściami.")
-  warnings.push("Mapa v2 jest szkicem. Obecne firmware nadal ma stałe role RF433 i Mint; brak NVS/apply/readback v2.")
+  warnings.push("Mapa v2 jest szkicem: firmware zachowuje Mint i stałe role RF433. NVS i readback v2 służą diagnostyce; aktywacja profilu jest zablokowana.")
   return [...new Set(warnings)]
 }
 

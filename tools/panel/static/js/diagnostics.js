@@ -175,9 +175,11 @@ function formatDiagnosticsHtml(snapshot) {
 }
 
 async function refreshDiagnosticsView(refreshDevice = true) {
-  const query = refreshDevice && lastState?.connected ? "?refresh=1" : "";
+  const sendRefresh = Boolean(refreshDevice && lastState?.connected);
   try {
-    diagnosticsSnapshot = await api(`/api/diagnostics${query}`);
+    diagnosticsSnapshot = sendRefresh
+      ? await api("/api/diagnostics/refresh", { method: "POST", body: "{}" })
+      : await api("/api/diagnostics");
   } catch (err) {
     diagnosticsSnapshot = `Błąd: ${friendlyError(err.message)}`;
   }

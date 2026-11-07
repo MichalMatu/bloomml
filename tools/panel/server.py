@@ -110,9 +110,9 @@ class PanelHandler(BaseHTTPRequestHandler):
                 _json_response(self, HTTPStatus.OK, BRIDGE.snapshot())
             elif path == "/api/diagnostics":
                 query = parse_qs(urlparse(self.path).query)
-                refresh = query.get("refresh", ["0"])[0].lower() in {"1", "true", "yes"}
-                if refresh and BRIDGE.snapshot().get("connected"):
-                    BRIDGE.request_diagnostics()
+                if query.get("refresh", ["0"])[0].lower() in {"1", "true", "yes"}:
+                    _json_response(self, HTTPStatus.METHOD_NOT_ALLOWED, {"error": "diagnostics_refresh_requires_post"})
+                    return
                 _json_response(self, HTTPStatus.OK, BRIDGE.diagnostics_snapshot())
             elif path == "/api/ports":
                 _json_response(self, HTTPStatus.OK, {"ports": BRIDGE.list_ports()})
@@ -146,6 +146,10 @@ class PanelHandler(BaseHTTPRequestHandler):
             elif path == "/api/disconnect":
                 BRIDGE.disconnect()
                 _json_response(self, HTTPStatus.OK, BRIDGE.snapshot())
+            elif path == "/api/diagnostics/refresh":
+                if BRIDGE.snapshot().get("connected"):
+                    BRIDGE.request_diagnostics()
+                _json_response(self, HTTPStatus.OK, BRIDGE.diagnostics_snapshot())
             elif path == "/api/command":
                 BRIDGE.send_command(body)
                 _json_response(self, HTTPStatus.OK, {"ok": True})

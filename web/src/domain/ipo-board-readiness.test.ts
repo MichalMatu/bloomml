@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest"
 import { assessCrowPanelProfile, MAX_FIRMWARE_IPO_JSON_BYTES } from "./ipo-board-readiness"
-import { createDefaultIpoProfile, validateIpoProfile } from "./ipo-profile"
+import { assessIpoProfile, createDefaultIpoProfile, validateIpoProfile } from "./ipo-profile"
 
 describe("DeviceProfile v2 / physical CrowPanel admission preview", () => {
+  it("reports implemented NVS/readback without promising profile activation", () => {
+    const warnings = assessIpoProfile(createDefaultIpoProfile()).join(" ")
+    expect(warnings).toContain("NVS i readback v2")
+    expect(warnings).toContain("aktywacja profilu jest zablokowana")
+    expect(warnings).not.toContain("brak NVS/apply/readback")
+  })
+
   it("admits only the compiled Mint hardware reference, without granting apply", () => {
     const p = createDefaultIpoProfile()
     expect(validateIpoProfile(p)).toEqual([])

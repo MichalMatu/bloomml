@@ -285,7 +285,7 @@ export function IpoSetupPage() {
                     <div className="flex items-center gap-2">
                       <Switch aria-label={"Aktywne: " + d.id} checked={d.enabled}
                         onCheckedChange={(checked) => changeDevice(d.id, { enabled: checked })} />
-                      <Button type="button" variant="ghost" size="sm"
+                      <Button type="button" variant="ghost"
                         onClick={() => removeDevice(d.id)}>Usuń</Button>
                     </div>
                   </div>
@@ -372,7 +372,7 @@ export function IpoSetupPage() {
               <div key={a.id} className="space-y-3 rounded-lg border p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold">{a.id}</p>
-                  <Button type="button" variant="ghost" size="sm"
+                  <Button type="button" variant="ghost"
                     onClick={() => removeActuator(a.id)}>Usuń</Button>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -437,7 +437,7 @@ export function IpoSetupPage() {
                       disabled={definition.protected}
                       onCheckedChange={(enabled) => changeProcess(p.id, { enabled })}/>
                     {!definition.protected ? (
-                      <Button type="button" variant="ghost" size="sm"
+                      <Button type="button" variant="ghost"
                         onClick={() => removeProcess(p.id)}>Usuń</Button>
                     ) : null}
                   </div>
@@ -464,7 +464,7 @@ export function IpoSetupPage() {
                   {" → "}{EFFECT_LABELS[link.effect]}{" → "}
                   <strong>{profile.actuators.find((a) => a.id === link.actuator_id)?.id ?? link.actuator_id}</strong>
                 </p>
-                <Button type="button" variant="ghost" size="sm"
+                <Button type="button" variant="ghost"
                   onClick={() => setProfile((previous) => ({
                     ...previous, links: previous.links.filter((_, i) => i !== index),
                   }))}>Usuń</Button>
