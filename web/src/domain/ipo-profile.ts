@@ -105,6 +105,7 @@ export function validateIpoProfile(value: unknown): string[] {
     errors.push("board: niepoprawna nazwa")
   }
   const devices = list(root.devices, "devices", MAX_IPO_DEVICES, errors)
+  if (devices.length === 0) errors.push("devices: wymagane przynajmniej jedno urządzenie")
   const deviceSeen = new Set<string>()
   const locators = new Set<string>()
   const deviceMap = new Map<string, { driver: DriverId; enabled: boolean }>()
@@ -134,6 +135,7 @@ export function validateIpoProfile(value: unknown): string[] {
     }
   }
   const signals = list(root.signals, "signals", MAX_IPO_SIGNALS, errors)
+  if (signals.length === 0) errors.push("signals: wymagane przynajmniej jedno przypisanie")
   const signalSeen = new Set<string>()
   const assignedSignals = new Map<SignalRole, number>()
   for (const [i, item] of signals.entries()) {
@@ -202,6 +204,7 @@ export function validateIpoProfile(value: unknown): string[] {
     }
   }
   const processes = list(root.processes, "processes", MAX_IPO_PROCESSES, errors)
+  if (processes.length === 0) errors.push("processes: wymagany proces")
   const processSeen = new Set<string>()
   const processMap = new Map<string, { kind: ProcessKind; enabled: boolean }>()
   let co2SafetyCount = 0
@@ -308,7 +311,20 @@ export function assessIpoProfile(profile: IpoProfileV2): string[] {
       }
     }
   }
+  const currentFirmwareRoles: Partial<Record<OutputRole, string>> = {
+    exhaust_fan: "socket:1", light: "socket:2", humidifier: "socket:3",
+  }
   for (const output of profile.actuators) {
+    const device = devices.get(output.device_id)
+    const requiredLocator = currentFirmwareRoles[output.role]
+    if (!requiredLocator || device?.driver !== "rf433.binary_socket" ||
+        device.locator !== requiredLocator || output.channel !== "switch") {
+      warnings.push(output.id + ": poprawna definicja v2, ale brak takiego powiązania w obecnym firmware Mint.")
+    }
+    if ((output.role === "exhaust_fan" && (output.min_on_ms < 120000 || output.min_off_ms < 120000)) ||
+        (output.role === "humidifier" && (output.min_on_ms < 180000 || output.min_off_ms < 180000))) {
+      warnings.push(output.id + ": projektowe minima ON/OFF są niższe od aktualnej polityki firmware.")
+    }
     if (!devices.get(output.device_id)?.enabled) {
       warnings.push(output.id + ": powiązane wyjście fizyczne jest wyłączone.")
     }

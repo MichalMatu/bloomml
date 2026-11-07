@@ -12,7 +12,8 @@
 namespace growbox::ipo {
 
 inline constexpr std::size_t kMaxDevices = 24U;
-inline constexpr std::size_t kMaxSignals = 16U;
+inline constexpr std::size_t kMaxSignals = 16U; // semantic roles
+inline constexpr std::size_t kMaxSignalSources = kMaxSignals * 4U; // up to 4 sources per role
 inline constexpr std::size_t kMaxActuators = 24U;
 inline constexpr std::size_t kMaxProcesses = 16U;
 inline constexpr std::size_t kMaxLinks = 48U;
@@ -73,7 +74,7 @@ struct Link {
 };
 struct Graph {
   std::array<Device, kMaxDevices> devices{};
-  std::array<SignalBinding, kMaxSignals> signals{};
+  std::array<SignalBinding, kMaxSignalSources> signals{};
   std::array<ActuatorBinding, kMaxActuators> actuators{};
   std::array<Process, kMaxProcesses> processes{};
   std::array<Link, kMaxLinks> links{};
@@ -164,7 +165,7 @@ inline const Process* findProcess(const Graph& graph, std::uint16_t id) noexcept
   return nullptr;
 }
 inline GraphStatus validateGraph(const Graph& graph) noexcept {
-  if (graph.device_count > kMaxDevices || graph.signal_count > kMaxSignals ||
+  if (graph.device_count > kMaxDevices || graph.signal_count > kMaxSignalSources ||
       graph.actuator_count > kMaxActuators || graph.process_count > kMaxProcesses ||
       graph.link_count > kMaxLinks) return GraphStatus::Capacity;
   for (std::size_t i = 0; i < graph.device_count; ++i) {
