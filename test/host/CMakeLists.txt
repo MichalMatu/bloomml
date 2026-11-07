@@ -729,3 +729,22 @@ target_include_directories(service_console_text_sink_tests PRIVATE "${PROJECT_RO
 target_compile_features(service_console_text_sink_tests PRIVATE cxx_std_17)
 target_compile_options(service_console_text_sink_tests PRIVATE -Wall -Wextra -Wpedantic)
 add_test(NAME service_console_text_sink_tests COMMAND service_console_text_sink_tests)
+
+# Focused, portable IPO v2 contract gate. No ESP-IDF, NVS, RF or hardware I/O.
+# Run independently: cmake -S test/host -B build/host-tests &&
+#   cmake --build build/host-tests --target ipo_profile_tests &&
+#   ctest --test-dir build/host-tests -R '^ipo_profile_tests$' --output-on-failure
+add_executable(
+  ipo_profile_tests
+  "${PROJECT_ROOT}/test/test_ipo_profile/test_main.cpp"
+)
+target_include_directories(
+  ipo_profile_tests
+  PRIVATE
+    "${PROJECT_ROOT}/lib/ipo_profile/src"
+    "${PROJECT_ROOT}/lib/environment_control/src"
+    "${PROJECT_ROOT}/src"
+)
+target_compile_features(ipo_profile_tests PRIVATE cxx_std_17)
+target_compile_options(ipo_profile_tests PRIVATE -Wall -Wextra -Wpedantic)
+add_test(NAME ipo_profile_tests COMMAND ipo_profile_tests)

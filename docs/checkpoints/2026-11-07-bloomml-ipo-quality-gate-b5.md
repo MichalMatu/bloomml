@@ -39,3 +39,7 @@
 ## Jedyny następny krok
 
 **Wąska kwalifikacja nowej ścieżki** (nie historyczny pełny audit) z dedykowanymi testami `test/test_ipo_profile`, `web/...readiness.test.ts`, parserem C++/JSON i sprzętowym profilem build; sprawdzić też zachowanie przy awarii NVS i hardware input stale. Dopiero po PASS opracować jeden właściciel transakcji `stage → validate → commit → atomic apply → active readback → rollback`, a następnie lokalny odczyt statusu w istniejącym panelu. Nie uruchamiać żadnego procesu w tle, nie przypisywać AI/ML władzy wyjściowej.
+
+### Rejestrowanie nowych testów
+
+`test/host/CMakeLists.txt` zawiera nowy, oddzielny `ipo_profile_tests`, bez ESP-IDF i fizycznych wyjść. `Makefile` ma zawężony target `make test-ipo`, kompilujący **tylko** ten cel, a nie cały zestaw host. Dla frontend: `pnpm --dir web exec vitest run src/domain/ipo-board-readiness.test.ts`. To **komendy do przyszłej kwalifikacji**, nie dowód uruchomienia w tym sprincie.

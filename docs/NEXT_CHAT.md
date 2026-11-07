@@ -33,3 +33,10 @@
 - ML pozostaje Shadow, symulator/Kaggle offline, MPC research nie ma prawa aktywacji.
 
 **Konkretny stan:** nowy firmware zmienia selekcję/odrzucanie starych pomiarów, ale nie został skompilowany ani wgrany. Nie deklarować PASS/uruchomienia.
+
+## Uruchomienie tylko nowej wąskiej bramki, gdy operator dopuści
+
+- `make test-ipo` — wyłącznie nowy hostowy `ipo_profile_tests` (CMake rejestruje ten test; bez całej poprzedniej suite).
+- `pnpm --dir web exec vitest run src/domain/ipo-board-readiness.test.ts` — wyłącznie nowy test preflight UI.
+- Następnie osobna kwalifikacja ESP-IDF *real-input CrowPanel*, zanim nowa ścieżka sterowania zostanie wgrana na fizyczne wyjścia.
+- **W B5 żaden z powyższych testów ani buildów nie został uruchomiony.**

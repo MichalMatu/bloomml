@@ -23,6 +23,7 @@ endif
 
 .DEFAULT_GOAL := help
 
+.PHONY: test-ipo
 .PHONY: help setup setup-dev install-hooks ensure-venv ensure-idf \
         check check-fast check-push fmt lint clang-tidy-host schema schema-check \
         train-quick train-full probe-sim \
@@ -154,6 +155,12 @@ test-host:
 	cmake --build $(HOST_BUILD_DIR) --parallel $(HOST_BUILD_JOBS)
 	ctest --test-dir $(HOST_BUILD_DIR) --output-on-failure
 	bash scripts/test_display_host.sh
+
+# New IPO v2 narrow qualification gate; does NOT compile the full host suite.
+test-ipo:
+	cmake -S test/host -B $(HOST_BUILD_DIR)
+	cmake --build $(HOST_BUILD_DIR) --target ipo_profile_tests --parallel 2
+	ctest --test-dir $(HOST_BUILD_DIR) -R '^ipo_profile_tests$' --output-on-failure
 
 test-panel: ensure-venv
 	$(PY) -m pytest tests/test_panel.py tests/test_panel_e2e.py tests/test_panel_fixtures.py -q
