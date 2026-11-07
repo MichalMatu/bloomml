@@ -160,7 +160,7 @@ test-host:
 test-ipo:
 	cmake -S test/host -B $(HOST_BUILD_DIR)
 	cmake --build $(HOST_BUILD_DIR) --target ipo_profile_tests ipo_activation_tests --parallel 2
-	ctest --test-dir $(HOST_BUILD_DIR) -R '^(ipo_profile_tests|ipo_activation_tests)$' --output-on-failure
+	ctest --test-dir $(HOST_BUILD_DIR) -R '^(ipo_profile_tests|ipo_activation_tests)$$' --output-on-failure
 
 test-panel: ensure-venv
 	$(PY) -m pytest tests/test_panel.py tests/test_panel_e2e.py tests/test_panel_fixtures.py -q
