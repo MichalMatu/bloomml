@@ -12,8 +12,8 @@ The deployed product must remain standalone on the ESP32-S3. External foundation
 
 ## Current priority — IPO v2 activation qualification (2026-11-07)
 
-**Transaction owner SOURCE IMPLEMENTED / HOST TESTED; real-input hardware CLOSED.**
-One bounded owner now performs preview/validation/qualified NVS commit/safe shared RAM apply/readback/rollback and reports stored vs active with provenance. A closed production gate deliberately denies activation; no UART/browser apply and no new physical output authority. New narrow host CTest 2/2 and Vitest 9/9 passed on `977c48d221cd310be70f39653a33d8eb4abd5ebd`. Next is exact-SHA real-input ESP-IDF + NVS fault/reboot + TP357/SCD41/Rule/lamp-safety qualification with outputs fake-locked, then a real supervisor interlock and only subsequently a privileged operator API. Historical ML/display audits and broad builds are not part of this gate.
+**Transaction owner HOST TESTED; real-input ESP-IDF BUILD PASS; physical device still CLOSED.**
+One owner handles preview/validate/NVS commit/shared Rule-and-lamp RAM apply/readback/rollback, but production `ClosedIpoActivationGate` denies activation; no UART/browser apply or new physical authority. Exact-source CrowPanel build PASS (`1a1b3de8`, bin `0xd1e00`, 80% app partition free). The real NVS journal implementation passed host simulated NVS power-cut/CRC/rollback; `make test-ipo` 3/3 PASS on `45f3527`, plus 3/3 targeted LampSafety, stale Rule, lifecycle tests. **Authorized physical port `/dev/cu.usbserial-120` absent**: real flash/NVS power loss/TP357/SCD41 runtime and RAM/stack remain BLOCKED. Next hardware qualification with fake-locked outputs, then independently reviewed supervisor quiescence and authenticated operator API. See the [hardware checkpoint](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md).
 
 ## Archived source milestones (not active tasks)
 
