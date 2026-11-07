@@ -153,12 +153,13 @@ void Stage28ServiceConsoleSystemCommands::printStatus(std::uint64_t now_ms) noex
     const auto& owner = *config_.schedule_profile;
     const auto& profile = owner.active();
     sink_.writeFormatted(
-        "ipo_profile source=builtin_mint generation=%lu valid=%d "
+        "ipo_profile source=builtin_mint generation=%lu schedule_hash=%08lx valid=%d "
         "persisted=0 profile_v2_applied=0 mode=%s day_hour=%u night_hour=%u "
         "day_t=%.2f day_rh=%.2f day_vpd=%.2f "
         "night_t=%.2f night_rh=%.2f night_vpd=%.2f "
         "exhaust=%d humidifier=%d\r\n",
-        static_cast<unsigned long>(owner.generation()), owner.valid(),
+        static_cast<unsigned long>(owner.generation()),
+        static_cast<unsigned long>(runtimeScheduleFingerprint(profile)), owner.valid(),
         profile.humidity_mode == ::growbox::climate::HumidityControlMode::Vpd ? "VPD" : "RH",
         static_cast<unsigned>(profile.day_start_hour),
         static_cast<unsigned>(profile.night_start_hour),

@@ -116,6 +116,7 @@ elseif(GROWBOX_APP_MODE STREQUAL "climate-v6-real-inputs")
       "climate/runtime/schedule/ScheduleProfile.cpp"
       "climate/runtime/schedule/ScheduleIntentAdapter.cpp"
       "climate/runtime/profile/IpoProfileNvsJournal.cpp"
+      "climate/runtime/profile/IpoProfileJsonDecode.cpp"
       "climate/runtime/RuntimeAdapters.cpp"
       "climate/runtime/telemetry/TelemetryReporter.cpp"
       "climate/runtime/diagnostics/RfDiagnostics.cpp"

@@ -3,6 +3,7 @@
 #include "climate/application/ClimateCompositeInput.h"
 
 #include <cmath>
+#include <cstring>
 #include <cstdint>
 
 namespace growbox::app::climate_io::runtime {
@@ -89,6 +90,38 @@ private:
   RuntimeScheduleProfile active_ = makeMintRuntimeScheduleProfile();
   std::uint32_t generation_{0U};
 };
+
+// Stable fingerprint of the *active schedule settings* (not a v2 graph
+// digest, not evidence of flash persistence or physical output state).
+inline std::uint32_t runtimeScheduleFingerprint(
+    const RuntimeScheduleProfile& profile) noexcept {
+  std::uint32_t hash = 2166136261U;
+  const auto mix = [&hash](std::uint32_t bits) noexcept {
+    for (std::uint8_t i = 0U; i < 4U; ++i) {
+      hash = (hash ^ static_cast<std::uint8_t>(bits >> (i * 8U))) * 16777619U;
+    }
+  };
+  const auto mixFloat = [&mix](float value) noexcept {
+    std::uint32_t bits = 0U;
+    std::memcpy(&bits, &value, sizeof(value));
+    mix(bits);
+  };
+  mix(profile.version);
+  mix(profile.day_start_hour);
+  mix(profile.night_start_hour);
+  mix(static_cast<std::uint8_t>(profile.humidity_mode));
+  mix(static_cast<std::uint32_t>(profile.sensor_timeout_ms));
+  mix(static_cast<std::uint32_t>(profile.sensor_timeout_ms >> 32U));
+  mixFloat(profile.day.temperature_c);
+  mixFloat(profile.day.relative_humidity_pct);
+  mixFloat(profile.day.air_vpd_kpa);
+  mixFloat(profile.night.temperature_c);
+  mixFloat(profile.night.relative_humidity_pct);
+  mixFloat(profile.night.air_vpd_kpa);
+  mix(profile.exhaust_fan_available ? 1U : 0U);
+  mix(profile.humidifier_available ? 1U : 0U);
+  return hash;
+}
 
 inline bool projectRuntimeSchedule(std::uint8_t hour,
                                    const RuntimeScheduleProfile& profile,

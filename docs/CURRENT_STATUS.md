@@ -19,6 +19,10 @@ Status: **production feature/performance work remains paused pending the new-hos
 
 The current architecture split remains intentional: `ClimatePolicy.*` owns stateless Rule generation/arbitration/safety policy, while `ClimateRuntimeController.*` owns stateful trend/effective-action estimation, ML orchestration and execution reconciliation.
 
+## IPO Runtime Bridge 3 (2026-11-07) — firmware v2 decoder and dormant staging source
+
+Dodany w kodzie surowo walidujący `IpoProfileJsonDecode` (JSON v2 → bounded graph/targets → aktualne CrowPanel admission), nieaktywny `IpoProfileStagingCoordinator` (prepare / trwały zapis-only / weryfikacja), i `schedule_hash` diagnostyki istniejącego RAM Mint. Parser jest w źródłach real-input, ale brak jakiegokolwiek caller-a operacji NVS `commit` w produkcyjnym runtime; NIC nie zapisuje profilu, ani nie umożliwia jego zastosowania z panelu. Brak testów/kompilacji/flashowania: UNVERIFIED. `CONFIGURATION_FLOW.md` i checkpoint opisują granice.
+
 ## IPO Runtime Bridge 2 (2026-11-07) — durable profile source staged, NOT ACTIVE
 
 Dodano `IpoProfileWire.h` (cały typowany graf i cele, bounded wersja+CRC) i `IpoProfileNvsJournal.h/.cpp` (oddzielna dwuslotowa domena NVS z odczytem zwrotnym i możliwością wykrycia dobrej poprzedniej kopii). Kod dołączono do listy źródeł real-input, ale nie jest wywoływany, niczego nie zapisuje/odczytuje w boot i nie zmienia aktywnego profilu. Brak weryfikacji wykonawczej lub sprzętowej; `active IPO v2` nadal NIE ISTNIEJE. Więcej: `CONFIGURATION_FLOW.md`.

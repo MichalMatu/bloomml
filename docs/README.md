@@ -21,7 +21,7 @@ For normal product work read, in order:
 | Document | Role |
 | --- | --- |
 | `CURRENT_STATUS.md` | active baseline and next work |
-| `CONFIGURATION_FLOW.md` | canonical v2 IPO and current CrowPanel runtime bridge map |
+| `CONFIGURATION_FLOW.md` | canonical v2 IPO, CrowPanel runtime bridge stages and activation gates |
 | `PRODUCT_DIRECTION.md` | canonical product UX/contract direction and ML qualification gates |
 | `AUDIT_STATUS.md` | scoped audit results, evidence limits and open full-audit gates |
 | `NEXT_CHAT.md` | single follow-on sprint without repeating closed audit work |

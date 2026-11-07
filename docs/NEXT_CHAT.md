@@ -19,3 +19,12 @@ One development branch: `main`; `agent-control` Local Agent, `gh-pages` publishi
 5. Provide browser profile `preview → validate → apply → readback` only when a real local device API exists. E-ink observer only, Shadow passive.
 
 No v2 profile has been saved to NVS or applied to real board. Do not claim active v2 or successful build/tests. Research MPC 19/22 old hard-case FAIL, no empirical growbox calibration remain open.
+
+## Source-only update since Bridge 2 (same 2026-11-07 sprint)
+
+- `IpoProfileJsonDecode.h/.cpp`: strict bounded 8192-byte v2 JSON → typed graph+target snapshot, normalized numeric runtime IDs, driver/physical CrowPanel admission, no NVS or actuation side effect.
+- `IpoProfileStagingCoordinator.h`: isolated `prepare → persisted-only commit → exact readback`, not instantiated anywhere in runtime.
+- Serial `status` adds `schedule_hash` for *current Mint target/schedule values*, NOT a hash of an active v2 device graph.
+- Source registration in `src/CMakeLists.txt`; there is still **NO active apply transport, no full-profile load on boot, no NVS profile writes, no new physical output authority**.
+- Typed durable binary excludes original UI labels/names; do not promise lossless JSON round-trip from the MCU yet.
+- Continue with isolated, targeted contract/power-failure qualification before any physical profile activation. Do not rerun older green suites or heavy builds without specific need.

@@ -33,3 +33,13 @@ Start od świeżego main; brak nowych branches, Codex, Work, GitHub Actions. Nie
 - Validation and physical qualification of the new codec/NVS journal remain **NOT DONE** by operator request; do not claim it is production-proven, crash-safe under all torn writes, or active on the board. Serialize future store calls through a single runtime owner: generation checking alone is not a cross-task transaction mutex.
 
 Now next milestone is full v2 JSON parse/normalize → capability/admission → journal transaction → runtime atomic apply with rollback → profile hash/readback and live status. Do **not** wire journaled candidate to physical outputs before narrow qualification.
+
+## Stage 3 source extension — strict v2 JSON admission and dormant stage/commit/readback
+
+- `src/climate/runtime/profile/IpoProfileJsonDecode.h/.cpp` is a source-linked **bounded v2 parser**, using existing firmware cJSON: checks maximum JSON bytes (8192), exact known field sets (unknown/duplicate fields rejected), v2 draft provenance/board, driver/locator normalization, symbolic device/process/output IDs → bounded numeric IDs, source priority, channel/effect/role compatibility, target bounds, and final CrowPanel admission. Future hardware drivers deliberately rejected until qualified. No JSON values are ever interpreted as executable commands or RF payloads.
+- `src/climate/runtime/profile/IpoProfileStagingCoordinator.h` is a **dormant**, single-owner API for privileged `prepare JSON → validate board → encode/snapshot CRC → commit stored-only into journal → readback exact encoding`. A successful storage commit does NOT update the live runtime, schedule owner or OutputSupervisor.
+- `RuntimeScheduleProfile.h` adds a stable hash of the **schedule settings only**; serial console `status` reports it as `schedule_hash` with generation and explicit `profile_v2_applied=0`.
+- The parser source is registered for the real-input CMake source list, but the coordinator has **no boot or console caller** and no network API. No persistence writes or physical actuation can occur from this source alone.
+- The typed NVS execution snapshot stores **execution-relevant numeric IDs/graph/targets**, not the original JSON labels/board display names. GUI metadata must remain separate or be explicitly versioned for roundtrip/export later.
+
+Remaining: device-side validation/parity, power-cut/generation/CRC tests for new code, privileged runtime owner/transaction locks, safe staged activation & rollback, signal failover connection, real output mapper and readback/live UI. **No test suite, typecheck, heavy build, or physical flash was run by operator direction.**
