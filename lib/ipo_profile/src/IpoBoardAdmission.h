@@ -121,8 +121,12 @@ inline CrowPanelAdmission assessCrowPanelReference(const Graph& graph) noexcept 
       default: return false;
     }
   };
+  // The installed safety path must have a real CO2 input, not just an
+  // enabled co2_safety process and exhaust link. Missing/stale readings are
+  // still invalid at runtime; this checks hardware wiring only.
   constexpr SignalRole required[]{
-      SignalRole::InsideTemperature, SignalRole::InsideHumidity, SignalRole::ClockTime
+      SignalRole::InsideTemperature, SignalRole::InsideHumidity,
+      SignalRole::InsideCo2, SignalRole::ClockTime
   };
   for (const auto role : required) {
     bool found = false;
@@ -143,7 +147,7 @@ inline CrowPanelAdmission assessCrowPanelReference(const Graph& graph) noexcept 
   for (std::size_t i = 0; i < graph.signal_count; ++i) {
     const auto& binding = graph.signals[i];
     const auto* device = findDevice(graph, binding.device_id);
-    if (device == nullptr || binding.priority != 0U ||
+    if (device == nullptr || !device->enabled || binding.priority != 0U ||
         !signalPermitted(binding.role, device->driver, binding.channel)) {
       result.status = CrowPanelAdmissionStatus::UnsupportedInputBinding;
       return result;

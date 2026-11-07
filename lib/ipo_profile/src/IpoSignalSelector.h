@@ -44,6 +44,7 @@ inline SignalSelection selectFreshSignal(const Graph& graph, SignalRole role,
                                          std::uint64_t timeout_ms) noexcept {
   SignalSelection result{};
   if (graph.signal_count > kMaxSignalSources || graph.device_count > kMaxDevices ||
+      reading_count > kMaxSignalSources ||
       (reading_count > 0U && readings == nullptr)) {
     result.status = SignalSelectionStatus::Capacity;
     return result;
@@ -78,7 +79,8 @@ inline SignalSelection selectFreshSignal(const Graph& graph, SignalRole role,
         candidate = current;
       }
       if (!matching_reading_seen || !candidate.valid ||
-          candidate.age_ms > timeout_ms || !std::isfinite(candidate.value)) continue;
+          candidate.age_ms > timeout_ms || !std::isfinite(candidate.value) ||
+          std::fabs(candidate.value) > std::numeric_limits<float>::max()) continue;
       result.status = SignalSelectionStatus::Ok;
       result.device_id = candidate.device_id;
       result.channel = candidate.channel;

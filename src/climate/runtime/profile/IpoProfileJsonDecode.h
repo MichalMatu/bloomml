@@ -7,7 +7,10 @@
 
 namespace growbox::app::climate_io::runtime::profile {
 
-inline constexpr std::size_t kMaximumIpoProfileJsonBytes = 8192U;
+// Bounded operator JSON (24 devices / 16 signal roles / 48 links can exceed 8 KB).
+// Parsed only in the privileged staging path, never in the one-second control tick.
+// The JS exporter counts compact UTF-8 bytes against the same 32 KiB limit.
+inline constexpr std::size_t kMaximumIpoProfileJsonBytes = 32768U;
 
 enum class IpoJsonStatus : std::uint8_t {
   Ok, InvalidLength, InvalidJson, UnsupportedSchema, InvalidFields,

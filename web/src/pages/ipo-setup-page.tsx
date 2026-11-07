@@ -19,6 +19,7 @@ import {
   outputChannels, parseIpoJson, validateIpoProfile,
 } from "@/domain/ipo-profile"
 import type { Actuator, Device, IpoProfileV2, Process, ProcessLink, Targets } from "@/domain/ipo-profile"
+import { assessCrowPanelProfile } from "@/domain/ipo-board-readiness"
 import { navigate, ROUTES } from "@/lib/routing"
 
 function Pick({
@@ -72,6 +73,7 @@ export function IpoSetupPage() {
   const errors = useMemo(() => validateIpoProfile(profile), [profile])
   const warnings = useMemo(() => assessIpoProfile(profile), [profile])
   const valid = errors.length === 0
+  const firmwareReadiness = useMemo(() => assessCrowPanelProfile(profile), [profile])
 
   const inputDevices = profile.devices.filter((d) =>
     DRIVER_CATALOG[d.driver].channels.some((c) => c.direction === "input"),
@@ -235,7 +237,9 @@ export function IpoSetupPage() {
   }
   function downloadDraft() {
     if (!valid) { setMessage("Najpierw popraw błędy konfiguracji."); return }
-    const blob = new Blob([JSON.stringify(profile, null, 2) + "\n"], { type: "application/json" })
+    // Compact JSON is the form bounded by the ESP32 firmware parser, unlike
+    // pretty-printed drafts whose whitespace can exceed the device limit.
+    const blob = new Blob([JSON.stringify(profile) + "\n"], { type: "application/json" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
@@ -566,6 +570,26 @@ export function IpoSetupPage() {
           </div>
           {valid ? <p className="text-sm font-medium">Graf i dane szkicu: poprawne strukturalnie. To NIE jest kwalifikacja do sterowania sprzętem.</p>
             : <AppErrorList errors={errors}/>}
+          <div className="space-y-2 rounded-lg border p-3">
+            <p className="text-sm font-semibold">Zgodność z obecnym firmware CrowPanel</p>
+            <p className="text-sm text-muted-foreground">
+              {firmwareReadiness.matchesCurrentFirmware
+                ? "Profil mieści się w aktualnych możliwościach referencyjnej mapy Mint."
+                : "Profil jest poprawnym projektem IPO, ale obecne firmware nie obsługuje całej konfiguracji."}
+              {" "}Rozmiar JSON: {firmwareReadiness.jsonBytes} bajtów.
+              {" "}Aktywacja na urządzeniu: niedostępna; brak kwalifikowanego apply.
+            </p>
+            {!firmwareReadiness.matchesCurrentFirmware ? (
+              <details>
+                <summary className="cursor-pointer text-sm font-medium">
+                  Przyczyny niezgodności ({firmwareReadiness.reasons.length})
+                </summary>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {firmwareReadiness.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                </ul>
+              </details>
+            ) : null}
+          </div>
           <details className="rounded-lg border p-3">
             <summary className="cursor-pointer text-sm font-medium">Zastrzeżenia sprzętowe i gotowość</summary>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
