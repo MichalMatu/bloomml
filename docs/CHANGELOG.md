@@ -1,3 +1,10 @@
+## 2026-11-07 — IPO v2 CrowPanel build + NVS adapter fault matrix
+
+- Real-input CrowPanel/e-ink ESP-IDF build passed at source `1a1b3de8`; bin `0xd1e00`, 80% of app partition free, no flash.
+- Added `ipo_nvs_journal_tests`: unchanged production journal with simulated NVS commit faults, reboot, CRC backup and namespace-isolated rollback.
+- Mac Local Agent: NVS test 1/1 PASS; LampSafety/freshness/output lifecycle 3/3 PASS; `make test-ipo` 3/3 PASS on `45f3527`. Fixed Makefile CTest regex escaping.
+- `/dev/cu.usbserial-120` absent, physical NVS and supervised activation unqualified; `ClosedIpoActivationGate` remains installed. [Checkpoint](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md).
+
 ## 2026-11-07 — IPO v2 activation transaction, host qualification
 
 - One explicit `IpoProfileActivationTransaction`, closed hardware qualification gate, generation/CRC-bound preview, NVS commit, schedule RAM apply, independent readback and two-sided rollback/quarantine.
