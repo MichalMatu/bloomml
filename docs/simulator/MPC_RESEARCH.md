@@ -28,4 +28,4 @@ PYTHONPATH=. python -m tools.ml.mpc.cli --hours 1 --step-s 60 --seed 1729 --outp
 PYTHONPATH=. python -m tools.ml.mpc.scenario_matrix --steps 12 --step-s 60 --seeds 1729 1730 --output-dir build/mpc-matrix
 ```
 
-CLI/matrix zwracają code 2 również przy ukończonym, lecz niezaliczonym gate syntetycznym; rozdziel liczbę uruchomień od jakości wyników. Zachowaj manifest i negatywne próby. Bez dokładnego `source_commit` status pozostaje UNKNOWN. Re-test ostatnich poprawek safety na `9258ae41...` to **pierwszy następny krok**; wyniki starych SHA nie dowodzą obecnej kwalifikacji.
+CLI/matrix zwracają code 2 również przy ukończonym, lecz niezaliczonym gate syntetycznym; rozdziel liczbę uruchomień od jakości wyników. Zachowaj manifest i negatywne próby. Bez dokładnego `source_commit` status pozostaje UNKNOWN. Rzetelny retest 37/37 unittest PASS na `9258ae41` i po scaleniu na main został wykonany (Local Agent task `la-bloomml-main-consolidation-20261107-v2`); następny krok to atrybucja 19/22 porażek w trudnych przypadkach, a nie ponawianie zaliczonego testu. Pełna kwalifikacja MPC pozostaje otwarta.

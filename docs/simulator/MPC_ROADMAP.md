@@ -4,7 +4,7 @@
 
 | Kolejność | Zadanie | Gate / dowód ukończenia |
 | --- | --- | --- |
-| **P0.1** | Exact-SHA retest ostatnich awaryjnych hard-stopów, stateful dwell/slew/interlocków po `9258ae41...` | Jednostkowe + R4 integration PASS, kontrola bezpieczeństwa pre-existing ON, rejection reasons i testy negatywne, zapis logu/SHA; dotychczas **UNKNOWN** |
+| **P0.1 — DONE (testy jednostkowe)** | Exact-SHA retest ostatnich awaryjnych hard-stopów/interlocków z `9258ae41...` | 37/37 jednostkowych PASS na źródłowym SHA oraz 37/37 po scaleniu (`la-bloomml-main-consolidation-20261107-v2`); adversarial matrix nadal **19/22 FAIL**, to osobna bramka P0.2 |
 | **P0.2** | Atrybucja 19/22 porażek w macierzy 11×2×3 | Metryki osobno warm-up i steady state, reachable/infeasible, fault/stale/limited-capacity; nie zmieniać gate dla ukrycia FAIL; baseline identyczne seedy |
 | **P0.3** | Minimalne ulepszenia MPC: feasibility, priority i disturbances, bez monolitu | Wersjonowany before/after na tej samej macierzy; brak regresji interlock/safety; raport przypadków, gdzie baseline wygrywa |
 | **P1.1** | Wielogodzinny/wielodniowy E2E, tylko CPU na start | 2→6→24→72 h ze stopniowanym budżetem; T/RH lub VPD/CO₂/PPFD, DLI, energie proxy, switches, constraints, fallback, timeout, water residual; multi-seed dopiero po małym smoke |

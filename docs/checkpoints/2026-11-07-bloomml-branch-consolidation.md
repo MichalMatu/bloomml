@@ -16,6 +16,6 @@ New source and offline research work directly on `main`. `agent-control` continu
 
 Offline inclusion of the R4 physics and MPC solver does NOT make MPC fit for physical actuation. Historical matrix **19/22 MPC FAIL**. Exact historical test log `agent-control:.agent/results/la-bloomml-mpc-safety-regression-20261104-v1.json`: 37 unit tests PASS on `9258ae41`, and same hard-case matrix 19/22 FAIL. This is not a full current-main qualification. No firmware/physical E2E performed as part of the Git merge.
 
-Post-merge branch removal requires explicit remote ancestry/content checks and successful focused regression. The Local Agent task evidence must be read before claiming remote deletion.
+**Completed:** terminal result `agent-control:.agent/results/la-bloomml-main-consolidation-20261107-v2.json` (status done, exit 0) verified ancestry and exact research-source preservation (69/75 changed paths identical, six active docs reconciled), unchanged production code, Python research compileall, **37/37 MPC unittest PASS**, **18/18 dataset unittest PASS**, and clean isolated checkout. A normal authenticated `git push --delete` removed `research/simulator-fidelity-kaggle-20261103`, and the remote branch absence was checked. Remaining branches: `main`, `agent-control`, `gh-pages`. Verified main code was `8ed884a56c91fcd8650796cdb3db7ea4cbf37312`; later docs-only commits are not new execution evidence.
 
 See `../NEXT_CHAT.md`, `../PRODUCT_DIRECTION.md`, `../AUDIT_STATUS.md` and `../simulator/RESEARCH_STATUS.md`.

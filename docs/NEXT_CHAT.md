@@ -18,4 +18,4 @@ Design one versioned production `DeviceProfile` contract for configured sensor r
 
 ## Open gates
 
-Full exact-main clean-room C++/ESP-IDF build, complete current-source test suite, physical SCD41/buttons/outputs, ML hardware safety and own-growbox data are OPEN/UNKNOWN. Branch deletion and exact merge validation (if performed) require inspection of terminal Local Agent evidence in `agent-control:.agent/results/`. Do not assume task success from queue submission.
+Full exact-main clean-room C++/ESP-IDF build, complete current-source test suite, physical SCD41/buttons/outputs, ML hardware safety and own-growbox data are OPEN/UNKNOWN. Branch removal was confirmed on the remote (Local Agent task `la-bloomml-main-consolidation-20261107-v2`, exit 0): ancestry + source equivalence, Python compileall, 37 MPC unit tests and 18 dataset unit tests PASS at `8ed884a56c91fcd8650796cdb3db7ea4cbf37312`; `research/simulator-fidelity-kaggle-20261103` was deleted. Three branches remain: `main`, `agent-control`, `gh-pages`. This does not close firmware or adversarial MPC quality gates.

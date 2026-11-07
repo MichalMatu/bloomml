@@ -41,4 +41,8 @@ This is a scoped repair checkpoint rather than a false "all gates green" declara
 
 ## Consolidation (2026-11-07)
 
-Two-parent merge `fadf6614e54264ad9f45ca19ce8699683322bb23` retains previous product main `5e4db5af736e9c18d69d451496694fa6aff11743` and experimental tip `73de11be282d40d03767275cc6a0891e58ed23f8` as parents. All 72 research-only modified/added paths were copied by exact blob SHA; the three overlapping active docs were reconciled. Existing product code remains unchanged. Branch cleanup is contingent on separate ancestry and source-check verification. Never infer hardware qualification from this merge.
+Two-parent merge `fadf6614e54264ad9f45ca19ce8699683322bb23` retains previous product main `5e4db5af736e9c18d69d451496694fa6aff11743` and experimental tip `73de11be282d40d03767275cc6a0891e58ed23f8` as parents. All 72 research-only modified/added paths were copied by exact blob SHA; the three overlapping active docs were reconciled. Existing product code remains unchanged. Research branch was deleted after successful Local Agent ancestry/blob/quality verification (`la-bloomml-main-consolidation-20261107-v2`, done/exit 0); no other work branch remains. Never infer hardware qualification from this merge.
+
+### Exact-main cleanup verification
+
+At main `8ed884a56c91fcd8650796cdb3db7ea4cbf37312`, Local Agent result `agent-control:.agent/results/la-bloomml-main-consolidation-20261107-v2.json` confirms: Git ancestry PASS, 69/75 research-changed paths byte-identical (the remaining six are intentionally reconciled/updated Markdown), production code unchanged, Python research compileall PASS, **37 MPC unittest PASS**, **18 dataset unittest PASS**, clean checkout, and successful remote deletion of `research/simulator-fidelity-kaggle-20261103` via normal `git push --delete`. Remaining branches: `main`, `agent-control`, `gh-pages`. This is scoped verification, **not** firmware or all-tests PASS.
