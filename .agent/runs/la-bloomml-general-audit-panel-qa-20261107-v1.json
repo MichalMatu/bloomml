@@ -1,0 +1,14 @@
+{
+  "event": "task_started",
+  "task_id": "la-bloomml-general-audit-panel-qa-20261107-v1",
+  "task_digest": "6d97b8b39e74e4067e1c6ebb247cdb25d6dbb0550fee2994f869f1070bfd27aa",
+  "idle_timeout": 600,
+  "task_timeout": 1600,
+  "memory_limit_mb": 4096,
+  "started_at": "2026-11-07T17:12:13.261410+00:00",
+  "attempt_id": "3d5ab04b40170fdc99c16289",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 68577,
+  "updated_at": "2026-11-07T17:12:13.261546+00:00",
+  "pid": 68577
+}
