@@ -2,7 +2,7 @@
 
 **Resume point (2026-11-07): connect authorized CrowPanel on `/dev/cu.usbserial-120` and prove physical output isolation.** Until this is confirmed, hardware qualification and IPO v2 activation API are blocked. Start with [NEXT_CHAT.md](NEXT_CHAT.md) and the [final checkpoint](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md).
 
-Current product docs are authoritative; dated checkpoints preserve implementation evidence. Historical plans do not reopen closed work.
+Current product docs are authoritative; dated checkpoints preserve implementation evidence. The latest [repository repair checkpoint](checkpoints/2026-11-07-bloomml-general-repository-repair.md) records exact-source web/panel gates and the physical gate still blocked. Historical plans do not reopen closed work.
 
 ## Read first
 
@@ -26,6 +26,7 @@ For normal product work read, in order:
 | `CONFIGURATION_FLOW.md` | canonical current IPO contract, runtime owners and activation gate (not phase history) |
 | `PRODUCT_DIRECTION.md` | canonical product UX/contract direction and ML qualification gates |
 | `AUDIT_STATUS.md` | scoped audit results, evidence limits and open full-audit gates |
+| `checkpoints/2026-11-07-bloomml-general-repository-repair.md` | new source audit, repairs, test evidence and next-chat boundary |
 | `NEXT_CHAT.md` | exact resume procedure: hardware connection/isolation first |
 | `checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md` | final consolidated checkpoint and restart dependency |
 | `checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md` | new CrowPanel build and NVS adapter fault-matrix evidence; authorized device absent |

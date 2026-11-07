@@ -11,6 +11,7 @@ Cel produktu: autonomiczny ESP32-S3 (native ESP-IDF), rzeczywiste czujniki, dete
 | IPO v2 DeviceProfile / edytor / board readiness B5 | **DONE — draft** | Schema, mapowanie, parser, walidacja; bez runtime apply |
 | Wspólny RAM Rule/lampa, selector, NVS journal, transaction owner | **DONE — source / host-qualified** | Mint aktywny; produkcyjny `ClosedIpoActivationGate` odrzuca apply |
 | Mac C++/Vitest/fault matrix i real-input CrowPanel ESP-IDF build | **PASS — software** | CTest IPO 3/3; Vitest B5 9/9; safety 3/3; ESP-IDF build PASS |
+| General software audit repairs | **DONE — scoped** | Web 114 Vitest + typecheck/lint/build, panel 135 pytest, host/display PASS; physical gates unchanged. [Checkpoint](checkpoints/2026-11-07-bloomml-general-repository-repair.md) |
 | **H0: podłączony autoryzowany CrowPanel i izolacja wyjść** | **NEXT / BLOCKED** | W ostatnim sprawdzeniu port `/dev/cu.usbserial-120` nieobecny |
 | H1: hardware acceptance z fake-locked outputs | **NOT STARTED** | Prawdziwy NVS/flash, reboot, TP357/SCD41, Rule/LampSafety, RAM/stack/watchdog |
 | H2: supervisor-owned safe quiesce + emergency lock | **NOT STARTED** | Oddzielny gate z fizyczną kwalifikacją i uprawnieniem operatora |

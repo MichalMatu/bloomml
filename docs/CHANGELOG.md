@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-07 — General repository repair and manual software gates
+
+- Repaired four IPO button-size type errors and moved 96 feature-page styling violations into 40 typed `app-chrome` presets without weakening ESLint.
+- Protected diagnostics refresh through same-origin POST, prevented stale cached UART diagnostics being reported as fresh and added explicit 504 timeout.
+- Web exact `196c305`: 114/114 Vitest + typecheck/lint/build PASS; panel exact `4aadf5f`: 135/135 pytest PASS; portable host/display C++ PASS at `cf1c434`; baseline IPO 3/3 CTest PASS at `54c486d`.
+- Documentation/checkpoint updated without enabling firmware IPO activation, flashing or changing Rule/OutputSupervisor. [Repair checkpoint](checkpoints/2026-11-07-bloomml-general-repository-repair.md).
+
 ## 2026-11-07 — Documentation freeze and hardware handoff
 
 - Consolidated current status, IPO contract and roadmap into one unambiguous source of truth; removed duplicated historical Bridge 1–4/B5 status paragraphs and stale “UNVERIFIED” assertions from active docs, keeping prior checkpoints and source history.
