@@ -30,7 +30,7 @@ Then fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any
 
 Historical Stage27/Stage28 handoffs, temporary prompts and superseded audits are not live documentation. Use `docs/HISTORY.md`, `docs/CHANGELOG.md` and Git history when historical evidence is needed.
 
-IPO v2 browser configuration remains **draft-only**. The portable `lib/ipo_profile/` graph and reference-source selector are now compiled into the real-input source path; the profile NVS journal is read at boot **for diagnostics only**. The JSON profile staging/apply code is dormant. This never authorizes hardware writes or replaces Rule, LampSafety or OutputSupervisor. Broad driver mapping, safe NVS activation/readback/rollback and exact-SHA qualification are OPEN. See `docs/CONFIGURATION_FLOW.md` and current checkpoint.
+IPO v2 browser configuration remains **draft-only**. Portable graph and fixed-board selectors are compiled into CrowPanel real-input; boot inspects NVS for diagnostics only. A single activation transaction owner is host-qualified but production instantiates `ClosedIpoActivationGate`; there is no live apply endpoint or physical v2 authority. CrowPanel exact-source ESP-IDF build PASS (2026-11-07), while physical power-loss/ESP-IDF NVS and real hardware tests remain OPEN: authorized `/dev/cu.usbserial-120` was absent. This never replaces Rule, LampSafety or OutputSupervisor. See `docs/CONFIGURATION_FLOW.md` and the current hardware qualification checkpoint.
 
 Research documents such as `DATA_CONTRACT.md`, `CONFIG_MATRIX.*` and `docs/simulator/*` may describe the older v4 128-feature/15-output toolchain. Do not treat them as the production climate-v6 runtime contract unless the task explicitly targets that research toolchain.
 
