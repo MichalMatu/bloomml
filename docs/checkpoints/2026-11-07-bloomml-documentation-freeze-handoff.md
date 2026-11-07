@@ -1,8 +1,8 @@
 # BloomML — FINAL CHECKPOINT / dokumentacja uporządkowana / wznowienie od CrowPanel
 
-**Data:** 2026-11-07  
-**Repo:** `MichalMatu/bloomml`  
-**Gałąź źródłowa:** `main`, kontrola Mac Local Agent: `agent-control`  
+**Data:** 2026-11-07
+**Repo:** `MichalMatu/bloomml`
+**Gałąź źródłowa:** `main`, kontrola Mac Local Agent: `agent-control`
 **Stan:** `IPO_V2_HOST_PASS / CROWPANEL_BUILD_PASS / DEVICE_ABSENT / HARDWARE_LOCKED / NO_ACTIVE_V2`
 
 ## Decyzja handoff (wiążąca dla kolejnego czatu)
