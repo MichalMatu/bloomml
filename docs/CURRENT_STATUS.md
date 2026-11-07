@@ -2,7 +2,15 @@
 
 Data: **2026-11-07** · Repo: `MichalMatu/bloomml` · branch: `main`.
 
-**Status:** IPO v2 owner transakcji **HOST QUALIFIED, HARDWARE LOCKED**. Wąskie C++/Vitest przeszły na Macu, ale ESP-IDF real-input i fizyczny sprzęt nie zostały zakwalifikowane ani wgrane. Poprzednie wyniki sprzętowe dotyczą wcześniejszego kodu. **Nie twierdzić, że nowy firmware jest już wdrożony.**
+**Status:** IPO v2 **HOST QUALIFIED, CROWPANEL BUILD PASS, HARDWARE LOCKED**. Testy C++ i produkcyjna kompilacja ESP-IDF real-input przeszły na Macu; fizyczny sprzęt i prawdziwy flash/NVS nie były dostępne ani wgrane. **Nie twierdzić, że firmware jest wdrożony lub IPO v2 aktywne.**
+
+## IPO v2 — nowa kwalifikacja ESP-IDF + produkcyjny dziennik NVS pod mock API
+
+**Build PASS / NVS mock fault matrix PASS / physical hardware BLOCKED.** Mac Local Agent wykonał real-input CrowPanel e-ink build na źródłowym SHA `1a1b3de8` (bin `0xd1e00`, około 80% partycji aplikacji wolne). Dodano hostowy test **produkcyjnego** `IpoProfileNvsJournal.cpp` z wstrzykniętym NVS API: torn write, commit przed/po flipie znacznika, restart, CRC i fallback, rollback pustego/poprzedniego slotu i izolacja osobnej przestrzeni wyjść. `make test-ipo` 3/3 PASS na `45f3527`, a osobne safety/Rule freshness/output lifecycle 3/3 PASS. Wcześniejszego Vitest B5 nie powtarzano.
+
+Autoryzowany port `/dev/cu.usbserial-120` jest **nieobecny**. Żadnych otwarć portu, flashowania ani fizycznego RF. Test NVS był wykonywany na mock API, nie na prawdziwej pamięci ESP-IDF. Produkcyjny `ClosedIpoActivationGate` wciąż odmawia aktywacji. Nie ma jeszcze supervisor-owned quiesce ani autoryzowanego live API.
+
+[Nowy checkpoint hardware gate](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md); dalsze działania: [NEXT_CHAT.md](NEXT_CHAT.md).
 
 ## IPO v2 — owner transakcji i wąska kwalifikacja (2026-11-07)
 
