@@ -27,6 +27,12 @@ The separate `research/simulator-fidelity-kaggle-20261103` branch has experiment
 
 This scoped repair's evidence and remaining full-audit gates live in `AUDIT_STATUS.md`; the next step is `NEXT_CHAT.md`. The current main code/firmware has NOT been completely requalified on the latest exact SHA.
 
+## MPC / Kaggle research now in main (2026-11-07)
+
+The R4 numerical simulator, Kaggle runners/notebooks, external greenhouse dataset tooling, and experimental MPC have been merged into `main` while staying exclusively under `tools/ml/`, `tests/`, `notebooks/` and `docs/simulator/`. Code inclusion is **not** an approval for physical actuation. Latest research record: [research status](simulator/RESEARCH_STATUS.md), [MPC roadmap](simulator/MPC_ROADMAP.md) and [2026-11-04 exact-SHA checkpoint](checkpoints/2026-11-04-bloomml-mpc-resume-complete.md).
+
+Historical MPC challenge matrix: **3/22 PASS, 19/22 FAIL**; a 60-minute representative MPC episode was PASS, but physical model calibration/own growbox logs and active MPC hardware approval remain absent. Separate research branch history is preserved as a merge parent. New work goes directly on `main`, keeping the research / runtime ownership boundary.
+
 ## Display / hardware baseline
 
 The production CrowPanel display path is integrated and stable at the software boundary:

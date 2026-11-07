@@ -58,6 +58,10 @@ The following documents primarily describe the research/tooling side and are not
 
 They remain because tools and research workflows still use them. They must not be used to infer current firmware ownership, active output authority or the current product roadmap.
 
+## Integrated research tooling (separate from production authority)
+
+The former research branch content is now present on `main`; the research work remains logically isolated, not production-qualified. Current MPC entry point: [research status](simulator/RESEARCH_STATUS.md), [MPC roadmap](simulator/MPC_ROADMAP.md), [Kaggle execution](simulator/KAGGLE_EXECUTION.md), [archived 2026-11-04 checkpoint](checkpoints/2026-11-04-bloomml-mpc-resume-complete.md). Historical branch names inside dated checkpoints are provenance only.
+
 ## History
 
 - `HISTORY.md` — compact milestone/evidence index.

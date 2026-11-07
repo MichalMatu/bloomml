@@ -21,6 +21,10 @@ The target is not two admin panels and another training loop. See `PRODUCT_DIREC
 
 Existing product hardware stabilization and research work below are **separate** gates. This audit did not launch a new feature slice.
 
+### MPC / Kaggle research (source is now on main, NOT a production controller)
+
+The experiment infrastructure from the historical research branch was merged into `main` on 2026-11-07, without changing ESP-IDF, `ClimateRulePolicy` or `OutputSupervisor`. Continue the research independently under `tools/ml/` following [MPC roadmap](simulator/MPC_ROADMAP.md) and [research status](simulator/RESEARCH_STATUS.md): retest exact-head safety, attribute the 19/22 failed hard scenarios, bounded CPU experiments, and only then consider a dedicated Kaggle MPC study. Do not equate code colocation with authorization for real output control.
+
 ## Existing subsystem work (independently gated)
 
 ### 1. Clay/menu/button/simulator display stage
