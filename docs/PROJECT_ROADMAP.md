@@ -10,6 +10,10 @@ Broad architecture cleanup, the SCD41/e-ink recovery closeout, runtime persisten
 
 The deployed product must remain standalone on the ESP32-S3. External foundation models, training services or cloud inference may be used only in offline research/development and must not become runtime dependencies.
 
+## IPO Runtime Bridge 2 — whole-profile NVS journal source (2026-11-07)
+
+Typowany deterministyczny codec całości IPO + targets i oddzielny dwuslotowy NVS journal z walidacją, CRC i readback zostały dodane do źródeł, lecz nie są wywoływane przez fizyczny runtime. Następny P1: parser v2 JSON, potwierdzone przyjęcie grafu, pojedynczy koordynator apply, walidowana NVS/rollback, source fallback, readback hash i monitoring. **Do wykonania nowych, wąskich bramek bezpieczeństwa przed aktywnym zapisem i sterowaniem.**
+
 ## IPO Runtime Bridge 1 (2026-11-07)
 
 Skończona w kodzie (UNVERIFIED) faza wspólnego snapshotu Rule/lampa, referencyjna fizyczna bramka CrowPanel, bounded priority/valid/age selector, boot diagnostics i readback generacji/nastaw w istniejącej konsoli `status`. Brak zewnętrznego apply, NVS v2 i nowych aktywnych kanałów; output supervisor i bezpieczeństwo nietknięte. Kolejność: strict decode v2 → osobna trwała domena konfiguracji/NVS z rollbackiem → qualifiable signal routing → safe supervisor binding → active hash/readback → live panel. Szczegóły `CONFIGURATION_FLOW.md`.

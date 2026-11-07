@@ -13,7 +13,8 @@ namespace growbox::ipo {
 
 inline constexpr std::size_t kMaxDevices = 24U;
 inline constexpr std::size_t kMaxSignals = 16U; // semantic roles
-inline constexpr std::size_t kMaxSignalSources = kMaxSignals * 4U; // up to 4 sources per role
+inline constexpr std::size_t kMaxSourcesPerRole = 4U;
+inline constexpr std::size_t kMaxSignalSources = kMaxSignals * kMaxSourcesPerRole;
 inline constexpr std::size_t kMaxActuators = 24U;
 inline constexpr std::size_t kMaxProcesses = 16U;
 inline constexpr std::size_t kMaxLinks = 48U;
@@ -180,6 +181,7 @@ inline GraphStatus validateGraph(const Graph& graph) noexcept {
   }
   for (std::size_t i = 0; i < graph.signal_count; ++i) {
     const auto& s = graph.signals[i];
+    if (s.priority >= kMaxSourcesPerRole) return GraphStatus::DuplicateSignalPriority;
     const auto* device = findDevice(graph, s.device_id);
     if (!device) return GraphStatus::UnknownDevice;
     if (!driverProvides(device->driver, s.channel) || !accepts(s.role, s.channel))

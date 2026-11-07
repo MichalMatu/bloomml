@@ -23,3 +23,13 @@
 4. Dopiero po rozdzielnym dowodzie przyjąć dynamiczne mapowanie wyjść do istniejącego OutputSupervisor i dopuścić `Preview → Apply → Readback` z faktycznym potwierdzeniem, podgląd statusu także na e-ink.
 
 Start od świeżego main; brak nowych branches, Codex, Work, GitHub Actions. Nie powtarzać starszych testów; nowe zmiany przed realnym sterowaniem wymagają osobnej wąskiej kwalifikacji.
+
+## Stage 2 source extension: full typed profile persistence journal (same sprint)
+
+- `src/climate/runtime/profile/IpoProfileWire.h`: explicit little-endian wire encoding/decoding of **whole bounded IPO graph plus day/night/timeout/capabilities and generation**, not a padded raw struct and not research JSON. Version, magic, CRC32, maximum payload 1536 bytes and board admission before accepting. Decode refuses length/CRC/unsupported hardware mismatch. Exporting browser JSON still needs a separate trusted parser/normalizer.
+- `src/climate/runtime/profile/IpoProfileNvsJournal.h/.cpp`: separate NVS namespace `gb_ipoprof`; two durable slots, inactive slot write+commit, exact byte readback, CRC and typed decode, then selector switch+commit+readback. Boot-side `load` detects absent/corrupt slots and reports a valid previous slot for operator-approved recovery. Stale generation is rejected. **Does not call global NVS init/erase**, does not touch OutputSupervisor state store.
+- Added journal C++ file to real-input CMake source list, but **no instance is called during runtime boot or execution**. No automatic read/apply or write is enabled, so currently deployed behavior does not change.
+- `IpoGraph.h` guards maximum four source priorities; selector iterates only those priorities.
+- Validation and physical qualification of the new codec/NVS journal remain **NOT DONE** by operator request; do not claim it is production-proven, crash-safe under all torn writes, or active on the board. Serialize future store calls through a single runtime owner: generation checking alone is not a cross-task transaction mutex.
+
+Now next milestone is full v2 JSON parse/normalize → capability/admission → journal transaction → runtime atomic apply with rollback → profile hash/readback and live status. Do **not** wire journaled candidate to physical outputs before narrow qualification.

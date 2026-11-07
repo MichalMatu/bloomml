@@ -56,7 +56,7 @@ inline SignalSelection selectFreshSignal(const Graph& graph, SignalRole role,
   }
 
   bool role_exists = false;
-  for (std::uint16_t priority = 0U; priority <= 255U; ++priority) {
+  for (std::uint16_t priority = 0U; priority < kMaxSourcesPerRole; ++priority) {
     for (std::size_t i = 0; i < graph.signal_count; ++i) {
       const auto& binding = graph.signals[i];
       if (binding.role != role) continue;

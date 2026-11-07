@@ -54,3 +54,7 @@ Mapped actual TP357/SCD41/Xiaomi/DS3231 inputs, fixed RF433 sockets and day/nigh
 ## 2026-11-07 IPO Foundation v2 source-only
 
 Added bounded DeviceProfile v2 schema/example, driver catalog, prioritized signals, typed process-to-output links, import/migration, new browser homepage and unlinked portable C++17 DTO/graph arbiter. Canonical `docs/CONFIGURATION_FLOW.md`. No production runtime/physical output changes. No tests/typecheck/builds run per operator direction; code not executable-qualified. Firmware v2 parser/NVS/apply/readback remains OPEN.
+
+## 2026-11-07 IPO Runtime Bridge 1/2 — scoped evidence
+
+Source changes introduce shared typed Mint-compatible runtime schedule owner, read-only console status, CrowPanel read-only graph admission/priority freshness selector and an **uninvoked** bounded full-profile wire codec + dual-slot NVS journal. This is not an applied v2 user profile. No new tests, typechecks, heavy builds or physical deployment per operator direction; all executable gates for this new source remain OPEN/UNVERIFIED. Do not confuse adding NVS code with durable profile activation or RF verification. Checkpoint: `docs/checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md`.

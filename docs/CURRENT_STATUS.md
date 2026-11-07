@@ -19,6 +19,10 @@ Status: **production feature/performance work remains paused pending the new-hos
 
 The current architecture split remains intentional: `ClimatePolicy.*` owns stateless Rule generation/arbitration/safety policy, while `ClimateRuntimeController.*` owns stateful trend/effective-action estimation, ML orchestration and execution reconciliation.
 
+## IPO Runtime Bridge 2 (2026-11-07) — durable profile source staged, NOT ACTIVE
+
+Dodano `IpoProfileWire.h` (cały typowany graf i cele, bounded wersja+CRC) i `IpoProfileNvsJournal.h/.cpp` (oddzielna dwuslotowa domena NVS z odczytem zwrotnym i możliwością wykrycia dobrej poprzedniej kopii). Kod dołączono do listy źródeł real-input, ale nie jest wywoływany, niczego nie zapisuje/odczytuje w boot i nie zmienia aktywnego profilu. Brak weryfikacji wykonawczej lub sprzętowej; `active IPO v2` nadal NIE ISTNIEJE. Więcej: `CONFIGURATION_FLOW.md`.
+
 ## IPO Runtime Bridge 1 (2026-11-07) — code present, unqualified
 
 W real-input firmware utworzono **jeden, typowany, walidowany właściciel profilu RAM** do celów Rule oraz harmonogramu lampy, z domyślnym bez zmian Mint. Do konsoli `status` dodano rozpoznawalny readback tego snapshotu (NVS=0/v2 applied=0). `lib/ipo_profile` ma teraz przenośny selektor świeżych sygnałów i rygorystyczne dopuszczenie referencyjnego grafu CrowPanel; bootstrap raportuje tylko informacyjną zgodność (apply=0). Nie ma jeszcze v2 JSON parsera na ESP, NVS profilu, włączonego fallbacku, dynamicznych wyjść ani live API. **Nie uruchamiano kompilacji/testów ani nie flashowano urządzenia.** Status tych zmian: UNVERIFIED. Patrz `CONFIGURATION_FLOW.md` i `checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md`.
