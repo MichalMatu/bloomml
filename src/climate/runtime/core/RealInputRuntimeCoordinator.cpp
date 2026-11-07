@@ -63,7 +63,8 @@ void RealInputRuntimeCoordinator::tick(std::uint64_t loop_started_us) noexcept {
   output::ScheduleIntent schedule_intent{};
   const std::uint64_t schedule_sequence = cycle_state_.nextOutputIntentSequence();
   const bool schedule_intent_ready =
-      rtc_sampled && buildScheduleIntent(now_ms, rtc_snapshot, schedule_sequence, schedule_intent);
+      rtc_sampled && buildScheduleIntent(now_ms, rtc_snapshot, schedule_sequence,
+                                        services_.inputs.profile.active(), schedule_intent);
   if (!schedule_intent_ready) {
     schedule_intent = {};
     schedule_intent.metadata.sequence = schedule_sequence;

@@ -45,6 +45,12 @@ bool RuntimeNearbySource::sample(std::uint64_t monotonic_ms,
   return true;
 }
 
+bool ConfiguredScheduleConfigSource::resolve(
+    std::uint64_t, const ClimateWallClockSnapshot& clock,
+    ClimateScheduleConfigSnapshot& output) noexcept {
+  return resolveConfiguredScheduleProfile(clock, owner_.active(), output);
+}
+
 bool MintScheduleConfigSource::resolve(std::uint64_t, const ClimateWallClockSnapshot& clock,
                                        ClimateScheduleConfigSnapshot& output) noexcept {
   return resolveMintScheduleProfile(clock, output);

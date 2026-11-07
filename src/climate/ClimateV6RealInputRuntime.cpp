@@ -110,8 +110,17 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
 
   runtime::RuntimeInsideSource inside(ble, scd41);
   runtime::RuntimeNearbySource outside(ble);
-  runtime::MintScheduleConfigSource schedule_config;
+  // Shared, typed and validated profile owner. Only the built-in Mint profile is active:
+  // no external v2 apply/NVS writes are enabled by this integration milestone.
+  static runtime::RuntimeScheduleProfileOwner profile_owner;
+  const bool schedule_profile_valid = profile_owner.valid();
+  runtime::ConfiguredScheduleConfigSource schedule_config(profile_owner);
   CompositeClimateSnapshotProvider composite(inside, outside, clock, schedule_config);
+  if (!schedule_profile_valid) {
+    ESP_LOGE(kTag, "Runtime schedule profile invalid; locking physical outputs");
+    execution_status.transport_available = false;
+    execution_status.output_ready = false;
+  }
 
   if (!output_owner.valid()) {
     ESP_LOGE(kTag, "Output supervisor/lifecycle composition invalid; physical execution locked");
@@ -123,7 +132,7 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
       {runtime_config::kServiceConsoleEnabled, runtime_config::kFirmwareGitSha,
        &execution_status.output_ready, &storage_logger, &runtime_timing,
        &output_owner.automationControl(), &output_owner.manualControl(),
-       &output_owner.maintenanceControl()},
+       &output_owner.maintenanceControl(), &profile_owner},
       ble, scd41, clock, rf_diagnostics);
   const bool service_console_ready = service_console.begin();
 
@@ -178,6 +187,9 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
       ble, scd41, clock, storage_logger, storage_logger_ready,
       static_cast<std::int32_t>(reset_reason), display_observer);
 
+  ESP_LOGI(kTag, "ipo_schedule_profile generation=%lu valid=%d origin=builtin-mint persisted=0 applied_from_v2=0",
+           static_cast<unsigned long>(profile_owner.generation()), schedule_profile_valid);
+
   ESP_LOGI(kTag,
            "Stage27 real-input runtime: nvs=%d nvs_recovered=%d i2c=%d scd41=%d ds3231=%d "
            "ble=%d sd=%d flash_fallback=%d storage_logger=%d rf433_loopback=%d "
@@ -199,7 +211,7 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
                             execution_status.output_ready ? "real-bounded" : "fake-locked");
 
   runtime::RealInputRuntimeServices services{
-      {ble, clock},
+      {ble, clock, profile_owner},
       application,
       {control_owner.lampSafety(), execution_status, output_owner.transport(),
        output_owner.lifecycle(), output_owner.lifecycleExecutor(), output_owner.runtimeLifecycle(),

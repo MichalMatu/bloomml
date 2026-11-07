@@ -7,6 +7,7 @@
 #include "climate/runtime/diagnostics/RfDiagnostics.h"
 #include "climate/runtime/diagnostics/Stage28ePlatformDiagnostics.h"
 #include "climate/runtime/schedule/EuropeWarsawTime.h"
+#include "climate/runtime/schedule/RuntimeScheduleProfile.h"
 #include "climate/storage/Stage27TelemetryLogger.h"
 
 #include <array>
@@ -145,6 +146,30 @@ void Stage28ServiceConsoleSystemCommands::printStatus(std::uint64_t now_ms) noex
       static_cast<unsigned long>(task_captured), task_status != nullptr);
 
   status_contributor_.printStatusDetails();
+
+  // Read-only active target/schedule evidence. This is an in-RAM profile
+  // snapshot, not confirmation of a deployed v2 graph or NVS write.
+  if (config_.schedule_profile != nullptr) {
+    const auto& owner = *config_.schedule_profile;
+    const auto& profile = owner.active();
+    sink_.writeFormatted(
+        "ipo_profile source=builtin_mint generation=%lu valid=%d "
+        "persisted=0 profile_v2_applied=0 mode=%s day_hour=%u night_hour=%u "
+        "day_t=%.2f day_rh=%.2f day_vpd=%.2f "
+        "night_t=%.2f night_rh=%.2f night_vpd=%.2f "
+        "exhaust=%d humidifier=%d\r\n",
+        static_cast<unsigned long>(owner.generation()), owner.valid(),
+        profile.humidity_mode == ::growbox::climate::HumidityControlMode::Vpd ? "VPD" : "RH",
+        static_cast<unsigned>(profile.day_start_hour),
+        static_cast<unsigned>(profile.night_start_hour),
+        static_cast<double>(profile.day.temperature_c),
+        static_cast<double>(profile.day.relative_humidity_pct),
+        static_cast<double>(profile.day.air_vpd_kpa),
+        static_cast<double>(profile.night.temperature_c),
+        static_cast<double>(profile.night.relative_humidity_pct),
+        static_cast<double>(profile.night.air_vpd_kpa),
+        profile.exhaust_fan_available, profile.humidifier_available);
+  }
 
   if (config_.timing_metrics != nullptr) {
     const RuntimeTimingMetrics& timing = *config_.timing_metrics;

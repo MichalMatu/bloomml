@@ -30,6 +30,7 @@ class LampSafetyController;
 
 namespace runtime {
 class RfDiagnostics;
+class RuntimeScheduleProfileOwner;
 class RuntimeOutputTransport;
 class Stage28ServiceConsole;
 class TelemetryReporter;
@@ -39,6 +40,7 @@ struct RuntimeTimingMetrics;
 struct RealInputRuntimeInputServices final {
   native::BleClimateScanner& ble;
   native::Ds3231ClockSource& clock;
+  const RuntimeScheduleProfileOwner& profile;
 };
 
 struct RealInputRuntimeOutputServices final {

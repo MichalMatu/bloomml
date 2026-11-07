@@ -4,6 +4,7 @@
 #include "climate/application/ClimateCompositeInput.h"
 #include "climate/input/ble/BleClimateScanner.h"
 #include "climate/input/sensors/Scd41InsideSource.h"
+#include "climate/runtime/schedule/RuntimeScheduleProfile.h"
 
 #include <cstdint>
 
@@ -35,6 +36,20 @@ private:
   native::BleClimateScanner& ble_;
 };
 
+// The real runtime reads the same admitted profile as the lamp scheduler.
+class ConfiguredScheduleConfigSource final : public ClimateScheduleConfigSource {
+public:
+  explicit ConfiguredScheduleConfigSource(const RuntimeScheduleProfileOwner& owner) noexcept
+      : owner_(owner) {}
+
+  bool resolve(std::uint64_t monotonic_ms, const ClimateWallClockSnapshot& clock,
+               ClimateScheduleConfigSnapshot& output) noexcept override;
+
+private:
+  const RuntimeScheduleProfileOwner& owner_;
+};
+
+// Legacy Mint source is preserved for previous host fixture callers.
 class MintScheduleConfigSource final : public ClimateScheduleConfigSource {
 public:
   bool resolve(std::uint64_t monotonic_ms, const ClimateWallClockSnapshot& clock,

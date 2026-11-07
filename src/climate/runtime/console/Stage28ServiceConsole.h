@@ -25,6 +25,7 @@ class Ds3231ClockSource;
 } // namespace growbox::app::climate_io::native
 namespace growbox::app::climate_io::runtime {
 class RfDiagnostics;
+class RuntimeScheduleProfileOwner;
 
 class Stage28ServiceConsole final : public ServiceConsoleTextSink {
 public:
@@ -37,6 +38,7 @@ public:
     ::growbox::app::output::OutputAutomationControl* automation_control{nullptr};
     ::growbox::app::output::OutputManualControl* manual_control{nullptr};
     ::growbox::app::output::OutputMaintenanceControl* maintenance_control{nullptr};
+    const RuntimeScheduleProfileOwner* schedule_profile{nullptr};
   };
 
   Stage28ServiceConsole(Config config, native::BleClimateScanner& ble,

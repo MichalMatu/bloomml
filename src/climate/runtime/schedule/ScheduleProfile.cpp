@@ -4,45 +4,30 @@
 
 namespace growbox::app::climate_io::runtime {
 
+bool buildConfiguredScheduleProfile(std::uint8_t local_hour,
+                                    const RuntimeScheduleProfile& profile,
+                                    ClimateScheduleConfigSnapshot& output) noexcept {
+  return projectRuntimeSchedule(local_hour, profile, output);
+}
+
+bool resolveConfiguredScheduleProfile(const ClimateWallClockSnapshot& clock,
+                                      const RuntimeScheduleProfile& profile,
+                                      ClimateScheduleConfigSnapshot& output) noexcept {
+  output = {};
+  if (!clock.valid || !validateRuntimeScheduleProfile(profile)) return false;
+  EuropeWarsawLocalTime local{};
+  if (!resolveEuropeWarsawLocalTime(clock.unix_time_s, local)) return false;
+  return buildConfiguredScheduleProfile(local.hour, profile, output);
+}
+
 bool buildMintScheduleProfile(std::uint8_t local_hour,
                               ClimateScheduleConfigSnapshot& output) noexcept {
-  if (local_hour > 23U) {
-    output = {};
-    return false;
-  }
-
-  output = {};
-  output.sensor_timeout_ms = ::growbox::climate::kDefaultSensorTimeoutMs;
-  output.humidity_control_mode = ::growbox::climate::HumidityControlMode::Rh;
-  output.capabilities.heater = false;
-  output.capabilities.cooler = false;
-  output.capabilities.exhaust_fan = true;
-  output.capabilities.humidifier = true;
-  output.capabilities.dehumidifier = false;
-  output.capabilities.co2_doser = false;
-
-  const bool day = local_hour >= 6U && local_hour < 22U;
-  output.targets.air_temperature_c = day ? 24.5F : 21.5F;
-  output.targets.relative_humidity_pct = day ? 58.0F : 65.0F;
-  output.targets.air_vpd_kpa = day ? 1.2F : 0.9F;
-  output.targets.co2_enabled = false;
-  output.targets.co2_ppm = 0.0F;
-  output.schedule.light_level = day ? 1.0F : 0.0F;
-  return true;
+  return buildConfiguredScheduleProfile(local_hour, makeMintRuntimeScheduleProfile(), output);
 }
 
 bool resolveMintScheduleProfile(const ClimateWallClockSnapshot& clock,
                                 ClimateScheduleConfigSnapshot& output) noexcept {
-  if (!clock.valid) {
-    return false;
-  }
-
-  EuropeWarsawLocalTime local{};
-  if (!resolveEuropeWarsawLocalTime(clock.unix_time_s, local)) {
-    return false;
-  }
-
-  return buildMintScheduleProfile(local.hour, output);
+  return resolveConfiguredScheduleProfile(clock, makeMintRuntimeScheduleProfile(), output);
 }
 
 } // namespace growbox::app::climate_io::runtime

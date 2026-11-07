@@ -6,14 +6,12 @@
 namespace growbox::app::climate_io::runtime {
 
 bool buildScheduleIntent(std::uint64_t monotonic_ms, const ClimateWallClockSnapshot& clock,
-                         std::uint64_t sequence,
+                         std::uint64_t sequence, const RuntimeScheduleProfile& profile,
                          ::growbox::app::output::ScheduleIntent& output) noexcept {
   output = {};
 
-  ClimateScheduleConfigSnapshot profile{};
-  if (!resolveMintScheduleProfile(clock, profile)) {
-    return false;
-  }
+  ClimateScheduleConfigSnapshot resolved{};
+  if (!resolveConfiguredScheduleProfile(clock, profile, resolved)) return false;
 
   ::growbox::app::output::ScheduleIntent intent{};
   intent.metadata.sequence = sequence;
@@ -21,12 +19,19 @@ bool buildScheduleIntent(std::uint64_t monotonic_ms, const ClimateWallClockSnaps
   intent.metadata.source = ::growbox::app::output::OutputSource::Schedule;
   intent.metadata.reason = ::growbox::app::output::OutputReason::ScheduleRequest;
   if (!::growbox::app::output::setEndpointIntent(
-          intent.endpoints[0], stage28d::kScheduledLightEndpoint, profile.schedule.light_level)) {
+          intent.endpoints[0], stage28d::kScheduledLightEndpoint, resolved.schedule.light_level)) {
     return false;
   }
 
   output = intent;
   return true;
+}
+
+bool buildScheduleIntent(std::uint64_t monotonic_ms, const ClimateWallClockSnapshot& clock,
+                         std::uint64_t sequence,
+                         ::growbox::app::output::ScheduleIntent& output) noexcept {
+  return buildScheduleIntent(monotonic_ms, clock, sequence, makeMintRuntimeScheduleProfile(),
+                             output);
 }
 
 } // namespace growbox::app::climate_io::runtime
