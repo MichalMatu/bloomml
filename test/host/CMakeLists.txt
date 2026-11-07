@@ -762,3 +762,19 @@ target_include_directories(ipo_activation_tests PRIVATE
 target_compile_features(ipo_activation_tests PRIVATE cxx_std_17)
 target_compile_options(ipo_activation_tests PRIVATE -Wall -Wextra -Wpedantic)
 add_test(NAME ipo_activation_tests COMMAND ipo_activation_tests)
+
+# Production NVS journal compiled unchanged against a transactional ESP-IDF
+# NVS API double; exercises the actual two-slot/CRC/rollback code, no board.
+add_executable(ipo_nvs_journal_tests
+  "${PROJECT_ROOT}/test/test_ipo_nvs_journal/test_main.cpp"
+  "${PROJECT_ROOT}/src/climate/runtime/profile/IpoProfileNvsJournal.cpp"
+)
+target_include_directories(ipo_nvs_journal_tests PRIVATE
+  "${PROJECT_ROOT}/test/test_ipo_nvs_journal"
+  "${PROJECT_ROOT}/lib/ipo_profile/src"
+  "${PROJECT_ROOT}/lib/environment_control/src"
+  "${PROJECT_ROOT}/src"
+)
+target_compile_features(ipo_nvs_journal_tests PRIVATE cxx_std_17)
+target_compile_options(ipo_nvs_journal_tests PRIVATE -Wall -Wextra -Wpedantic)
+add_test(NAME ipo_nvs_journal_tests COMMAND ipo_nvs_journal_tests)

@@ -156,11 +156,11 @@ test-host:
 	ctest --test-dir $(HOST_BUILD_DIR) --output-on-failure
 	bash scripts/test_display_host.sh
 
-# New IPO v2 narrow qualification gate; does NOT compile the full host suite.
+# New IPO v2 narrow gate: transaction and production NVS adapter (mocked NVS API).
 test-ipo:
 	cmake -S test/host -B $(HOST_BUILD_DIR)
-	cmake --build $(HOST_BUILD_DIR) --target ipo_profile_tests ipo_activation_tests --parallel 2
-	ctest --test-dir $(HOST_BUILD_DIR) -R '^(ipo_profile_tests|ipo_activation_tests)$$' --output-on-failure
+	cmake --build $(HOST_BUILD_DIR) --target ipo_profile_tests ipo_activation_tests ipo_nvs_journal_tests --parallel 2
+	ctest --test-dir $(HOST_BUILD_DIR) -R '^(ipo_profile_tests|ipo_activation_tests|ipo_nvs_journal_tests)$' --output-on-failure
 
 test-panel: ensure-venv
 	$(PY) -m pytest tests/test_panel.py tests/test_panel_e2e.py tests/test_panel_fixtures.py -q
