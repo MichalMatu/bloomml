@@ -337,6 +337,30 @@ def test_bridge_confirms_transport_on_ack():
     assert bridge._state["last_status"]["paused"] is False
 
 
+def test_diagnostics_refresh_does_not_return_stale_cached_report(monkeypatch):
+    bridge = SerialBridge()
+    old = {"type": "diagnostics", "sample": "old"}
+    bridge._handle_message(old)
+    calls = []
+    monkeypatch.setattr(bridge, "send_command", lambda command: calls.append(command))
+    assert bridge.request_diagnostics(timeout_s=0.01) is None
+    assert calls == [{"command": "diagnostics"}]
+    assert bridge.diagnostics_snapshot()["device"] == old
+
+
+def test_diagnostics_refresh_requires_new_serial_frame(monkeypatch):
+    bridge = SerialBridge()
+    bridge._handle_message({"type": "diagnostics", "sample": "old"})
+    fresh = {"type": "diagnostics", "sample": "new"}
+
+    def respond(command):
+        assert command == {"command": "diagnostics"}
+        bridge._handle_message(fresh)
+
+    monkeypatch.setattr(bridge, "send_command", respond)
+    assert bridge.request_diagnostics(timeout_s=0.1) == fresh
+
+
 def test_bridge_stores_diagnostics_message():
     bridge = SerialBridge()
     bridge._handle_message(

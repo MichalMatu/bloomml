@@ -62,6 +62,8 @@ _PORT_LIKELY_MARKERS = (
 class SerialBridge:
     def __init__(self, *, history_limit: int = 50) -> None:
         self._lock = threading.RLock()
+        self._diagnostics_refresh_lock = threading.Lock()
+        self._diagnostics_generation = 0
         self._stop = threading.Event()
         self._reader: threading.Thread | None = None
         self._serial: serial.Serial | None = None
@@ -162,17 +164,21 @@ class SerialBridge:
             }
 
     def request_diagnostics(self, *, timeout_s: float = 1.5) -> dict[str, Any] | None:
-        self.send_command({"command": "diagnostics"})
-        deadline = time.monotonic() + timeout_s
-        while time.monotonic() < deadline:
+        # Do not mistake a cached report from an earlier request for a fresh
+        # response. The firmware protocol has no correlation ID, so concurrent
+        # refreshes are serialized and must observe a newer diagnostics frame.
+        with self._diagnostics_refresh_lock:
             with self._lock:
-                diagnostics = self._state.get("last_diagnostics")
-            if isinstance(diagnostics, dict):
-                return diagnostics
-            time.sleep(0.05)
-        with self._lock:
-            diagnostics = self._state.get("last_diagnostics")
-        return diagnostics if isinstance(diagnostics, dict) else None
+                generation = self._diagnostics_generation
+            self.send_command({"command": "diagnostics"})
+            deadline = time.monotonic() + timeout_s
+            while time.monotonic() < deadline:
+                with self._lock:
+                    if self._diagnostics_generation != generation:
+                        diagnostics = self._state.get("last_diagnostics")
+                        return diagnostics if isinstance(diagnostics, dict) else None
+                time.sleep(0.05)
+            return None
 
     def _reset_session_state(self) -> None:
         self._state["last_status"] = None
@@ -181,6 +187,7 @@ class SerialBridge:
         self._state["last_startup"] = None
         self._state["last_firmware_error"] = None
         self._state["last_diagnostics"] = None
+        self._diagnostics_generation = 0
         self._last_transport_tx_at = 0.0
         self._last_status_tx_at = 0.0
         self._pending_mode_value = None
@@ -436,6 +443,7 @@ class SerialBridge:
                 self._apply_scenario_message(message)
             elif message_type == "diagnostics":
                 self._state["last_diagnostics"] = message
+                self._diagnostics_generation += 1
             elif message_type == "ack":
                 self._state["last_ack"] = message
                 self._apply_ack_message(message)

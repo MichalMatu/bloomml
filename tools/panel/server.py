@@ -147,8 +147,9 @@ class PanelHandler(BaseHTTPRequestHandler):
                 BRIDGE.disconnect()
                 _json_response(self, HTTPStatus.OK, BRIDGE.snapshot())
             elif path == "/api/diagnostics/refresh":
-                if BRIDGE.snapshot().get("connected"):
-                    BRIDGE.request_diagnostics()
+                if BRIDGE.snapshot().get("connected") and BRIDGE.request_diagnostics() is None:
+                    _json_response(self, HTTPStatus.GATEWAY_TIMEOUT, {"error": "diagnostics_refresh_timeout"})
+                    return
                 _json_response(self, HTTPStatus.OK, BRIDGE.diagnostics_snapshot())
             elif path == "/api/command":
                 BRIDGE.send_command(body)

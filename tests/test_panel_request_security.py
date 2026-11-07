@@ -28,6 +28,7 @@ def command_server(monkeypatch):
 
         def request_diagnostics(self):
             self.diagnostic_refreshes += 1
+            return {"type": "diagnostics"}
 
         def diagnostics_snapshot(self):
             return {"connected": True, "refreshes": self.diagnostic_refreshes}
@@ -138,3 +139,11 @@ def test_same_origin_diagnostics_refresh_requires_post(command_server):
     assert status == 200
     assert payload["refreshes"] == 1
     assert bridge.diagnostic_refreshes == 1
+
+
+def test_diagnostics_refresh_timeout_is_not_reported_as_success(command_server, monkeypatch):
+    bridge, base = command_server
+    monkeypatch.setattr(bridge, "request_diagnostics", lambda: None)
+    status, payload = post_command(base, path="/api/diagnostics/refresh")
+    assert status == 504
+    assert payload["error"] == "diagnostics_refresh_timeout"
