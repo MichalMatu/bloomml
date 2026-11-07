@@ -43,3 +43,7 @@ Now next milestone is full v2 JSON parse/normalize → capability/admission → 
 - The typed NVS execution snapshot stores **execution-relevant numeric IDs/graph/targets**, not the original JSON labels/board display names. GUI metadata must remain separate or be explicitly versioned for roundtrip/export later.
 
 Remaining: device-side validation/parity, power-cut/generation/CRC tests for new code, privileged runtime owner/transaction locks, safe staged activation & rollback, signal failover connection, real output mapper and readback/live UI. **No test suite, typecheck, heavy build, or physical flash was run by operator direction.**
+
+## Final conservative admission hardening
+
+`IpoBoardAdmission.h` now additionally requires all five current Mint process→effect→output routes (temperature/exhaust, humidity/exhaust, humidity/humidifier, CO₂ safety/exhaust, light schedule/lamp) with active processes before declaring a board-compatible reference. A graph with correctly numbered RF sockets but missing a critical route is rejected. This admission remains read-only; `apply_authorized=false`, no new runtime call or output command. No build/test executed.

@@ -20,7 +20,8 @@ enum class CrowPanelAdmissionStatus : std::uint8_t {
   UnsupportedOutput,
   UnsafeDwell,
   MissingRequiredOutput,
-  MissingRequiredInput
+  MissingRequiredInput,
+  MissingRequiredLink
 };
 struct CrowPanelAdmission {
   CrowPanelAdmissionStatus status = CrowPanelAdmissionStatus::InvalidGraph;
@@ -193,6 +194,38 @@ inline CrowPanelAdmission assessCrowPanelReference(const Graph& graph) noexcept 
   if (!roles_seen[0] || !roles_seen[1] || !roles_seen[2]) {
     result.status = CrowPanelAdmissionStatus::MissingRequiredOutput;
     return result;
+  }
+  // A profile can have valid endpoints yet omit a safety-critical route.
+  // This admission requires the known Mint process graph, not merely three
+  // correctly addressed sockets. Physical Safety remains independent.
+  struct RequiredRoute {
+    ProcessKind process;
+    OutputRole output;
+    Effect effect;
+  };
+  constexpr RequiredRoute required_routes[]{
+      {ProcessKind::Temperature, OutputRole::Exhaust, Effect::Ventilate},
+      {ProcessKind::Humidity, OutputRole::Exhaust, Effect::Ventilate},
+      {ProcessKind::Humidity, OutputRole::Humidifier, Effect::Humidify},
+      {ProcessKind::Co2Safety, OutputRole::Exhaust, Effect::Ventilate},
+      {ProcessKind::LightSchedule, OutputRole::Light, Effect::Illuminate},
+  };
+  for (const auto& required : required_routes) {
+    bool found = false;
+    for (std::size_t i = 0; i < graph.link_count && !found; ++i) {
+      const auto& link = graph.links[i];
+      const auto* process = findProcess(graph, link.process_id);
+      const auto* output = findActuator(graph, link.actuator_id);
+      if (process != nullptr && process->enabled && output != nullptr &&
+          process->kind == required.process && output->role == required.output &&
+          link.effect == required.effect) {
+        found = true;
+      }
+    }
+    if (!found) {
+      result.status = CrowPanelAdmissionStatus::MissingRequiredLink;
+      return result;
+    }
   }
   result.status = CrowPanelAdmissionStatus::CompatibleReferenceOnly;
   result.matches_compiled_board = true;

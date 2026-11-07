@@ -92,3 +92,5 @@ Dodano `src/climate/runtime/profile/IpoProfileWire.h` (typowany, wersjonowany, l
 ## IPO Runtime Bridge 3 — firmware parser, bez wykonania (2026-11-07)
 
 `IpoProfileJsonDecode.cpp` mapuje `DeviceProfile v2` JSON na bounded `Graph + RuntimeScheduleProfile` i **odrzuca** nieznane pola, niezgodne identyfikatory/kanały, drivery bez adaptacji sprzętowej oraz mapowania poza CrowPanel. `IpoProfileStagingCoordinator.h` tworzy izolowaną ścieżkę `preview → typed admission → zapis-tylko-do-NVS → readback`. Żaden komponent aktywnego bootstrapu jej nie wywołuje; nie ma nadawania uprawnień RF/OutputSupervisor i nie ma jeszcze aktualizacji aktywnego profilu z NVS. Kontrakt binary zapisuje semantyczną konfigurację wykonawczą, **nie** pełne stringowe etykiety JSON. `status` raportuje `schedule_hash` obecnego Mint RAM, a nie aktywny hash grafu v2. Bez testów i kompilacji: UNVERIFIED.
+
+**Dodatkowa bramka zgodności:** poprawne numery gniazdek nie wystarczą; adapter odrzuca graf bez kompletu pięciu wymaganych połączeń proces→efekt→wyjście znanych dla bieżącego Mint. Dalsze rozszerzanie ról wyjść wymaga nowych driverów i kwalifikacji; nie powoduje automatycznego odblokowania RF.
