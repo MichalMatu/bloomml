@@ -4,7 +4,7 @@
 
 ## Istniejące połączenie (R4 — historyczny, nie MPC)
 
-`GitHub research SHA → Mac Local Agent → prywatny notebook Kaggle → manifest → Local Agent → audyt`. Token Kaggle jest wyłącznie na Macu; nigdy w czacie, repo, notebooku czy wyniku testu. Operacje uruchamiane **na żądanie**, bez CI/GitHub Actions.
+`GitHub main SHA (research code) → Mac Local Agent → prywatny notebook Kaggle → manifest → Local Agent → audyt`. Token Kaggle jest wyłącznie na Macu; nigdy w czacie, repo, notebooku czy wyniku testu. Operacje uruchamiane **na żądanie**, bez CI/GitHub Actions.
 
 Sprawdzony notebook **physics R4**, private: https://www.kaggle.com/code/meeehooow/bloomml-r4-physics-stress . Źródło: `notebooks/BloomML_Kaggle_R4_Stress.ipynb`, runner `tools/ml/kaggle_r4_stress_runner.py`. Wymaga dwóch **oddzielnych** `cuda:0` i `cuda:1` (Tesla T4), bez automatycznej podmiany CPU. Kaggle ma ograniczenia quota/runtime i może nie udostępnić obu GPU.
 
@@ -23,7 +23,7 @@ Nie traktować starego manifestu jako dowodu nowego SHA: weryfikować commit, na
 
 ## Następny flow — duży eksperyment **MPC**, jeszcze NIE wykonany
 
-1. **Preflight:** świeże SHA research i `main`; odczyt `agent-control:.agent/status/daemon.json`. Local Agent tylko do zadania na Macu/Kaggle zgodnie z `AGENTS.md` (agent binding, `work_branch=main`, `resources=[]`). Research branch ma być klonowany **read-only** na Macu; nie prowadzić zapisu `main`. Brak Codex, Work, GitHub Actions.
+1. **Preflight:** świeże `main` SHA i `agent-control:.agent/status/daemon.json`. Local Agent na Macu/Kaggle wg `AGENTS.md` (agent binding, `work_branch=main`, `resources=[]`); klon do katalogu tymczasowego z kontrolą SHA i bez zmian produkcyjnego firmware. Brak Codex, Work, GitHub Actions.
 2. **Gate lokalny:** exact-SHA retest hard-stop `9258ae41...`; analiza niepowodzeń, porównanie CPU MPC/threshold/hysteresis, skrócone i wielogodzinne epizody z fault/stale, jawne `FAIL` i `UNKNOWN`. Żadnego dużego Kaggle, gdy bezpieczeństwo/symulator jest niestabilne.
 3. **Ocena GPU:** zmierz to samo zadanie na CPU i GPU **na tym samym hostcie**, z FP64 parity, deterministycznymi seedami i raportem time/memory. Obecny beam search to Python + referencyjny model skalarowy: **nie zakładać przyspieszenia CUDA**. GPU można użyć do batch physics, niezależnej oceny scenariuszy lub surrogate training.
 4. **Nowe artefakty:** przygotuj *oddzielny* wersjonowany runner i prywatny notebook dla MPC. Obecny notebook R4 nie uruchamia macierzy MPC. Zrób mały pilot na 2×T4: identyczny kod/seed/setup, sumy scenariuszy i weryfikacja, że obie karty wykonały faktyczne obliczenia; test CPU↔GPU oraz powtarzalność.

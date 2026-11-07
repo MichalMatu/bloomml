@@ -1,31 +1,21 @@
-# BloomML — next-chat handoff (2026-11-07)
+# BloomML — handoff after branch consolidation (2026-11-07)
 
-## Read and verify first
+## Source and operating policy
 
-Read `AGENTS.md`, `docs/README.md`, `docs/CURRENT_STATUS.md`, `docs/PRODUCT_DIRECTION.md`, `docs/AUDIT_STATUS.md`, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md`; fetch fresh `main` and `agent-control:.agent/status/daemon.json`. Do not assume stored SHA is HEAD.
+- ONE development branch: `main` for production, offline research, tests and documentation. `agent-control` remains Local Agent's control branch; `gh-pages` remains the publishing branch.
+- Merge checkpoint: `fadf6614e54264ad9f45ca19ce8699683322bb23` with original product parent `5e4db5af736e9c18d69d451496694fa6aff11743` and original research parent `73de11be282d40d03767275cc6a0891e58ed23f8`. Always fetch fresh current `main`.
+- Historical research branch names in dated checkpoints are provenance, not active work instructions. Before Local Agent commands read `AGENTS.md` and `agent-control:.agent/status/daemon.json`. No Codex, Work or GitHub Actions.
 
-## What this sprint changed
+## What is preserved
 
-- Product direction: ONE eventual operator workflow for hardware, targets, safe autonomy, monitoring. Current web v5 configurator/3D and serial v4 panel are research/developer surfaces, **not competing production admins**.
-- Main panel request hardening against browser cross-origin POST, DNS rebinding for loopback-bound listener, non-JSON and oversized request bodies, with dedicated tests.
-- Clarified v5 browser wording/filename and documentation around v4/v5/v6 boundaries; no schema conversion, production firmware or safety ownership was changed.
-- Local test evidence and its exact snapshot limitations are in `AUDIT_STATUS.md`.
+`main` contains Rule-authoritative ESP-IDF firmware and offline R4 physics, Kaggle GPU notebooks/runners, public dataset benchmarks, MPC devices/optimizer/lab, passive shadow DTO and tests. No runtime connection was made from MPC to hardware outputs; no v4/v5/v6 schema conversion, production training dependency or `OutputSupervisor` change.
 
-## Not done — do not call it done
+Current research entry points: `docs/simulator/RESEARCH_STATUS.md`, `docs/simulator/MPC_ROADMAP.md`. Original Kaggle R4 work is historical DONE. MPC's older 60-minute episode PASS does not erase 19/22 FAIL challenging cases. 2026-11-04 Local Agent report gives 37/37 unit PASS on `9258ae41` while the hard-case matrix remains 19/22 FAIL. Empirical growbox calibration and physical qualification are absent.
 
-- Full current-HEAD source/dependency clean-room gate, IDF build, physical SCD41/buttons/output testing.
-- Unified device-profile and production setup UI (not yet implemented).
-- Research MPC robustness: 19/22 adversarial scenarios FAIL; latest exact-SHA retest open; Kaggle MPC sweep not run.
-- Research branch has not been merged. No Local Agent hardware tasks were queued.
+## Single next product sprint
 
-## Single next closable sprint
+Design one versioned production `DeviceProfile` contract for configured sensor roles, output mappings, environmental targets, schedules and safety. Inventory the current hardcoded production I/O, ownership/persistence and validation/migration seams, then add focused tests before changing UI. Do not build a third panel.
 
-**Production profile contract and one minimal integration plan, without implementing a second UI.**
+## Open gates
 
-1. Recheck fresh HEAD / Local Agent activity and review capability mapping and persistence boundary.
-2. Specify one bounded versioned device profile with validation and migration tests, separate from ML feature schemas.
-3. Choose the already-existing frontend components to reuse, and explicitly classify remaining demo/research panels.
-4. Implement no actuator/control changes until profile tests and safety/ownership review pass.
-5. Publish a tested source/documentation checkpoint with exact SHA. Preserve all historical research evidence without rerunning closed work.
-
-Research resume instead: read `docs/simulator/RESEARCH_STATUS.md`, `docs/simulator/MPC_ROADMAP.md` and `docs/checkpoints/2026-11-04-bloomml-mpc-resume-complete.md` on the research branch; never treat that branch as production.
+Full exact-main clean-room C++/ESP-IDF build, complete current-source test suite, physical SCD41/buttons/outputs, ML hardware safety and own-growbox data are OPEN/UNKNOWN. Branch deletion and exact merge validation (if performed) require inspection of terminal Local Agent evidence in `agent-control:.agent/results/`. Do not assume task success from queue submission.

@@ -9,6 +9,8 @@
 - control branch: `agent-control`
 - publishing branch: `gh-pages`
 
+**Single development branch (2026-11-07):** source, tests, documents and offline research now use `main`. Do not create a new working/research branch unless requested by the operator. `agent-control` remains the Local Agent control plane, and `gh-pages` is publishing-only. Historical research branch names are provenance, not active instructions. The merge of experimental code onto `main` does not grant ML/MPC any authority over hardware; `tools/ml/`, `notebooks/` and research-only tests are separate from production.
+
 Do not infer or substitute another repository. A different repository requires an explicit Chat Bridge rebind.
 
 ## Bootstrap

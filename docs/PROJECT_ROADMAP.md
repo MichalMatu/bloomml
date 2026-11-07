@@ -117,6 +117,7 @@ Rank work by practical growbox value, safety risk, ownership clarity, ESP32-S3 r
 - `main` — canonical source/documentation;
 - `agent-control` — Local Agent control only;
 - `gh-pages` — publishing only;
-- temporary branches are disposable after verified integration.
+- source, tests, documentation and offline research work directly on `main`; do not create working branches under current operator policy.
+- the former research branch's complete ancestry is merged; its code remains unqualified for direct actuation.
 
 For each new task start from `docs/README.md`, `CURRENT_STATUS.md` and the relevant subsystem contract.

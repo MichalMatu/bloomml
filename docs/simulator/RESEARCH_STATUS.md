@@ -1,6 +1,6 @@
 # BloomML — aktualny status badań (START HERE)
 
-**2026-11-04** · research branch `research/simulator-fidelity-kaggle-20261103`. **Jeden aktualny checkpoint do wznowienia MPC:** [MPC complete resume](../checkpoints/2026-11-04-bloomml-mpc-resume-complete.md). **Plan:** [MPC_ROADMAP.md](MPC_ROADMAP.md). Nie mieszać starszego v4 research z climate-v6 produkcji.
+**Badania 2026-11-04, konsolidacja 2026-11-07** · kod i historia eksperymentów na `main`. **Jeden aktualny checkpoint do wznowienia MPC:** [MPC complete resume](../checkpoints/2026-11-04-bloomml-mpc-resume-complete.md). **Plan:** [MPC_ROADMAP.md](MPC_ROADMAP.md). Nie mieszać starszego v4 research z climate-v6 produkcji.
 
 | Obszar | Zweryfikowane | Obecny gate |
 | --- | --- | --- |
@@ -16,4 +16,6 @@
 Dokumenty szczegółowe, bez przepisywania danych:
 [Fizyka i granice](THERMODYNAMIC_CORE.md) · [MPC kontrakt](MPC_RESEARCH.md) · [Quality i evidence R4](QUALITY_AND_OBSERVABILITY.md) · [Kaggle flow](KAGGLE_EXECUTION.md) · [WUR](WUR_DATASET_EVALUATION.md) · [dataset ranking](PUBLIC_DATASETS.md).
 
-**Bezpieczeństwo:** wyłącznie sandbox/CPU/Kaggle na badawczej gałęzi. Nie zmieniać `main`, Growclip, firmware, Rule ani OutputSupervisor. Zewnętrzna szklarnia ≠ pomiar z własnego growboxa. Nie uruchamiać dużych obliczeń bez konkretnego pytania i planu walidacji.
+**Bezpieczeństwo:** badania wyłącznie w izolowanym `tools/ml/` na `main`, w sandbox/CPU/Kaggle. Nie modyfikować w tym torze Growclip, firmware, Rule ani OutputSupervisor. Zewnętrzna szklarnia ≠ pomiar z własnego growboxa. Nie uruchamiać dużych obliczeń bez konkretnego pytania i planu walidacji.
+
+**Historyczny retest jest dostępny:** `agent-control:.agent/results/la-bloomml-mpc-safety-regression-20261104-v1.json` raportuje 37/37 testów jednostkowych PASS na `9258ae41` i nadal 19/22 porażek macierzy. Jest to dowód na tamten dokładny kod, nie automatycznie na wszystkie dalsze commity ani pełny build.

@@ -23,7 +23,7 @@ The current architecture split remains intentional: `ClimatePolicy.*` owns state
 
 The target is **one operator setup/status workflow**: real sensors/outputs -> desired targets/schedules/safety -> offline autonomous controller -> observed state and diagnostics. This does not exist end-to-end yet. The serial `tools/panel/` UI is a v4 developer/demo service; the browser `web/` page exports v5 research JSON and separately previews 3D geometry; production firmware is climate-v6 with fixed real-input composition. See `PRODUCT_DIRECTION.md` before extending any panel.
 
-The separate `research/simulator-fidelity-kaggle-20261103` branch has experimental R4/Kaggle/MPC work (110 commits ahead of the common base as observed). Its 19/22 challenging MPC scenario failures and missing physical fidelity evidence prevent a production promotion. Research is not merged into `main`; see branch-local `docs/simulator/RESEARCH_STATUS.md`.
+The former research branch's R4/Kaggle/MPC files and full commit history are now on `main`. Its 19/22 hard MPC scenario failures and missing physical fidelity prevent production promotion; see `docs/simulator/RESEARCH_STATUS.md`.
 
 This scoped repair's evidence and remaining full-audit gates live in `AUDIT_STATUS.md`; the next step is `NEXT_CHAT.md`. The current main code/firmware has NOT been completely requalified on the latest exact SHA.
 

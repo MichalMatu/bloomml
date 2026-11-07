@@ -20,7 +20,7 @@ The machine does the rest **only within proven capabilities**. A transparent det
 | Production setup + status | Growbox operator | **Not unified yet**; current firmware has fixed source composition and observer-only e-ink | ONE future operator flow for hardware, targets, safety and monitoring |
 | Local hardware/demo service | Developer/technician | `tools/panel/`, serial protocol with **research v4** scenario controls | Developer diagnostics only; never represent as the production configuration backend |
 | Browser configuration + 3D | Research/design | `web/`, bundled **research v5**, JSON export and geometric 3D visualization | Reuse UX/components after a versioned production configuration adapter exists; 3D is optional |
-| Physics / ML / MPC lab | Research/development | `tools/ml/`, simulator, replay, Kaggle and branch-isolated MPC | Offline qualification, training, failure analysis; no runtime dependency |
+| Physics / ML / MPC lab | Research/development | `tools/ml/`, simulator, replay, Kaggle and runtime-isolated MPC | Offline qualification, training, failure analysis; no runtime dependency |
 | E-ink | Device operator | `src/climate/display/` | Status/diagnostics observer; not a control-authority owner |
 
 **Never silently convert a v4/v5 research JSON export into the v6 production runtime.** The present schema families are different, with distinct feature/output counts and meanings:
@@ -51,7 +51,7 @@ validated operator profile + real measurements + schedules
 - `OutputSupervisor` is the single configured-output owner. An ML proposal must not bypass safety, thermal interlocks, real sensor validity, persistence or execution-truth checks.
 - Missing/stale sensors, unknown output state, poor model confidence or timed-out inference must fail safely.
 - ESP32-S3 remains autonomous/offline. Mac/Kaggle/GPU are training and development infrastructure only, never a production control dependency.
-- The 2026-11-04 research branch has a limited MPC success case but **19/22 hard scenario failures**. Safety retest on the latest research patch is not yet independently confirmed. Do not enable MPC on hardware from these results.
+- The preserved 2026-11-04 MPC research has a limited success case but **19/22 hard scenario failures**. Safety retest on the latest research patch is not yet independently confirmed. Do not enable MPC on hardware from these results.
 
 ## Work ordering: product before experiments
 
@@ -77,6 +77,6 @@ validated operator profile + real measurements + schedules
 
 ## Immediate non-goals
 
-No direct merge of the 110-commit research branch; no forced integration of v4/v5/v6; no deletion of panels or old evaluation evidence; no new model training solely to increase scores; no new cloud/runtime dependency; no new firmware output authority.
+The 110-commit research history is now merged into `main`, but the research remains runtime-isolated. No forced integration of v4/v5/v6; no deletion of panels or old evaluation evidence; no new model training solely to increase scores; no new cloud/runtime dependency; no new firmware output authority.
 
 See `AUDIT_STATUS.md` for what has been tested in this audit, and `NEXT_CHAT.md` for the next bounded, closable sprint.

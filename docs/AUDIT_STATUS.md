@@ -1,11 +1,11 @@
 # BloomML — repository audit and repair ledger
 
-As of 2026-11-07. Scope: `MichalMatu/bloomml`. Source baseline `main@d5044b712b9f7b56278c31f5770d853836089071`. Separate research branch `research/simulator-fidelity-kaggle-20261103@73de11be282d40d03767275cc6a0891e58ed23f8`.
+As of 2026-11-07. Scope: `MichalMatu/bloomml`. Source baseline `main@d5044b712b9f7b56278c31f5770d853836089071`. Former research tip `73de11be282d40d03767275cc6a0891e58ed23f8`, merged into `main` by `fadf6614e54264ad9f45ca19ce8699683322bb23`.
 
 ## Reconstructed state
 
 - Main: stable production climate-v6 with Rule authority, configured-output safety and CrowPanel observer. Recent main history: the last 7 and 30 days contain the Nov 3/Nov 5 manual-only CI/storage commits; larger 90-day history includes display, architecture, ML decisions and performance tooling.
-- Research: 110 commits ahead of the common base and one main commit behind; the research-only branch contains physics R4, Kaggle 2×T4 runs, datasets and MPC. **Do not count this as production firmware.**
+- Research at its historical tip: 110 commits ahead of the common base with physics R4, Kaggle 2×T4, datasets and MPC. The full research ancestry is merged into `main`, but **none of this is production firmware authority**.
 - Local Agent: `agent-control:.agent/status/daemon.json` observed idle with no active task; daemon 4.20.16 on 2026-11-07. No hardware/Mac/Kaggle task launched as part of this audit.
 - Archive: Library snapshot `growbox-source-deb68799899450d248b7e300e2bc20374b42ba8a.tar.zst` checksum verified; it predates current main and is NOT an exact current-main checkout. Several target panel files match current main blob SHAs.
 
@@ -33,8 +33,12 @@ No claim of a full repository audit or hardware qualification is made. Do not di
 1. Fresh exact-HEAD source/dependency snapshot; full project layout/dependency/security inspection and all relevant host/web/IDF gates.
 2. Local Agent host preflight + authorized SCD41/buttons physical qualification when hardware/operator conditions are available.
 3. Device-profile design with explicit v4/v5/v6 isolation; prototype only after contract and acceptance tests.
-4. On research branch: retest latest hard-stop patch, analyze 19/22 MPC failures, then bounded CPU/GPU/Kaggle work. Do not cherry-pick unqualified MPC to main.
+4. On `main` under isolated `tools/ml/`: confirm merged-head regression, analyze 19/22 MPC failures, then bounded CPU/GPU/Kaggle research. Do not activate unqualified MPC in firmware.
 
 ## Checkpoint discipline
 
 This is a scoped repair checkpoint rather than a false "all gates green" declaration. Current source HEAD must be fetched anew before a subsequent change, and final commit SHA is reported by the publisher rather than embedded recursively in this file.
+
+## Consolidation (2026-11-07)
+
+Two-parent merge `fadf6614e54264ad9f45ca19ce8699683322bb23` retains previous product main `5e4db5af736e9c18d69d451496694fa6aff11743` and experimental tip `73de11be282d40d03767275cc6a0891e58ed23f8` as parents. All 72 research-only modified/added paths were copied by exact blob SHA; the three overlapping active docs were reconciled. Existing product code remains unchanged. Branch cleanup is contingent on separate ancestry and source-check verification. Never infer hardware qualification from this merge.

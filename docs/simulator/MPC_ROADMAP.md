@@ -1,6 +1,6 @@
 # BloomML MPC — aktywna roadmapa badawcza
 
-**Jedyny plan kolejnych prac MPC, 2026-11-04.** Przed rozpoczęciem: [pełny checkpoint](../checkpoints/2026-11-04-bloomml-mpc-resume-complete.md). Położenie kodu: `tools/ml/mpc/`. Wyłącznie `research/simulator-fidelity-kaggle-20261103`. Nie dotykać `main`, firmware, Growclip, Rule ani OutputSupervisor.
+**Jedyny plan kolejnych prac MPC, 2026-11-04.** Przed rozpoczęciem: [pełny checkpoint](../checkpoints/2026-11-04-bloomml-mpc-resume-complete.md). Położenie kodu: `tools/ml/mpc/`. Kod badań jest na `main`, ale izolowany pod `tools/ml/`; nie dotykać firmware, Growclip, Rule ani OutputSupervisor.
 
 | Kolejność | Zadanie | Gate / dowód ukończenia |
 | --- | --- | --- |
@@ -22,4 +22,4 @@
 4. Dopiero potem tysiące różnych geometrii/klimatów/mocy/seedów, identyczne baseline, znane tolerancje, percentyle MAE/RMSE, out-of-tolerance fraction, hard violations, energy proxy, switches, timeout, failure categories, CPU/GPU parity i czas.
 5. Zgłoś `PASS/FAIL/BLOCKED/UNKNOWN` rozdzielnie: **software/numerical evidence**, **synthetic control quality**, **empirical fidelity**, **hardware approval**. Dane syntetyczne nie są dowodem uprawowym.
 
-**Kaggle jest obowiązkowym kolejnym etapem po lokalnym gate, nie automatycznie teraz.** Konkretny operacyjny flow w [KAGGLE_EXECUTION.md](KAGGLE_EXECUTION.md). Starsze R4 runy nie wymagają ponownego uruchomienia. Każde zamknięte zadanie: test + exact SHA + commit na research + krótkie dopisanie wyniku do checkpointu, bez powielania roadmapy.
+**Kaggle jest obowiązkowym kolejnym etapem po lokalnym gate, nie automatycznie teraz.** Konkretny operacyjny flow w [KAGGLE_EXECUTION.md](KAGGLE_EXECUTION.md). Starsze R4 runy nie wymagają ponownego uruchomienia. Każde zamknięte zadanie: test + exact SHA + commit na `main` (wyłącznie kod badań) + krótkie dopisanie wyniku do checkpointu, bez powielania roadmapy.
