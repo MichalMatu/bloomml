@@ -1,11 +1,15 @@
 import { lazy, Suspense } from "react"
 
-import { App } from "@/App"
 import { SetupPage } from "@/pages/setup-page"
 import { AppPageLoading } from "@/components/app-chrome"
 import { ROUTES, usePathname } from "@/lib/routing"
 
-/** R3F stays out of the configurator bundle until this route is opened. */
+/** Keep research and 3D modules out of the operator setup entry bundle. */
+const ResearchV5Page = lazy(async () => {
+  const module = await import("@/App")
+  return { default: module.App }
+})
+
 const Chamber3dPage = lazy(async () => {
   const module = await import("@/pages/chamber-3d-page")
   return { default: module.Chamber3dPage }
@@ -23,7 +27,13 @@ export function AppRouter() {
     )
   }
 
-  if (pathname === ROUTES.legacyV5) return <App />
+  if (pathname === ROUTES.legacyV5) {
+    return (
+      <Suspense fallback={<AppPageLoading>Ładowanie laboratorium v5…</AppPageLoading>}>
+        <ResearchV5Page />
+      </Suspense>
+    )
+  }
 
   return <SetupPage />
 }
