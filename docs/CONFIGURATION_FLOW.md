@@ -111,3 +111,18 @@ W konfiguratorze `/` pojawiła się **jawna ocena zgodności** `ipo-board-readin
 Do wersji źródłowej firmware dodano byte-bound JSON 32 KiB oraz odrzucanie `exhaust_fan_available=false` dla obecnej pojedynczej drogi wentylacji. Eksport `/` jest zwarty i liczy bajty UTF-8 bez dodawanego końcowego LF; przy znacznikach Unicode etykiet aktualny C++ parser ogranicza je do 80 bajtów UTF-8. NVS odczyt przy starcie buforuje niekryptograficzny CRC32 całego zapisanego rekordu, a `IpoProfileReadback` odróżnia je od `schedule_hash` bieżącego Mint w RAM. `status` drukuje `ipo_health` oraz `ipo_readback`, lecz nie jest API live dla przeglądarki ani potwierdzeniem przełączenia RF433.
 
 Zapisano nowy host C++ i Vitest zestaw **regresji tego zakresu**. Nie uruchamiano ich ani kompilacji/flashowania, więc gate wykonawczy pozostaje OPEN. Zob. [checkpoint B5](checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md).
+
+## IPO v2 transaction owner — kwalifikacja hostowa, brak fizycznej aktywacji (2026-11-07)
+
+`IpoProfileActivationTransaction` jest jednym planowanym właścicielem zapisująco-aktywującym dla firmware; `IpoProfileStagingCoordinator` pozostaje narzędziem przygotowania, a `IpoProfileNvsJournal` wyłącznie składowaniem. Nie powstał drugi silnik sterowania wyjściami.
+
+1. **Preview:** pełna dekodowana i dopuszczona konfiguracja v2 dostaje token (CRC32 pełnego zakodowanego profilu + generacja NVS); właściciel zapamiętuje generację i hash RAM Rule/lamp. Bez zapisów i fizycznych efektów.
+2. **Validate/qualification:** ponowna walidacja grafu/CrowPanel, granice generacji i tokenu, jawnie niezależny gate bezpieczeństwa (dokładny SHA, świeże wejścia, lamp thermal lock, quiescence i wyłączna kontrola OutputSupervisor).
+3. **NVS Commit:** dwu-slotowy journal z weryfikacją zapisu, następnie wyraźny odczyt stored hash/generation. Commit sam w sobie oznacza jedynie `stored`.
+4. **Apply:** dopiero przy nieprzerwanej kwalifikacji atomowo wymieniany wspólny RAM `RuntimeScheduleProfileOwner`, z którego Rule i harmonogram lampy pobierają nastawy; graf pozostaje referencyjny, bez przekazania uprawnień wyjściom/ML.
+5. **Readback:** porównanie generacji, aktywnego fingerprintu harmonogramu RAM oraz generacji/fingerprintu NVS; tylko pełna zgodność oraz znacznik z bieżącej transakcji potwierdzają `operator_v2`.
+6. **Rollback:** powrót do poprzednich nastaw RAM i poprzedniego poprawnego slotu NVS (lub `NotFound`, jeśli startował z pustym NVS), obowiązkowy readback. Jeśli któregokolwiek nie uda się zweryfikować, wynik `Quarantined` wymaga zatrzaśniętego locku wyjść i nigdy nie raportuje applied.
+
+**Produkcyjny adapter gate pozostaje `ClosedIpoActivationGate`, a wejście jest niedostępne dla UI/UART.** Z tego powodu żadna próba fizycznej aktywacji v2 nie jest obecnie możliwa. Nawet po awarii zasilania między trwałym zapisem a RAM apply, boot nie wczytuje profilu v2: aktywny jest Mint; `stored != active` jest prawidłowo diagnozowane. CRC32 jest kontrolą integralności, nie podpisem/autoryzacją. Przy aktywacji zewnętrznej trzeba dopiero dodać bezpieczny, uwierzytelniony kanał i prawdziwą bramkę OutputSupervisor.
+
+**Weryfikacja:** Mac Local Agent na `977c48d221cd310be70f39653a33d8eb4abd5ebd`: CTest 2/2; Vitest 9/9, wyłącznie nowa bramka. Fake journal testuje konflikty, odmowy, rozjazd readback, symulowaną awarię po przełączeniu znacznika i rollback. Nie ma tu dowodu awaryjnego zachowania rzeczywistego NVS, kwalifikacji real-input ESP-IDF, termiki lampy ani fizycznego RF.

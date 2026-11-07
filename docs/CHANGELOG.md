@@ -1,3 +1,10 @@
+## 2026-11-07 — IPO v2 activation transaction, host qualification
+
+- One explicit `IpoProfileActivationTransaction`, closed hardware qualification gate, generation/CRC-bound preview, NVS commit, schedule RAM apply, independent readback and two-sided rollback/quarantine.
+- Runtime console now derives active vs stored truth from verified transaction evidence; still no active v2 or physical-output activation.
+- Narrow Mac Local Agent tests on `977c48d221cd310be70f39653a33d8eb4abd5ebd`: C++ IPO targets 2/2 and frontend board readiness 9/9 PASS. ESP-IDF/hardware qualification and real NVS power-loss acceptance remain open.
+- Fixed the IPO Makefile CTest regex escaping. See `checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md`.
+
 # Changelog
 
 Only milestones that still help understand the current codebase are kept here. Detailed phase-by-phase notes remain in Git history.

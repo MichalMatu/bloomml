@@ -25,7 +25,8 @@ For normal product work read, in order:
 | `PRODUCT_DIRECTION.md` | canonical product UX/contract direction and ML qualification gates |
 | `AUDIT_STATUS.md` | scoped audit results, evidence limits and open full-audit gates |
 | `NEXT_CHAT.md` | single follow-on sprint without repeating closed audit work |
-| `checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md` | current IPO B5 change record and unqualified execution gates |
+| `checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md` | qualified host-only transaction owner, explicit closed hardware gate and remaining device gates |
+| `checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md` | prior B5 change record, now host-qualified at the later transaction checkpoint |
 | `ARCHITECTURE.md` | stable ownership/safety architecture |
 | `PROJECT_ROADMAP.md` | ordered product priorities |
 | `DISPLAY_UI_PORT.md` | live plan/contract for Clay/menu/button/simulator work |

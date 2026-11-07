@@ -2,11 +2,22 @@
 
 Data: **2026-11-07** · Repo: `MichalMatu/bloomml` · branch: `main`.
 
-**Status:** IPO v2 runtime bridge **SOURCE IMPLEMENTED / UNVERIFIED**. Poprzednie wyniki sprzętowe dotyczą wcześniejszego kodu i nie kwalifikują zmian z 7 listopada. Kod nie został skompilowany, przetestowany ani wgrany na ESP32 w tym sprincie — zgodnie z dyspozycją operatora. **Nie twierdzić, że nowy firmware jest już wdrożony.**
+**Status:** IPO v2 owner transakcji **HOST QUALIFIED, HARDWARE LOCKED**. Wąskie C++/Vitest przeszły na Macu, ale ESP-IDF real-input i fizyczny sprzęt nie zostały zakwalifikowane ani wgrane. Poprzednie wyniki sprzętowe dotyczą wcześniejszego kodu. **Nie twierdzić, że nowy firmware jest już wdrożony.**
 
-## IPO Quality Gate B5 — kod źródłowy, bez wykonania (2026-11-07)
+## IPO v2 — owner transakcji i wąska kwalifikacja (2026-11-07)
 
-Dopisano wymagane źródło **SCD41 CO₂** do dopuszczenia obecnego CrowPanel; ograniczono liczbę surowych pomiarów w selektorze i zapobieżono overflow `double → float`; nieaktywny firmware parser JSON v2 ma jawny limit **32 KiB** dopasowany do maksymalnego grafu. Kandydat ze świadomie wyłączonym wyciągiem nie przejdzie trwałej walidacji profilu. W `/` pokazujemy teraz **osobno** poprawność grafu, zgodność z rzeczywistą referencyjną mapą CrowPanel i rozmiar UTF-8, zawsze bez przycisku `apply`. Odczyt statusu w firmware rozdziela Mint w RAM i zapis w NVS; fingerprint NVS buforowany przy starcie, nie kodowany ponownie na stosie konsoli. Powstały dedykowane testy host C++ i web Vitest, a host test został zarejestrowany pod `make test-ipo` — **nie były uruchamiane**. Wciąż brak aktywnego profilu operatora i hardware qualification.
+**SOURCE IMPLEMENTED / HOST QUALIFIED / HARDWARE ACTIVATION LOCKED.**
+W kodzie działającym pod real-input utworzono jednego właściciela `IpoProfileActivationTransaction` (nie podłączono żadnego endpointu zapisu). Jego typowana sekwencja to `preview → validate → NVS commit → RAM apply → readback → rollback`. Przed trwałym zapisem wymaga bramki kwalifikacji, która na produkcyjnym CrowPanel jest świadomie **`ClosedIpoActivationGate`** — nie da się z tego firmware włączyć operatorowego v2 ani ominąć `OutputSupervisor`. Po restarcie aktywny jest nadal Mint, niezależnie od poprawnego wpisu w IPO NVS. Konsola czyta faktyczny `RuntimeScheduleProfileOwner`, zapamiętany fingerprint NVS i dowód aktywacji z RAM zamiast wnioskować `applied` z samego zapisu.
+
+Własny rollback dziennika NVS potrafi wskazać poprzednią poprawną kopię lub wrócić do pustej przestrzeni `gb_ipoprof`; przy braku pewnego readbacku transakcja przechodzi w `Quarantined` i żąda zatrzaśnięcia blokady fizycznych wyjść. Nie zmieniono Rule, LampSafety ani ścieżki sterowania RF433.
+
+**Nowe wykonane testy na Mac Local Agent (dokładny kod `977c48d221cd310be70f39653a33d8eb4abd5ebd`):** `make test-ipo` → 2/2 CTest PASS (profile + activation); `pnpm --dir web exec vitest run src/domain/ipo-board-readiness.test.ts` → 9/9 PASS; `git diff --check` PASS. Wynik: `.agent/results/la-bloomml-ipo-v2-transaction-tests-20261107-v2.json`. Testy aktywacji wykorzystują fake journal i bramkę, **nie** weryfikują sprzętowego NVS, resetu ani transportu.
+
+**Nadal otwarte:** celowany ESP-IDF compile real-input CrowPanel, rzeczywisty adapter blokady OutputSupervisor z kwalifikacją exact-SHA, stale/valid TP357+SCD41 i niezależnego zabezpieczenia termicznego lampy, sprzętowe NVS interruption/reboot, readback aktywacji po restarcie, urządzeniowe API dla istniejącego panelu. Brak zgody na odblokowanie fizycznych wyjść w tym sprincie.
+
+## IPO Quality Gate B5 — kod źródłowy, następnie kwalifikacja wąska (2026-11-07)
+
+Dopisano wymagane źródło **SCD41 CO₂** do dopuszczenia obecnego CrowPanel; ograniczono liczbę surowych pomiarów w selektorze i zapobieżono overflow `double → float`; nieaktywny firmware parser JSON v2 ma jawny limit **32 KiB** dopasowany do maksymalnego grafu. Kandydat ze świadomie wyłączonym wyciągiem nie przejdzie trwałej walidacji profilu. W `/` pokazujemy teraz **osobno** poprawność grafu, zgodność z rzeczywistą referencyjną mapą CrowPanel i rozmiar UTF-8, zawsze bez przycisku `apply`. Odczyt statusu w firmware rozdziela Mint w RAM i zapis w NVS; fingerprint NVS buforowany przy starcie, nie kodowany ponownie na stosie konsoli. Powstały dedykowane testy host C++ i web Vitest, a host test został zarejestrowany pod `make test-ipo` — zostały następnie uruchomione w celowanej bramce 2/2 CTest i 9/9 Vitest. Wciąż brak aktywnego profilu operatora i hardware qualification.
 
 Dokładne zmiany i dalszy zakres: [checkpoint B5](checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md).
 

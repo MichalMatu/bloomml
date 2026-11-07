@@ -1,42 +1,23 @@
-# BloomML — handoff po IPO Runtime Bridge 4 (2026-11-07)
+# BloomML — handoff po IPO v2 Activation Transaction (2026-11-07)
 
-## Wejście
+## Wymagany start
+- Repo `MichalMatu/bloomml`; źródło tylko `main`, `agent-control` tylko Local Agent, `gh-pages` publikacyjne.
+- Odśwież HEAD `main` i stan `agent-control:.agent/status/daemon.json` przed jakimkolwiek zapisem/zadaniem. Nie zakładaj SHA handoff jako aktualnego.
+- Czytaj `AGENTS.md`, `docs/README.md`, `docs/CURRENT_STATUS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md` i `docs/checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md`.
+- Bez Codex, Work, GitHub Actions, nowej gałęzi, force-push, powtarzania zamkniętych sprintów i ciężkich niecelowanych buildów.
 
-- Repo `MichalMatu/bloomml`, źródło tylko `main`, `agent-control` dla Local Agent, `gh-pages` publikacyjne.
-- Startuj od **świeżego HEAD**, nie utrwalaj SHA ze starej rozmowy. Sprawdź stan `.agent/status/daemon.json` przed nowym zadaniem Local Agent. Nie używaj Codex, Work ani GitHub Actions.
-- Czytaj `AGENTS.md`, `docs/README.md`, `docs/CURRENT_STATUS.md`, `docs/CONFIGURATION_FLOW.md` i `docs/ARCHITECTURE.md` przed zmianami.
-- Operator wprost prosił **bez ponawiania testów i ciężkich kompilacji**; w Bridge 1–4 żadnych nie wykonano. Nowy kod pozostaje **UNVERIFIED**. Przed fizycznym wgraniem nowego firmware konieczna nowa celowana kwalifikacja dotkniętej ścieżki — nie historycznych badań ML.
+## Zamknięte — nie powtarzać
+- B5 admission/preflight, bounded JSON/wire/NVS journal, Readback i real-input selector; wąska bramka B5 została wykonana.
+- Jeden nowy `IpoProfileActivationTransaction`, `ClosedIpoActivationGate`, NVS `rollbackTo`, aktywny vs zapisany status w konsoli. Wpisane w real-input, ale żadna droga do aktywacji nie jest odblokowana.
+- Wąskie kwalifikacje Mac Local Agent na kodzie `977c48d221cd310be70f39653a33d8eb4abd5ebd`: `make test-ipo` -> 2/2 CTest PASS; `pnpm --dir web exec vitest run src/domain/ipo-board-readiness.test.ts` -> 9/9 PASS; `git diff --check` PASS. Evidence: `.agent/results/la-bloomml-ipo-v2-transaction-tests-20261107-v2.json`. C++ transakcja używa *fake* journal; to nie jest fizyczny NVS.
+- Nie przeprowadzono ESP-IDF CrowPanel build, hardware flash/reset/testu fizycznego. Nie deklarować production PASS.
 
-## Zamknięte źródłowo — nie powtarzać
+## Następny jeden sprint — kwalifikacja urządzeniowa i port bezpieczeństwa
+1. Skupiona weryfikacja produkcyjnej ścieżki real-input CrowPanel (minimalny ESP-IDF build na exact SHA z odłączonym/fake-locked RF) i lokalnych źródeł TP357/SCD41, invalid/stale, Rule, niezależnego TP357 LampSafety. Utrzymać progi >=28°C trip, <=26°C przez 10 min recovery.
+2. Wąskie fault-injection dla **rzeczywistego** adaptera NVS: dwufazowy zapis, zerwanie energii przed/po flipie, corrupt slot, fallback, rollback pustego i poprzedniego slotu, reboot `stored != active`, zasoby/stack.
+3. Dopiero po kwalifikacji zaprojektować i podłączyć implementację `IpoActivationSafetyGate` przez istniejący OutputSupervisor quiesce/emergency-lock. Zablokować wejście bez uprawnień i potwierdzenia operatora. Żadnego bezpośredniego RF/GPIO w transakcji.
+4. Wprowadzić minimalny, uwierzytelniony lokalny kanał preview/activate/status do **istniejącego** konfiguratora, dopiero po kwalifikacji. Zachować prawdę `stored` vs `active` vs fizyczny RF state.
+5. Osobny checkpoint exact SHA, wyniki tylko nowych testów, resztkowe blokery i handoff.
 
-1. Jeden offline edytor `DeviceProfile v2` na `/` wraz z driver catalog, signal registry, process/effect/output links, migracja z v1. Nowszy v2 szkic **nie jest aktywną konfiguracją**; v1 zachowany `/lab/profile-v1`, v5 research `/lab/v5`.
-2. Bounded `lib/ipo_profile`: C++ `IpoGraph`, `IpoBoardAdmission` wymagający pełnych pięciu referencyjnych połączeń Mint, `IpoSignalSelector` ze świeżością i priorytetami. Admission = referencja, **apply_authorized=false**.
-3. Wspólny `RuntimeScheduleProfileOwner` dla Rule i harmonogramu lampy, wbudowany Mint pozostaje aktywny.
-4. Bounded typowany firmware JSON parser `IpoProfileJsonDecode`, full-profile `IpoProfileWire` z magic/version/CRC, osobna `IpoProfileNvsJournal` dwuslotowa, dormant `IpoProfileStagingCoordinator` stored-only. Nie wywoływać NVS `commit` jako substytutu aktywnego apply.
-5. W **real-input** nowy selektor jest podpięty do TP357 T/RH, SCD41 CO₂, Xiaomi T/RH przy zachowaniu osobnej lamp Safety TP357. Zapisany profil NVS jest na boot wyłącznie odczytywany i **nigdy automatycznie stosowany**.
-6. `Stage28ServiceConsole status` rozróżnia `ipo_store` (zapis), `ipo_profile` (aktywny Mint/schedule_hash) i `ipo_input` (valid, source id, age, fallback poprzedniego cyklu). Żadne z nich nie potwierdza fizycznego stanu RF433.
-7. Dokumentacja prawdy: `docs/CONFIGURATION_FLOW.md`; checkpoint `docs/checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md`.
-
-## Zamknięte po Bridge 4 — B5 IPO Quality Gate
-
-- `IpoBoardAdmission` wymaga kwalifikowanego wejścia CO₂ obok TP357 T/RH i RTC; brak źródła mimo safety-link odrzuca profil. `IpoSignalSelector` ogranicza liczbę wejść i blokuje overflow przy konwersji do `float`. `IpoProfileWire` blokuje deklarację niedostępnego wyciągu.
-- `IpoProfileJsonDecode` limit UTF-8 32 KiB; `web/src/domain/ipo-board-readiness.ts` plus istniejący edytor `/` pokazują preflight obecnego CrowPanel, 80 bajtów na etykietę, miejsca i brak możliwości apply. Eksport kompaktowego JSON z tym samym limitem.
-- Jedna observer-only projekcja `IpoProfileReadback` pokazuje active Mint RAM vs stored NVS. NVS odczyt buforuje CRC32 zapisanego rekordu, a konsola ma czytelne `ipo_health` + `ipo_readback` bez dodatkowego dużego bufora na stosie i bez zmiany dotychczasowych wierszy.
-- Dodano `test/test_ipo_profile/test_main.cpp` (C++) oraz `web/src/domain/ipo-board-readiness.test.ts` (Vitest) — **testów nie wykonywano**; nie powtarzać ich implementacji.
-- Dokładny zakres w `docs/checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md`.
-
-## Jeden następny sprint
-
-- Przed aktywacją fizyczną wykonać **skoncentrowaną** kwalifikację nowych ścieżek: valid/stale TP357 i SCD41, Rule+lamp Safety, kodowanie i power-loss NVS, rozróżnienie stored/active, ponowny start. Nie powtarzać starych historycznych testów; gdy operator nadal wyklucza testy, pozostać przy kodzie dormant/read-only.
-- Następnie przy jednym właścicielu i po spełnieniu bramek: `preview → validate → stage NVS → safe apply → readback active hash → rollback`, bez drugiego silnika wyjść. Tylko jawnie wspierane endpointy i adaptery; `OutputSupervisor` i bezpieczeństwo nadrzędne.
-- Dopiero później sieciowe/lokalne API do już istniejącego operator UI i e-ink observer; brak fałszywego `applied` na podstawie zapisanych bajtów.
-- ML pozostaje Shadow, symulator/Kaggle offline, MPC research nie ma prawa aktywacji.
-
-**Konkretny stan:** nowy firmware zmienia selekcję/odrzucanie starych pomiarów, ale nie został skompilowany ani wgrany. Nie deklarować PASS/uruchomienia.
-
-## Uruchomienie tylko nowej wąskiej bramki, gdy operator dopuści
-
-- `make test-ipo` — wyłącznie nowy hostowy `ipo_profile_tests` (CMake rejestruje ten test; bez całej poprzedniej suite).
-- `pnpm --dir web exec vitest run src/domain/ipo-board-readiness.test.ts` — wyłącznie nowy test preflight UI.
-- Następnie osobna kwalifikacja ESP-IDF *real-input CrowPanel*, zanim nowa ścieżka sterowania zostanie wgrana na fizyczne wyjścia.
-- **W B5 żaden z powyższych testów ani buildów nie został uruchomiony.**
+## Bezwzględne granice
+Rule jest autorytetem. ML/MPC Shadow. `OutputSupervisor` jedynym właścicielem wyjść. LampSafety niezależna. `ClosedIpoActivationGate` ma pozostać zamknięta dopóki nie przejdzie osobna kwalifikacja sprzętowa i operator nie autoryzuje aktywacji. Brak automatycznego apply z NVS przy restarcie.

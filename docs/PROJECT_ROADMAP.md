@@ -10,9 +10,10 @@ Broad architecture cleanup, the SCD41/e-ink recovery closeout, runtime persisten
 
 The deployed product must remain standalone on the ESP32-S3. External foundation models, training services or cloud inference may be used only in offline research/development and must not become runtime dependencies.
 
-## Current priority — IPO Runtime Bridge 4 (2026-11-07)
+## Current priority — IPO v2 activation qualification (2026-11-07)
 
-**Source code committed / EXECUTION UNVERIFIED.** Current real inputs TP357/SCD41/Xiaomi use the IPO reference selector with validity/age checks; read-only boot inspection of the isolated profile NVS store and console source-provenance are present. Mint Rule and OutputSupervisor retain physical authority, no dynamic v2 apply, no new actuator role. The next work is *focused qualification* of changed inputs and NVS before any active apply, then one atomic single-owner apply/readback/rollback path, then live operator status. No repeat of completed research suites or another UI. See `CURRENT_STATUS.md` and `NEXT_CHAT.md`.
+**Transaction owner SOURCE IMPLEMENTED / HOST TESTED; real-input hardware CLOSED.**
+One bounded owner now performs preview/validation/qualified NVS commit/safe shared RAM apply/readback/rollback and reports stored vs active with provenance. A closed production gate deliberately denies activation; no UART/browser apply and no new physical output authority. New narrow host CTest 2/2 and Vitest 9/9 passed on `977c48d221cd310be70f39653a33d8eb4abd5ebd`. Next is exact-SHA real-input ESP-IDF + NVS fault/reboot + TP357/SCD41/Rule/lamp-safety qualification with outputs fake-locked, then a real supervisor interlock and only subsequently a privileged operator API. Historical ML/display audits and broad builds are not part of this gate.
 
 ## Archived source milestones (not active tasks)
 
