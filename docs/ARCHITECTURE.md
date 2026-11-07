@@ -4,9 +4,11 @@ Current state: [CURRENT_STATUS.md](CURRENT_STATUS.md).
 Product order: [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md).
 Display port contract: [DISPLAY_UI_PORT.md](DISPLAY_UI_PORT.md).
 
-## IPO v2 foundation boundary (unlinked)
+## IPO v2 bridge — compiled, host-qualified, hardware-locked
 
-`schemas/device-profile.v2.schema.json` and `web/src/domain/ipo-*.ts` define a bounded declarative device/signal/process/output/link graph; portable C++17 `lib/ipo_profile/src/IpoGraph.h` provides a typed validation seam and **symbolic** compatible-intent aggregator. None is linked into the production firmware. Hardware driver adapter/registry, safe profile NVS, apply/readback, and qualification remain open. Never bypass the existing `OutputSupervisor` or thermal interlocks; do not allow unqualified shadow ML to actuate hardware.
+`schemas/device-profile.v2.schema.json` and `web/src/domain/ipo-*.ts` define the offline draft. Portable C++17 `lib/ipo_profile/` is now linked into CrowPanel real-input through a **fixed-board** selector; boot inspects the separate `gb_ipoprof` NVS journal without applying it. The single `IpoProfileActivationTransaction` checks preview, generation, qualified NVS commit, shared Rule/lamp RAM apply and readback/rollback. Production injects `ClosedIpoActivationGate`; there is **no reachable apply path**. Stored profile never implies active.
+
+Real-input ESP-IDF CrowPanel compilation passed at source `1a1b3de8`. The production NVS journal passed fault tests compiled against a mocked NVS API; real hardware and power loss remain unqualified because the authorized device was absent. OutputSupervisor still exclusively owns physical outputs, TP357 thermal safety is independent and Rule is authoritative. Supervisor-owned quiesce, authenticated operator endpoint and physical qualification remain prerequisites to any activation. See [hardware checkpoint](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md).
 
 ## Stable design rules
 
