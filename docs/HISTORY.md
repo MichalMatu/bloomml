@@ -6,6 +6,7 @@ Compact record of milestones that still matter operationally. Detailed retired p
 
 | Period | Milestone | Evidence / identity |
 | --- | --- | --- |
+| 2026-11-07 | IPO v2 host-qualified transaction, CrowPanel ESP-IDF build, production NVS adapter with mock fault injection; physical device absent | [final checkpoint](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md), [NVS/build checkpoint](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md) |
 | 2026-07 | Initial environment-controller / TinyML repository | `0.1.0` line in `CHANGELOG.md` |
 | 2026-08 | Climate-v6 ML research Stages 12-16; Rule retained as authority | `ML_DECISION_REPORT.md` |
 | 2026-09 | Climate-v6 native ESP-IDF runtime, Rule authority, ML shadow path | current architecture/runtime code |
@@ -30,6 +31,6 @@ Compact record of milestones that still matter operationally. Detailed retired p
 
 ## Branch policy
 
-Long-lived branches are `main`, `agent-control` and `gh-pages`. Temporary implementation branches are disposable after verified integration.
+Long-lived branches are `main`, `agent-control` and `gh-pages`. Current operator policy forbids new working branches; use `main` for source and `agent-control` only for Local Agent control.
 
 For active work use `CURRENT_STATUS.md`, not historical commits or retired handoffs.

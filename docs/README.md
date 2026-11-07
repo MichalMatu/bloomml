@@ -1,6 +1,8 @@
-# Documentation map
+# BloomML — documentation map
 
-This directory is intentionally split into current product documentation, operational hardware references, research/legacy material and compact history. Start here instead of reading every file.
+**Resume point (2026-11-07): connect authorized CrowPanel on `/dev/cu.usbserial-120` and prove physical output isolation.** Until this is confirmed, hardware qualification and IPO v2 activation API are blocked. Start with [NEXT_CHAT.md](NEXT_CHAT.md) and the [final checkpoint](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md).
+
+Current product docs are authoritative; dated checkpoints preserve implementation evidence. Historical plans do not reopen closed work.
 
 ## Read first
 
@@ -20,11 +22,12 @@ For normal product work read, in order:
 
 | Document | Role |
 | --- | --- |
-| `CURRENT_STATUS.md` | active baseline and next work |
-| `CONFIGURATION_FLOW.md` | canonical v2 IPO, CrowPanel runtime bridge stages and activation gates |
+| `CURRENT_STATUS.md` | current implemented/tested/blocked truth and next hardware action |
+| `CONFIGURATION_FLOW.md` | canonical current IPO contract, runtime owners and activation gate (not phase history) |
 | `PRODUCT_DIRECTION.md` | canonical product UX/contract direction and ML qualification gates |
 | `AUDIT_STATUS.md` | scoped audit results, evidence limits and open full-audit gates |
-| `NEXT_CHAT.md` | single follow-on sprint without repeating closed audit work |
+| `NEXT_CHAT.md` | exact resume procedure: hardware connection/isolation first |
+| `checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md` | final consolidated checkpoint and restart dependency |
 | `checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md` | new CrowPanel build and NVS adapter fault-matrix evidence; authorized device absent |
 | `checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md` | qualified host-only transaction owner, explicit closed hardware gate and remaining device gates |
 | `checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md` | prior B5 change record, now host-qualified at the later transaction checkpoint |

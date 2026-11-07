@@ -175,36 +175,9 @@ Legacy controller/demo code remains available only through explicit `legacy` app
 - simulator/golden checks for UI work;
 - canonical `make build-crowpanel` for production CrowPanel display work;
 - other ESP-IDF profile builds/static analysis as appropriate;
-- GitHub CI;
+- targeted Mac Local Agent or Linux Sandbox verification; GitHub Actions must not be invoked under current operator policy;
 - hardware qualification only when a fresh physical executable claim is required.
 
 Simulator/host/build PASS is software evidence, not physical acknowledgement.
 
-## IPO Runtime Bridge 1 — integration without output ownership transfer (2026-11-07)
-
-Production `RuntimeScheduleProfileOwner` is an in-memory validated snapshot holding the built-in Mint values. `ConfiguredScheduleConfigSource` for Rule and `buildScheduleIntent(..., profile)` for lamp schedule consume the **same configuration owner**, not independent hard-coded constants. The owner does not parse browser JSON or load NVS yet. A read-only `status` line reports generation/default Mint and marks `persisted=0` and `profile_v2_applied=0`.
-
-`lib/ipo_profile/src/IpoBoardAdmission.h` is a read-only CrowPanel driver and fixed RF433 reference admission layer; the firmware bootstrap logs the admission result with `apply_authorized=false`. `IpoSignalSelector.h` is a bounded freshness/priority helper, not a runtime sensor authority yet. Physical output path still belongs solely to `OutputSupervisor`, existing safety and fixed RF433 endpoints. The code has **not been compiled or physically qualified** in this sprint.
-
-## IPO full-profile durable storage (code only; inactive)
-
-`src/climate/runtime/profile/IpoProfileWire.h` defines an explicit bounded wire representation of the entire typed IPO graph and accepted schedule targets, with schema version/magic/generation/CRC32 and board admission. `IpoProfileNvsJournal` uses an independent NVS namespace `gb_ipoprof`, alternating slots and a separate active marker to verify a candidate before switching. Read errors and corruption must not silently become a successful active profile or trigger output writes; recovery is reported, not self-promoted. This store never initializes/erases global NVS. Source is included in real-input CMake but has **no current runtime caller**, NVS transaction coordinator or authority to install into the controller. It is not tested/compiled in this sprint. Future multi-task access needs explicit single-owner serialization and device-side tests before using `commit`.
-
-## Strict browser v2 → firmware execution snapshot boundary (code only)
-
-`IpoProfileJsonDecode` performs length/schema/exact key checks, canonicalizes symbolic device/process/actuator IDs, validates channel/role/process graphs, validates CrowPanel driver+physical endpoint restrictions, then produces a bounded typed `DurableIpoProfile`. It does not expose external apply. The encoded state intentionally excludes free-text UI labels and string IDs, retaining only execution semantics; any full JSON round-trip requires separate metadata storage. `IpoProfileStagingCoordinator` is not instantiated; when later introduced, a single serialized runtime owner must coordinate preview, NVS, install, readback and rollback. Firmware `status.schedule_hash` fingerprints the currently running *Mint schedule*, not a full v2 graph or confirmation of physical endpoint state. This code remains untested/unqualified.
-
-
-## IPO reference signal adapter / inactive stored profile (Bridge 4)
-
-`RuntimeInsideSource` and `RuntimeNearbySource` receive the compiled-in `makeCrowPanelMintReferenceGraph()`, then use `IpoSignalSelector` to normalize **only existing supported physical** measurements. Each selected role is gated by valid/finite/age and the current in-RAM schedule timeout; no unqualified fallback, and lamp's direct TP357 Safety remains separate. The existing source constructors without graph remain for backward compatibility. The IPO NVS journal is read at boot solely for diagnostics: `stored` does **not** imply `active`. Console readback distinguishes `ipo_store` vs `ipo_profile` vs `ipo_input`; no GUI transport or physical state acknowledgement is added. Source-level integration remains uncompiled and hardware-unqualified, particularly its effects on Rule validity transitions.
-
-## B5 — readback evidence and strict current-board admission
-
-A DeviceProfile v2 graph may be valid for future drivers while remaining incompatible with the current compiled CrowPanel. Browser `ipo-board-readiness.ts` is an observer-only approximation of current `IpoBoardAdmission`, never hardware discovery or apply authority. CrowPanel requires a present CO₂ input and continuous qualified exhaust path in addition to the known RF433 role routes. The offline parser's 32 KiB maximum JSON byte budget stays separate from the 1536-byte typed NVS wire envelope; parsing is dormant outside the control hot path. `IpoJournalReadResult` now holds a CRC32 fingerprint of validated on-disk bytes computed during boot load (not while printing console status), and `IpoProfileReadback` reports NVS truth separately from RAM Mint. `status` adds readable observer-only `ipo_health`/`ipo_readback` lines, no output owner changes. New targeted host/Vitest cases have been authored but **not executed**; physical activation is still gated.
-
-## IPO v2 transactional activation boundary (2026-11-07)
-
-`src/climate/runtime/profile/IpoProfileActivationTransaction.h` is the **single serialized transaction owner**, not a control or output engine. The typed graph admission and NVS journal remain separate. The owner can swap only `RuntimeScheduleProfileOwner` (Rule and lamp schedule) while an independent safety gate holds the existing `OutputSupervisor` interlock; neither persistence nor console, display, ML or parser may write configured physical outputs. Stored NVS remains distinct from active RAM and independently verified activation evidence. Failure to restore both RAM and NVS demands a latched output quarantine.
-
-Production currently injects `ClosedIpoActivationGate`, which **always refuses activation**. There is no privileged apply caller and no automatic apply on boot. An exact-SHA hardware-qualified gate, with a real `OutputSupervisor` quiesce/lock and independent lamp safety proof, remains required before enabling physical activation. Host fault-injection tests are not hardware authorization.
+Detailed source milestones are retained in [HISTORY.md](HISTORY.md) and the [final checkpoint](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md). This is a current owner/boundary specification, not a chronological work log.

@@ -1,146 +1,47 @@
-# Growbox ML project roadmap
+# BloomML — roadmapa rozwoju
 
-Updated: 2026-11-07 (product-direction reconciliation)
+**2026-11-07 · aktywny priorytet: IPO v2 — bezpieczne domknięcie konfiguracji na CrowPanel.**
 
-## Direction
+Cel produktu: autonomiczny ESP32-S3 (native ESP-IDF), rzeczywiste czujniki, deterministyczny Rule, RF433 przez OutputSupervisor, wyświetlacz e-ink, telemetria. ML/MPC nadal Shadow/research. Żadnych nowych silników i paneli administracyjnych zamiast istniejącego IPO.
 
-The product is a native ESP-IDF ESP32-S3 growbox controller using real sensors, deterministic Rule control, RF433 outputs, durable telemetry, e-ink operator visibility and an ML shadow/research path.
+## Stan milestone’ów
 
-Broad architecture cleanup, the SCD41/e-ink recovery closeout, runtime persistence hardening and Clay display Phases 1-6 are integrated. Prefer bounded changes that preserve ownership, safety and ESP32-S3 resource limits.
+| Etap | Status | Co oznacza |
+| --- | --- | --- |
+| IPO v2 DeviceProfile / edytor / board readiness B5 | **DONE — draft** | Schema, mapowanie, parser, walidacja; bez runtime apply |
+| Wspólny RAM Rule/lampa, selector, NVS journal, transaction owner | **DONE — source / host-qualified** | Mint aktywny; produkcyjny `ClosedIpoActivationGate` odrzuca apply |
+| Mac C++/Vitest/fault matrix i real-input CrowPanel ESP-IDF build | **PASS — software** | CTest IPO 3/3; Vitest B5 9/9; safety 3/3; ESP-IDF build PASS |
+| **H0: podłączony autoryzowany CrowPanel i izolacja wyjść** | **NEXT / BLOCKED** | W ostatnim sprawdzeniu port `/dev/cu.usbserial-120` nieobecny |
+| H1: hardware acceptance z fake-locked outputs | **NOT STARTED** | Prawdziwy NVS/flash, reboot, TP357/SCD41, Rule/LampSafety, RAM/stack/watchdog |
+| H2: supervisor-owned safe quiesce + emergency lock | **NOT STARTED** | Oddzielny gate z fizyczną kwalifikacją i uprawnieniem operatora |
+| H3: authenticated IPO preview/activate/status/rollback API + UI | **NOT STARTED** | Dopiero po H0/H1/H2, bez automatycznego apply z NVS |
+| H4: long-run telemetry, real-data calibration, shadow forecasting | **LATER** | Po bezpiecznej działającej ścieżce operatora |
 
-The deployed product must remain standalone on the ESP32-S3. External foundation models, training services or cloud inference may be used only in offline research/development and must not become runtime dependencies.
+**Wykonuj w tej kolejności.** Rozbudowa API nie może omijać braku fizycznej kwalifikacji. Wybieralne dodatkowe drivery/wyjścia oraz badawcze ML/MPC są osobnymi przyszłymi bramkami, nie przeszkodą do obecnego H0.
 
-## Current priority — IPO v2 activation qualification (2026-11-07)
+## Najbliższy sprint H0/H1 — dokładna kolejność
 
-**Transaction owner HOST TESTED; real-input ESP-IDF BUILD PASS; physical device still CLOSED.**
-One owner handles preview/validate/NVS commit/shared Rule-and-lamp RAM apply/readback/rollback, but production `ClosedIpoActivationGate` denies activation; no UART/browser apply or new physical authority. Exact-source CrowPanel build PASS (`1a1b3de8`, bin `0xd1e00`, 80% app partition free). The real NVS journal implementation passed host simulated NVS power-cut/CRC/rollback; `make test-ipo` 3/3 PASS on `45f3527`, plus 3/3 targeted LampSafety, stale Rule, lifecycle tests. **Authorized physical port `/dev/cu.usbserial-120` absent**: real flash/NVS power loss/TP357/SCD41 runtime and RAM/stack remain BLOCKED. Next hardware qualification with fake-locked outputs, then independently reviewed supervisor quiescence and authenticated operator API. See the [hardware checkpoint](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md).
+1. **Najpierw jedynie sprawdź fizyczną dostępność autoryzowanego `/dev/cu.usbserial-120` i potwierdź odłączenie / izolację trzech wyjść.** Nie otwieraj `/dev/cu.usbserial-10` ani nie używaj `/dev/cu.usbserial-1120` bez zgody. Jeśli brak płytki/izolacji, zatrzymaj etap z uczciwym `BLOCKED`.
+2. Po potwierdzeniu i wymaganej autoryzacji: zbuduj/zweryfikuj dokładne SHA dla CrowPanel real-input z `GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED=0`; utrzymaj fizyczne wyjścia fake-locked.
+3. Testuj tylko brakujące urządzeniowe scenariusze: realny NVS, slot marker/CRC/przerwanie commit, cold boot/rollback, wybrane podłączone wejścia TP357/SCD41, stale/invalid, termiczne trip/recovery, zasoby i watchdog. Bez nieautoryzowanych komend RF i bez destrukcyjnej próby zasilania działającego growboxa.
+4. Rozdziel `source/build pass` od `hardware-qualified`; zapisz dowody exact-SHA. Po hardware PASS przejdź do H2, a dopiero po H2 do H3.
 
-## Archived source milestones (not active tasks)
+## Nienaruszalne warunki akceptacji
 
-## IPO Runtime Bridge 3 — strict v2 typed admission and dormant staging source (2026-11-07)
+- Rule pozostaje autorytetem; ML/MPC tylko Shadow.
+- OutputSupervisor jest jedynym właścicielem normalnych fizycznych komend; transport RF nie stanowi potwierdzenia fizycznego wykonania.
+- TP357 LampSafety niezależny: ≥28°C trip, ≤26°C przez 10 min recovery. Brak czujnika ma kończyć się bezpiecznie.
+- `stored NVS` nie równa się `active RAM`; brak auto-apply przy boot. Nie odblokowywać `ClosedIpoActivationGate` bez osobnej kwalifikacji i jawnej zgody operatora.
+- Wyświetlacz i UI są obserwatorami; endpoint operatora musi być uwierzytelniony i wpięty w jeden owner transakcji.
 
-Parser JSON→bounded C++ graph/targets with CrowPanel admission + a separate non-running prepare/persist-only/readback coordinator are implemented in source. `status` now includes hash of the current in-RAM schedule. This is **NOT active v2 deployment**, no NVS profile is stored by runtime and no new outputs/fallbacks are enabled. Next: targeted validation of changed source, privileged single-owner activation, safe rollback, source routing, verified physical output mapping and live panel. Do not regress into extra UI panels.
+## Inne kierunki — zachowane, ale nieaktywne w tym handoffie
 
-## IPO Runtime Bridge 2 — whole-profile NVS journal source (2026-11-07)
+- Clay/e-ink: własność framebufferów i async pipeline już zintegrowana; ręczna kwalifikacja pięciu przycisków i SCD41 na fizycznej płytce pozostaje osobna.
+- Realne trajektorie, replay i telemetryczna poprawność decyzji przed kolejną kalibracją symulatora.
+- MPC: historyczna trudna macierz **3/22 PASS, 19/22 FAIL**; zero uprawnień produkcyjnych. [Research status](simulator/RESEARCH_STATUS.md).
+- TimesFM: tylko offline teacher/benchmark; opcjonalny ESP32-sized student dopiero na dowodach z realnych danych, w Shadow, bez sieci w produkcji.
+- Rozszerzanie driverów i efektorów wyłącznie na podstawie realnych potrzeb, capability admission i późniejszej osobnej kwalifikacji.
 
-Typowany deterministyczny codec całości IPO + targets i oddzielny dwuslotowy NVS journal z walidacją, CRC i readback zostały dodane do źródeł, lecz nie są wywoływane przez fizyczny runtime. Następny P1: parser v2 JSON, potwierdzone przyjęcie grafu, pojedynczy koordynator apply, walidowana NVS/rollback, source fallback, readback hash i monitoring. **Do wykonania nowych, wąskich bramek bezpieczeństwa przed aktywnym zapisem i sterowaniem.**
+Historia szczegółowych Bridge 1–4, wcześniejsze plany UI, eksperymenty i zamknięte audyty pozostają w [HISTORY.md](HISTORY.md), [CHANGELOG.md](CHANGELOG.md) oraz checkpointach, **nie jako ponownie otwarte zadania**.
 
-## IPO Runtime Bridge 1 (2026-11-07)
-
-Skończona w kodzie (UNVERIFIED) faza wspólnego snapshotu Rule/lampa, referencyjna fizyczna bramka CrowPanel, bounded priority/valid/age selector, boot diagnostics i readback generacji/nastaw w istniejącej konsoli `status`. Brak zewnętrznego apply, NVS v2 i nowych aktywnych kanałów; output supervisor i bezpieczeństwo nietknięte. Kolejność: strict decode v2 → osobna trwała domena konfiguracji/NVS z rollbackiem → qualifiable signal routing → safe supervisor binding → active hash/readback → live panel. Szczegóły `CONFIGURATION_FLOW.md`.
-
-## Current sprint milestone (2026-11-07)
-
-IPO v2 foundation SOURCE DONE, UNVERIFIED: bounded v2 schema/example, driver capability catalog, prioritized signal graph, process/output mappings, safe symbolic arbitration, one browser root editor, v1 migration, unlinked portable C++ DTO. No new tests/builds were run per operator request. Actual firmware registration, NVS apply/rollback, readback and real-status UI are OPEN. Canonical truth: `CONFIGURATION_FLOW.md`, handoff: `NEXT_CHAT.md`.
-
-## Product integration priorities — operator outcome
-
-The target is not two admin panels and another training loop. See `PRODUCT_DIRECTION.md` for the decided user journey and scope boundaries. Never treat the research v4 panel, browser v5 JSON/3D, and production climate-v6 as interchangeable contracts.
-
-1. **P0 SUPERSEDED by v2 source foundation (unverified) — earlier v1 milestone:** `CONFIGURATION_FLOW.md` documents roles and limitations; `schemas/device-profile.v1.schema.json`, Mint sample and strict browser draft at `/` are present. Browser v5 moved to `/lab/v5`. Firmware application and validation gates are NOT done.
-2. **P1 NEXT — close the actual setup-to-runtime slice:** typed validated firmware profile → coherent schedule/target snapshot → durable, recoverable NVS → apply/readback → real measurements/output truth in existing panel/e-ink. No second admin backend; no unsafe dynamic RF role mapping.
-3. **P2, capture actual own-growbox trajectories** with sensor provenance and applied/observed outputs; calibrate physics and compare deterministic Rule/persistence/PID baselines.
-4. **P3, qualify ML/MPC in shadow:** robust hard-case matrix, held-out trajectories, fault/fallback, bounded ESP32-S3 inference and physical sign-off; only then consider explicit active authority.
-
-Existing product hardware stabilization and research work below are **separate** gates. This audit did not launch a new feature slice.
-
-### MPC / Kaggle research (source is now on main, NOT a production controller)
-
-The experiment infrastructure from the historical research branch was merged into `main` on 2026-11-07, without changing ESP-IDF, `ClimateRulePolicy` or `OutputSupervisor`. Continue the research independently under `tools/ml/` following [MPC roadmap](simulator/MPC_ROADMAP.md) and [research status](simulator/RESEARCH_STATUS.md): retain passed focused safety regression, attribute the 19/22 failed hard scenarios, bounded CPU experiments, and only then consider a dedicated Kaggle MPC study. Do not equate code colocation with authorization for real output control.
-
-## Existing subsystem work (independently gated)
-
-### 1. Clay/menu/button/simulator display stage
-
-Use `DISPLAY_UI_PORT.md` as the implementation contract.
-
-Current position:
-
-1. isolated C++20 Clay component and exact 296x128 host simulator — DONE;
-2. reproduce current Environment / Outputs / System / Diagnostics pages on host — DONE;
-3. connect Clay behind the existing async display transaction and backend-owned framebuffer — DONE;
-4. implement true dirty-region RAM-window partial transfer — DONE;
-5. native ESP-IDF button stack — IMPLEMENTED, but physical key qualification is OPEN;
-6. bounded read-only growbox page chooser — IMPLEMENTED, but depends on qualified physical keys;
-7. exact-SHA physical qualification — PARTIAL: autonomous boot/display/resource evidence is green; physical-key and SCD41-with-device-present stabilization remain OPEN.
-
-Current priority is stabilization, not UI expansion. First prove all five physical keys with the known-good CrowPanel mapping and event semantics, then qualify SCD41 with the device attached. Only after those pass should menu/settings work resume.
-
-Do not replace the native SSD1680 backend, create another framebuffer/refresh owner or make UI another output owner. Production display integration must be verified with `make build-crowpanel`; the generic default firmware build does not compile the CrowPanel real-input display path.
-
-### 2. Controller behavior quality
-
-Build a replay/telemetry baseline from real growbox data, quantify temperature/humidity and absolute-humidity ventilation behavior, then choose one tuning candidate with explicit acceptance criteria.
-
-This real/replay baseline is also the prerequisite for the TimesFM teacher experiment below. Do not use another broad synthetic-only training pass as a substitute for real or calibrated trajectories.
-
-### 3. Configuration and operator UX
-
-Reduce friction in sensors, targets, schedules, outputs and growbox parameters without inflating ESP32-S3 RAM/CPU/flash cost. UI writes must route through existing application/domain ownership.
-
-### 4. Logging, history and explainability
-
-Make it easy to answer what the controller observed, why it chose an action, what transport attempted, and how the environment responded.
-
-### 5. ML shadow/research quality
-
-Improve datasets, replay metrics and Rule-vs-ML comparison. ML stays non-authoritative until separately justified and qualified.
-
-#### TimesFM teacher / forecasting track
-
-Use Google Research TimesFM only as an offline research teacher and benchmark. TimesFM must never be required by the deployed controller; the final candidate must execute locally on the ESP32-S3 with no network, server, Raspberry Pi or cloud dependency.
-
-Ordered plan:
-
-1. **Freeze the forecasting task from real/replay data.** Define a leakage-free history window, target signals and useful control horizons. Initial candidates are inside temperature, relative humidity and CO2 at +5, +15, +30 and +60 minutes, refined from measured growbox dynamics rather than assumed synthetic behavior.
-2. **Create a reproducible evaluation dataset.** Reuse deterministic runtime traces and calibrated replay trajectories. Preserve time ordering and split by trajectory/time so nearby samples from the same run cannot leak across train/test boundaries. Record relevant observed actuator state and known exogenous/time features separately from forecast targets.
-3. **Establish simple baselines first.** Compare persistence and a small growbox-native predictor with the existing climate-v6 research path before attributing value to a foundation model.
-4. **Evaluate TimesFM offline.** Run the current suitable TimesFM checkpoint on the same held-out trajectories and horizons. Treat it as a forecaster, not a causal controller: historical actuator state may be context, but hypothetical future actuator commands must not be interpreted as valid counterfactual effects without supporting data/modeling.
-5. **Attempt teacher-to-student transfer only on evidence.** If TimesFM materially improves held-out forecast quality or useful threshold-crossing prediction, train/distill a bounded student model that fits the ESP32-S3 resource envelope. Prefer the smallest architecture that preserves the measured gain; do not copy the foundation model architecture onto the MCU.
-6. **Integrate the student in shadow mode.** Add only the minimal firmware inference boundary needed to consume existing observations and emit forecasts/diagnostics. Rule control and safety remain authoritative; forecast output must not directly own physical outputs.
-7. **Qualify embedded cost and behavior.** Measure flash, internal RAM/PSRAM, inference latency, control-loop impact and failure behavior on the production CrowPanel profile. Compare embedded student predictions against the Python reference on fixed vectors and then against held-out/physical trajectories.
-8. **Decide whether forecasting earns a product role.** Promote nothing beyond shadow/research without explicit acceptance criteria showing practical growbox value over the simple baselines and without a separate safety/architecture/hardware qualification.
-
-Research/tooling boundaries:
-
-- keep TimesFM dependencies/checkpoints outside production firmware and outside normal device startup/build requirements;
-- do not vendor TimesFM 3.0 weights into firmware artifacts; its current pretrained-weight license is research/non-commercial and must remain isolated from any future production/commercial path;
-- keep generated datasets, teacher predictions and training/evaluation tooling under research/tool ownership rather than production control ownership;
-- the useful output of this track is an ESP32-sized student plus reproducible evidence, not a runtime connection between the ESP32 and TimesFM.
-
-### 6. Justified device expansion
-
-Add integrations only when a concrete growbox use case justifies implementation and maintenance cost.
-
-## Architecture quality rule
-
-Before substantial implementation, identify the owning module, state owner, dependency direction, side effects, ESP32-S3 resource impact and focused verification. Do not grow central coordinators/controllers merely because they already see the required state. The repository-wide implementation gate and oversized-file watchlist live in `../AGENTS.md`.
-
-## Closed work that should not be reopened by default
-
-- SCD41 clean-start/liveness recovery design is retained, but physical SCD41 qualification is currently open;
-- CrowPanel SSD1680 pin map and native backend ownership;
-- display rotation and async worker architecture;
-- runtime NVS/output-persistence hardening;
-- isolated Clay component and exact host simulator;
-- semantic four-page Clay reproduction and deterministic golden coverage;
-- Clay production integration behind the existing async transaction and single backend-owned framebuffer;
-- true dirty-window partial transfer, native semantic buttons and the bounded read-only page chooser;
-- Rule-authoritative production ownership;
-- output truth separation and `OutputSupervisor` ownership.
-
-Reopen only on new evidence, not because an older handoff or research document mentions the old issue.
-
-## Selection rule
-
-Rank work by practical growbox value, safety risk, ownership clarity, ESP32-S3 resource cost, verification coverage and reversibility.
-
-## Branch/work policy
-
-- `main` — canonical source/documentation;
-- `agent-control` — Local Agent control only;
-- `gh-pages` — publishing only;
-- source, tests, documentation and offline research work directly on `main`; do not create working branches under current operator policy.
-- the former research branch's complete ancestry is merged; its code remains unqualified for direct actuation.
-
-For each new task start from `docs/README.md`, `CURRENT_STATUS.md` and the relevant subsystem contract.
+**Źródło wykonawcze dla powrotu:** [NEXT_CHAT.md](NEXT_CHAT.md) · [CURRENT_STATUS.md](CURRENT_STATUS.md) · [finalny checkpoint](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md). Branch: `main`; `agent-control` tylko Local Agent; `gh-pages` tylko publikacja. Bez nowych gałęzi, Codex, Work, GitHub Actions i force-push.

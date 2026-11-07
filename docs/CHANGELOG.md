@@ -1,3 +1,11 @@
+# Changelog
+
+## 2026-11-07 — Documentation freeze and hardware handoff
+
+- Consolidated current status, IPO contract and roadmap into one unambiguous source of truth; removed duplicated historical Bridge 1–4/B5 status paragraphs and stale “UNVERIFIED” assertions from active docs, keeping prior checkpoints and source history.
+- **Only next action:** connect authorized CrowPanel and prove physical output isolation; then hardware safety qualification; then supervisor-owned lock and authenticated activation API.
+- No runtime code, hardware flash, activation gate or physical outputs changed. [Final checkpoint](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md).
+
 ## 2026-11-07 — IPO v2 CrowPanel build + NVS adapter fault matrix
 
 - Real-input CrowPanel/e-ink ESP-IDF build passed at source `1a1b3de8`; bin `0xd1e00`, 80% of app partition free, no flash.
@@ -12,11 +20,9 @@
 - Narrow Mac Local Agent tests on `977c48d221cd310be70f39653a33d8eb4abd5ebd`: C++ IPO targets 2/2 and frontend board readiness 9/9 PASS. ESP-IDF/hardware qualification and real NVS power-loss acceptance remain open.
 - Fixed the IPO Makefile CTest regex escaping. See `checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md`.
 
-# Changelog
-
 Only milestones that still help understand the current codebase are kept here. Detailed phase-by-phase notes remain in Git history.
 
-## Unreleased
+## Earlier integrated milestones
 
 ### Clay production display integration — 2026-09-20
 

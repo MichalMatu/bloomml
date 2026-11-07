@@ -1,26 +1,35 @@
-# BloomML — next sprint after IPO v2 CrowPanel build/NVS host qualification (2026-11-07)
+# BloomML — handoff do następnego czatu (2026-11-07)
 
-## Start
-- Repo `MichalMatu/bloomml`, main only for source/docs; `agent-control` only for Mac Local Agent. Fetch fresh HEAD and current daemon status before any action.
-- Read `AGENTS.md`, `docs/README.md`, `docs/CURRENT_STATUS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md`, and [hardware qualification checkpoint](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md).
-- No Codex, Work, GitHub Actions, new branch, force push, or reopening completed B5/IPO host work.
+## JEDEN NASTĘPNY KROK — ZACZNIJ OD TEGO
 
-## Closed — do not repeat
-- CrowPanel real-input ESP-IDF build PASS on firmware source `1a1b3de8`, 80% of app partition free; Mac task `la-bloomml-ipo-v2-crowpanel-build-20261107-v1`, no flash.
-- Production `IpoProfileNvsJournal.cpp` compiled with mock NVS API: power loss before/after marker flip, CRC/backup, rollback and output-namespace isolation; task `la-bloomml-ipo-v2-nvs-fault-matrix-20261107-v1` 1/1 PASS.
-- LampSafety / TP357 stale-Rule / OutputRuntimeLifecycle focused tests 3/3 PASS.
-- `make test-ipo` 3/3 PASS on `45f3527`; task `la-bloomml-ipo-v2-exact-source-final-gates-20261107-v2`. Fixed a Makefile CTest escaping regression.
-- Prior B5 Vitest 9/9 remains accepted; do not rerun unnecessarily.
+**Podłączyć autoryzowany CrowPanel do Maca i potwierdzić fizyczną izolację wszystkich wyjść.**
 
-## Physical blocker
-Mac Local Agent `/dev/cu.usbserial-120`: **ABSENT** in latest check. No physical board was opened, reset, flashed or tested. Thus this is **not hardware qualification**. Avoid `/dev/cu.usbserial-10`; do not use `/dev/cu.usbserial-1120` without explicit authorization.
+Ostatni Mac Local Agent zgłosił **`/dev/cu.usbserial-120` ABSENT**. Dopóki port i faktyczna izolacja trzech RF433 wyjść nie będą potwierdzone, **nie flashuj, nie resetuj, nie wykonuj testu power-cut, nie zmieniaj firmware i nie odblokowuj IPO v2**. Gdy płytka nadal jest nieobecna, zgłoś `BLOCKED / HARDWARE_ABSENT`, nie zastępuj tego ponawianiem już zaliczonych testów ani budowaniem przedwczesnego API.
 
-## Next bounded sprint when authorized board is present
-1. Confirm exact authorized port and physical isolation of output relays. Compile exact SHA with `GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED=0`. Never interrupt a live growbox until isolation is verified.
-2. Qualified real ESP-IDF NVS power-cut/CRC/backup/restart test; compare after reboot stored NVS vs active Mint, measure RAM/PSRAM/stack/watchdog.
-3. TP357 and SCD41 missing/stale/invalid and lamp thermal trip/recovery matrix; verify output supervisor and emergency ventilation only under fake-locked outputs.
-4. Independently review and implement supervisor-owned quiesce/emergency lock and permission scope; only then build authenticated local preview/activate/status/rollback endpoint in **existing** operator frontend. The historical demo `tools/panel` protocol is not a production security boundary.
-5. Exact-SHA checkpoint; retain blocked status for any unavailable physical evidence.
+## Preflight nowej sesji
 
-## Non-negotiable
-`ClosedIpoActivationGate` remains installed and there is **no physical IPO v2 activation**. Rule authoritative, ML/MPC shadow, TP357 safety >=28C trip / <=26C 10min recovery, `OutputSupervisor` sole configured output owner, no claimed physical RF acknowledgement, no auto-apply from NVS at boot.
+1. Repo **`MichalMatu/bloomml`**: odczytaj **aktualny** HEAD `main` i `agent-control:.agent/status/daemon.json`; nie zakładaj SHA handoff jako bieżącego. Mac Local Agent binding: `815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5`, `work_branch=main`, `resources=[]`.
+2. Przeczytaj `AGENTS.md`, `docs/README.md`, `docs/CURRENT_STATUS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md` i [finalny checkpoint](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md).
+3. Sprawdź **tylko autoryzowany port** `/dev/cu.usbserial-120`. **Nigdy** `/dev/cu.usbserial-10`; `/dev/cu.usbserial-1120` wymaga odrębnej zgody. Najpierw potwierdź fizyczną izolację wyjść, nie wyciągaj wniosku o izolacji z samego flag/config builda.
+
+## Co jest zakończone — NIE POWTARZAJ
+
+- IPO v2 B5: walidacja board/readiness; Vitest **9/9 PASS**.
+- Jedna transakcja `IpoProfileActivationTransaction`; NVS CRC/two-slot/readback/rollback, diagnostyka stored vs active, produkcyjny `ClosedIpoActivationGate`.
+- `make test-ipo` **3/3 CTest PASS** na `45f3527`; obejmuje adapter NVS z fault injection przy **mock** ESP-IDF API. LampSafety / BLE stale-Rule / output lifecycle **3/3 PASS** na `347bcca`.
+- CrowPanel N8R8 real-input/e-ink **ESP-IDF BUILD PASS** na `1a1b3de8` (bin `0xd1e00`, 80% app partition free). Nie jest to test hardware ani flash.
+- Końcowy poprzedni commit `c4bf62cf70b5197f5b19906cf48175a75719785e`: dokumentacja/closed gate check PASS, repo czyste.
+- Historyczne Bridge 1–4/B5/Clay/ML nie są zadaniami do ponownego otwarcia z samego powodu starszych opisów.
+
+Dowody: [checkpoint kwalifikacji](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md) i [checkpoint transakcji](checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md).
+
+## Dopiero po H0 — fizyczna obecność + izolacja
+
+1. Z autoryzacją operatora i izolowanymi wyjściami wykonaj rzeczywisty `ESP-IDF` hardware gate na exact SHA z `GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED=0`: NVS flash/reboot/slot recovery, TP357/SCD41 brak/stale/invalid, niezależny LampSafety, Rule, heap/PSRAM/stack/watchdog. Nie wykonuj ryzykownych odłączeń zasilania bez świadomej zgody i izolacji.
+2. Po PASS zaprojektuj supervisor-owned `quiesce / emergency-lock`, bez osobnych zapisów RF/GPIO, z zatrzaśniętym quarantine przy niepewnym rollbacku. Zachowaj wyłączną własność OutputSupervisor i niezależne safety.
+3. Dopiero potem dodaj **uwierzytelniony** lokalny preview/activate/status/rollback do istniejącego konfiguratora. `tools/panel` jest historycznym serwisem demo i nie stanowi automatycznie produkcyjnego API. Każdy status musi odróżniać `stored`, `active` i fizyczną obserwację.
+4. Zapisz nowy checkpoint exact-SHA, test matrix, blokery i handoff.
+
+## Zakazy i stałe kontrakty
+
+`main` tylko dla source/docs, `agent-control` tylko zadania/wyniki Local Agent, `gh-pages` publikacja. **Bez Codex, ChatGPT Work, GitHub Actions, nowych gałęzi i force-push.** Bez automatycznego apply z NVS. Produkcyjny `ClosedIpoActivationGate` pozostaje zamknięty aż do niezależnej kwalifikacji i jawnej autoryzacji. Rule jest autorytetem, ML/MPC Shadow. Lampa: trip ≥28°C; recovery ≤26°C przez 10 minut. RF433 TX nie jest fizycznym ACK.

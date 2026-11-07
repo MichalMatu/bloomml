@@ -4,7 +4,7 @@ Decision date: 2026-11-07. This document describes the intended product and curr
 
 ## IPO v2 evolution (2026-11-07)
 
-The operator homepage now edits a bounded, draft-only **DeviceProfile v2**, with device/driver instances, prioritized signals, typable processing, output roles and many-to-one links. Fixed v1 is preserved at `/lab/profile-v1`; v5 research at `/lab/v5`. Actual hardware still uses fixed Mint and three RF433 outputs. This is not a firmware apply/readback or active ML feature. Details and capability truth are in `CONFIGURATION_FLOW.md`.
+The operator homepage now edits a bounded, draft-only **DeviceProfile v2**, with device/driver instances, prioritized signals, typable processing, output roles and many-to-one links. Fixed v1 is preserved at `/lab/profile-v1`; v5 research at `/lab/v5`. Actual hardware still uses fixed Mint and three RF433 outputs. The typed transaction exists in firmware source and diagnostics show stored vs active, but production `ClosedIpoActivationGate` prevents apply. The offline draft is not active ML or hardware configuration. Details and capability truth are in `CONFIGURATION_FLOW.md`.
 
 ## Product promise
 
@@ -33,7 +33,7 @@ The machine does the rest **only within proven capabilities**. A transparent det
 - Browser research v5: `web/schema/environment-controller.v5.json`, 228 features / 25 outputs.
 - Production climate-v6: `schemas/environment-controller.v6.json`, 44 ML features / 6 climate outputs. This is an inference contract, **not yet a complete operator device-profile API**.
 
-The v2 **draft** of the operator setup is a bounded, versioned **device/signal/process/output graph** (real sensor identity/role, output role/transport, targets, schedules, physical limits). It must be mapped through existing application/runtime/output owners, not implemented by sharing experimental schemas or exposing raw RF. The offline v2 draft UI, a strict firmware parser, read-only IPO NVS boot inspection, and a fixed-board signal selector exist in source; safe active apply, new driver qualification and device tests/build remain open. See [CONFIGURATION_FLOW.md](CONFIGURATION_FLOW.md) before any additional implementation.
+The v2 **draft** of the operator setup is a bounded, versioned **device/signal/process/output graph** (real sensor identity/role, output role/transport, targets, schedules, physical limits). It must be mapped through existing application/runtime/output owners, not implemented by sharing experimental schemas or exposing raw RF. The offline v2 draft UI, a strict firmware parser, read-only IPO NVS boot inspection, and a fixed-board signal selector exist in source; safe active apply and physical device qualification remain open; the real-input CrowPanel ESP-IDF build passed at source `1a1b3de8`. See [CONFIGURATION_FLOW.md](CONFIGURATION_FLOW.md) before any additional implementation.
 
 ## Runtime authority and safety
 
@@ -57,27 +57,9 @@ validated operator profile + real measurements + schedules
 - ESP32-S3 remains autonomous/offline. Mac/Kaggle/GPU are training and development infrastructure only, never a production control dependency.
 - The preserved 2026-11-04 MPC research has a limited success case but **19/22 hard scenario failures**. Safety retest on the latest research patch is not yet independently confirmed. Do not enable MPC on hardware from these results.
 
-## Work ordering: product before experiments
+## Product sequencing
 
-**P0 — Establish the contracts (documentation + tests, no new UI):**
-- Inventory current production sensor/output capabilities and existing operator parameters; identify what is configurable and what is still compiled-in.
-- Design one versioned `DeviceProfile` boundary and backward-compatible migration story. Validate physical identifiers, units, ranges, unavailable modules, and dangerous combinations; retain immutable runtime safety limits.
-- Agree on one user-facing setup/status experience; keep demo and research interfaces explicitly labeled until a real integration exists.
-
-**P1 — End-to-end operator path:**
-- Build one minimal slice: sensor role -> output role -> desired targets -> save/apply -> verify observed state -> restart/recovery. No speculative panel rewrite.
-- Prove that the same profile is reflected in diagnostics; distinguish requested, transport-attempted and independently observed output truth.
-- Hardware acceptance on the authorized physical board and sensors is a separate gate.
-
-**P2 — Telemetry and real-world evidence:**
-- Record time-stamped inputs, validated applied outputs, targets, alarm/fallback causes and environment response from the user's own growbox.
-- Calibrate an explainable dynamics model with train/validation/test split by trajectory/time, with provenance.
-- Preserve simple Rule, persistence and optionally PID baselines.
-
-**P3 — ML optimization as an earned capability:**
-- First shadow forecasting/control and counterfactual replay; then software-in-the-loop, long-run fault testing and bounded MCU performance qualification.
-- Require demonstrated improvements against Rule/PID on held-out real trajectories, safe fallback, deterministic bounded inference, memory/time limits and independent hardware sign-off.
-- Promote to active only after explicit review. Model choice/training remains invisible to ordinary operators.
+IPO v2 draft/host and CrowPanel compilation are complete. **Next is the authorized CrowPanel physical connection plus output isolation; only afterward physical acceptance, supervisor-owned lock and authenticated apply API.** See [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) and [NEXT_CHAT.md](NEXT_CHAT.md). Real-data telemetry and ML shadow qualification follow a proven operator path, not vice versa.
 
 ## Immediate non-goals
 

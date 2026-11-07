@@ -1,135 +1,87 @@
-# BloomML — kanoniczna mapa IPO v2
+# BloomML — kanoniczna mapa konfiguracji IPO v2
 
-**2026-11-07 · aktualny kierunek: IPO Foundation v2.** Ta strona jest jedyną główną mapą produktu i jego stanu. Szkic v2 NIE jest jeszcze zastosowany na ESP32-S3.
+**Stan: browser DRAFT; host qualification PASS; CrowPanel firmware BUILD PASS; physical apply CLOSED.** Ten dokument opisuje **bieżący kontrakt**, a nie historyczne etapy Bridge 1–4/B5. Historia i dokładne SHA są w [checkpointach](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md).
 
-## Przepływ
+## Co jest aktywne, a co nie
 
 ```text
-Konfigurator /
-  1. DeviceRegistry: instancje sprzętu, drivery, adresy
-  2. SignalRegistry: sygnały semantyczne + główne/rezerwowe źródła
-  3. ProcessRegistry: typowane procesy, cele dzień/noc, harmonogram
-  4. OutputRegistry: urządzenia wykonawcze, kanały, role, minima ON/OFF
-  5. ProcessBindings: proces --dozwolony efekt--> wyjście
-  6. Walidacja i import/eksport DeviceProfile v2
-                           |
-             [BRAK RUNTIME APPLY v2]
-                           v
-  Docelowy firmware: validate → NVS → atomowy apply → readback
-  wejścia → Rule / ML Shadow(propozycja tylko) → arbiter
-          → Safety → OutputSupervisor → transport → telemetria
-                           |
-                   prawdziwe trajektorie
-                           v
-            kalibracja symulatora → trening → Shadow
+Konfigurator / (DeviceProfile v2, offline JSON)
+  DeviceRegistry -> SignalRegistry -> ProcessRegistry
+      -> OutputRegistry -> ProcessBindings -> Board Readiness
+  [DRAFT / EXPORT / PREVIEW ONLY, no device authorization]
+                         |
+                no live endpoint
+                         X
+  IpoProfileActivationTransaction (source exists, NOT callable)
+    preview -> board qualification -> NVS commit
+      -> shared Rule/lamp RAM apply -> readback -> rollback
+    Gate: ClosedIpoActivationGate, always denies
+                         X
+   Physical outputs are never granted by IPO v2
+
+Current real-input firmware on boot:
+  Mint RAM schedule -> Rule + lamp schedule
+  TP357 / SCD41 CO2 / Xiaomi -> fixed-board freshness selector
+  Rule + LampSafety -> OutputSupervisor -> RF433 transport
+  NVS gb_ipoprof -> read-only diagnostic stored state
+  Console/e-ink -> observer (not output authority)
 ```
 
-## Istniejące źródła i urządzenia, nie nowe uprawnienia
+**Zapis w NVS nigdy nie jest wystarczającym dowodem aktywacji.** `stored`, `active RAM`, `requested`, `resolved`, `attempted` i `observed physical` muszą pozostawać odrębne. Samo nadanie RF433 nie potwierdza rzeczywistego przełączenia gniazda.
 
-| Co | Aktualne źródło/endpoint | Rola |
+## Kontrakt DeviceProfile v2
+
+- Schemat: `schemas/device-profile.v2.schema.json`; przykład `profiles/crowpanel-ipo.v2.json`; status eksportu `draft_not_applied`.
+- `DeviceRegistry`: ID, driver, locator/adres, enabled oraz katalog możliwości, w tym role **przyszłe**, które nie są automatycznie sprzętowo obsługiwane.
+- `SignalRegistry`: semantyczna rola, kanał, źródło podstawowe/zapasowe, priorytet i jednostki; odczyt invalid/stale/nonfinite jest nieużywalny. Dynamiczny hardware fallback nie jest obecnie dopuszczony na CrowPanel.
+- `ProcessRegistry`: temperatura, RH/VPD, harmonogram lampy, ochrona CO₂; fizyczne safety nie zależy od edytowalności grafu.
+- `OutputRegistry`: rola, unikatowy fizyczny endpoint, stan safe-OFF, minimalny czas ON/OFF. `ProcessBindings` ogranicza do dozwolonych efektów.
+- Symboliczny `OutputArbiter` może podglądać zgodne propozycje, lecz **nie wysyła komend**.
+- Limity szkicu: 24 urządzenia, 16 źródeł/wiązań sygnałów, 24 wyjścia, 16 procesów, 48 relacji, do 4 źródeł na rolę; maksimum wejściowego JSON firmware **32 KiB**, wire binary **1536 B**. Limity modelu nie stanowią deklaracji obsługi nowych urządzeń.
+- Walidator B5 wymaga obecnych driverów/adresów, SCD41 CO₂, referencyjnych RF433 endpointów, pięciu istotnych linków, ograniczeń dwell i `exhaust_fan_available=true`. Jego `applyEnabled=false` nie jest błędem UI, lecz obowiązującą blokadą.
+
+## Fizyczny CrowPanel Mint — faktycznie zaimplementowane źródła
+
+| Funkcja | Źródło / transport | Uwaga |
 | --- | --- | --- |
-| T/RH wewnątrz | TP357 BLE | Rule T/RH/VPD i zabezpieczenie lampy |
-| CO₂ | SCD41 I²C | CO₂; T/RH z SCD41 NIE są jeszcze fallbackiem runtime |
-| T/RH otoczenia | Xiaomi BLE | informacja do sterowania wyciągiem |
-| Czas | DS3231 | sztywny Mint dzień/noc |
-| Wyciąg | RF433 socket:1 | Rule + safety, binary dwell 120/120 s |
-| Lampa | RF433 socket:2 | harmonogram + termiczne safety; nie ML |
-| Nawilżacz | RF433 socket:3 | Rule + safety, binary dwell 180/180 s |
-| E-ink | SSD1680 | obserwator, bez własności sterowania |
+| Temperatura i RH wewnątrz | TP357 BLE, urządzenie 1 | Rule i niezależny LampSafety; timeout pomiaru typowo 30 s |
+| CO₂ | SCD41 I²C `0x62`, urządzenie 2 | T/RH z SCD41 nie są zakwalifikowanym fallbackiem |
+| Otoczenie T/RH | Xiaomi BLE, urządzenie 3 | Informacja pomocnicza |
+| Zegar | DS3231 I²C `0x68` | Dzień / noc Mint |
+| Wyciąg | RF433 socket 1 | Rule + safety, min ON/OFF 120/120 s |
+| Lampa | RF433 socket 2 | Harmonogram + termiczne safety |
+| Nawilżacz | RF433 socket 3 | Rule + safety, min ON/OFF 180/180 s |
+| Wyświetlacz | SSD1680 296×128 | Obserwator, bez praw sterowania |
 
-Pozostałe role (grzałka, chłodzenie, osuszacz, dozownik CO₂, pompa, GPIO/PWM/Modbus) są w nowym profilu możliwościami *projektowymi*, ale NIE fizycznie działającymi wyjściami obecnego firmware. RF433 nie daje samoistnego potwierdzenia stanu gniazda.
+Mint w RAM: dzień 06:00–22:00 **24.5°C / 58% RH / 1.2 kPa**, noc **21.5°C / 65% RH / 0.9 kPa**, tryb RH, CO₂ target off. Niezależny termiczny interlock lampy: **trip ≥28°C, recovery ≤26°C przez nieprzerwane 10 minut**. Grzałki, chłodzenie, pompy, dozownik CO₂, PWM/GPIO/Modbus itp. są wyłącznie projektowymi możliwościami grafu, a nie nowymi aktywnymi fizycznymi wyjściami.
 
-Aktualne sztywne nastawy Mint: dzień 06–22: 24.5°C / 58% RH / 1.2 kPa; noc: 21.5°C / 65% RH / 0.9 kPa; tryb RH; CO₂ target off, timeout 30 s. Termiczny interlock lampy: wyłączenie od ≥28°C, powrót dopiero po ≤26°C przez 10 minut. Parametry te są nadal w firmware, nie wczytywane z v2.
+## Podział odpowiedzialności w kodzie
 
-## Co dostarcza v2
+| Moduł | Odpowiedzialność / limit |
+| --- | --- |
+| `web/src/domain/ipo-*.ts` + `/` | Offline draft, walidacja, board readiness; bez live apply |
+| `lib/ipo_profile/src/IpoGraph.h` / `IpoBoardAdmission.h` | Bounded model i stała referencyjna mapa CrowPanel; nie pozwolenie na RF |
+| `IpoSignalSelector.h` + `RuntimeInsideSource`/`RuntimeNearbySource` | Wybór użytecznego pomiaru spośród referencyjnych źródeł |
+| `IpoProfileJsonDecode.cpp` | Ścisły JSON → typowany graf i schedule; odrzucanie unsupported |
+| `IpoProfileWire.h` / `IpoProfileNvsJournal.cpp` | CRC, wersje, dwa sloty w izolowanym `gb_ipoprof`; zapis nie oznacza zastosowania |
+| `RuntimeScheduleProfileOwner` | Jeden bieżący profil RAM czytany przez Rule i harmonogram lampy |
+| `IpoProfileActivationTransaction.h` | Planowany pojedynczy owner preview/validate/commit/apply/readback/rollback |
+| `ClosedIpoActivationGate` | Produkcyjna odmowa aktywacji; nie zastępować permissive gate bez hardware sign-off |
+| `OutputSupervisor` + `LampSafety` | Wyłączna własność fizycznych wyjść i nieusuwalne termiczne safety |
+| `Stage28ServiceConsole` | Odrębne statusy aktywnego Mint, NVS i przygotowanej, lecz zablokowanej aktywacji |
 
-- Schemat: **schemas/device-profile.v2.schema.json**, przykład: **profiles/crowpanel-ipo.v2.json**. Wersja oraz status draft_not_applied są wymagane.
-- **DeviceRegistry** — wiele instancji z ID, driverem, adresem i flagą enabled; katalog capability i kanałów w **web/src/domain/ipo-catalog.ts**. Odróżnia driver obecny w firmware od planowanego; dynamiczna rejestracja nawet istniejącego drivera pozostaje otwarta.
-- **SignalRegistry** — role niezależne od modelu czujnika, kolejność źródeł, walidacja kanału i jednostki; źródło z nieprawidłowym/starym pomiarem nie może działać jako primary; fizyczny fallback jeszcze niezaimplementowany.
-- **ProcessRegistry** — typowane procesy (temperatura, RH/VPD, światło, ochrona CO₂); następne typy mogą być dodawane przez katalog. Chronione safety CO₂ nie może zostać wyłączone w profilu, przy czym fizyczne zabezpieczenia działają niezależnie od grafu.
-- **OutputRegistry** — rola logiczna niezależna od kanału; unikatowe fizyczne wyjścia i bezpieczny stan OFF; np. dwa wyciągi na dwóch osobnych kanałach, wiele procesów na jednym wyciągu.
-- **ProcessBindings** — dozwolone typowane efekty (np. ventilate dla wyciągu), zakaz przypisywania niedozwolonego działania do urządzenia.
-- **OutputArbiter** — wyłącznie symboliczna agregacja zgodnych propozycji przez MAX; bez fizycznych komend. Safety oraz OutputSupervisor pozostają nadrzędne.
+W przypadku nieudanego rollbacku transakcja zwraca `Quarantined` i wymaga zatrzaśniętej blokady; dopóki realna supervisor-owned bramka nie istnieje, produkcyjny gate jest zamknięty. Po restarcie nie wykonujemy auto-apply z NVS.
 
-Dodatkowo: **lib/ipo_profile/src/IpoGraph.h** zawiera przenośny C++17, ograniczony rozmiarem graf i walidator oraz podgląd agregacji; nie jest podłączony do produkcyjnego ESP-IDF.
+## Interfejsy i zgodność wsteczna
 
-Limity szkicu: 24 urządzenia, 16 ról sygnałów, 24 wyjścia, 16 procesów, 48 połączeń oraz 4 źródła na jedną rolę (UI edytuje primary i backup). To są limity rozmiaru danych, nie deklaracja gwarantowanej pojemności hardware.
+- `/` — główny szkic IPO v2 (import/eksport).
+- `/lab/profile-v1` — zachowany legacy v1 i jawna migracja danych.
+- `/lab/v5` — badawcze v5; `/chamber-3d` — niezależna geometria.
+- Climate-v6 (44 ML features/6 outputs), starsze v4 (128/15) i v5 (228/25) nie są wymienne z DeviceProfile v2.
+- Historyczny `tools/panel/` obsługuje demo/research serial JSON; **nie** jest gotową, uwierzytelnioną bramką production IPO.
 
-## UI i zgodność wsteczna
+## Kwalifikacja i kolejność dalszych zmian
 
-- **/** — nowy konfigurator IPO v2, jedna główna strona, dodawanie i usuwanie urządzeń, źródeł, wyjść, procesów, linków, cele i import/eksport JSON.
-- **/lab/profile-v1** — zachowany wcześniejszy sztywny szkic v1. Import v1 do v2 jest jawną migracją walidowanych danych.
-- **/lab/v5** — zachowany historyczny research schema v5 (228 features/25 outputs).
-- **/chamber-3d** — niezależna geometria, nie rzeczywista fizyka klimatu.
-- ML inference climate-v6 (44 features/6 outputs) i symulator badawczy v4 są innymi kontraktami niż DeviceProfile v2.
+**Zaliczone:** host C++ IPO **3/3**, B5 Vitest **9/9**, host NVS fault matrix (prawdziwy plik adaptera z mock API), safety/lifecycle **3/3**, real-input CrowPanel ESP-IDF **BUILD PASS** na `1a1b3de8`. **Nie zaliczone:** test na fizycznym ESP32-S3, prawdziwy flash/NVS power cut, TP357/SCD41 urządzeniowe, output lock i API.
 
-## Co dokładnie pozostaje do fizycznej integracji
-
-1. Firmware adapter: bezpieczne przetłumaczenie JSON v2 na typowane ograniczone struktury, registry driverów/zasobów sprzętu, weryfikacja dostępności i odrzucanie niezaimplementowanych driverów.
-2. Input runtime: dynamiczne role, age/valid/freshness, primary/fallback, brak zamiany brakujących danych na zero.
-3. Processing runtime: typowane procesy, zgodne intencje, harmonogram, priorytety, nieusuwalne bezpieczeństwo, shadow pasywny.
-4. Output runtime: pojedynczy OutputSupervisor jako właściciel fizycznych wyjść; deduplikacja i ograniczenia endpointów oraz transport z osobną obserwacją stanu.
-5. Osobna domena NVS: wersjonowanie, active/pending/known-good, integralność, atomic apply, readback, restart/rollback; awaria nie może częściowo zastosować grafu.
-6. Panel + e-ink status: aktywny hash profilu, pomiary i ich wiek, role/źródła, decyzje i stany requested/resolved/attempted/observed. UI draft nie może udawać runtime.
-7. Symulator: wirtualne adaptery tych samych ról v2 oraz kalibracja na rzeczywistych danych. Brak automatycznej aktywacji MPC.
-
-## Uczciwe bramki
-
-Zmieniono tylko izolowane DTO/katalog/walidację i przeglądarkowy profil. **Nie zmieniono fizycznego Rule, Safety, OutputSupervisor, NVS, RF433 ani e-ink.** Nie wykonano testów ani ciężkich kompilacji zgodnie z życzeniem operatora. Nowy kod ma status niezweryfikowanego szkicu integracyjnego.
-
-## IPO Runtime Bridge 1 — wpięcie w C++ firmware (2026-11-07)
-
-Prócz samego szkicu v2 działa teraz w kodzie **wspólny typowany właściciel profilu RAM** `RuntimeScheduleProfileOwner`, odczytywany zarówno przez `ConfiguredScheduleConfigSource` (Rule), jak i `ScheduleIntentAdapter` (harmonogram lampy). Nadal stosuje tylko wbudowany Mint; brak wejścia z JSON, NVS, fizycznego apply. Stare entrypointy Mint zachowano. Nie udawać, że dwa czytania zegara w jednym cyklu są gwarantowanie jednym identycznym pomiarem czasu — wspólna jest konfiguracja, a dedykowany clock snapshot pozostaje dalszą integracją.
-
-Nowe `lib/ipo_profile/src/IpoBoardAdmission.h` ma fabrykę **referencyjnego** grafu aktualnego CrowPanel oraz ścisłą bramkę obecnych driverów/wejść i RF433. `IpoSignalSelector.h` implementuje niezależny wybór świeżego źródła (valid/age/priority), **bez** podłączenia go do produkcyjnych sensorów. Real firmware otrzymał tylko **diagnostyczny** odczyt zgodności grafu przy boot (`can_apply=0`). Komenda konsoli `status` pokazuje snapshot w RAM: generację i bieżące cele/harmonogram, jawnie `persisted=0`, `profile_v2_applied=0`. `OutputSupervisor` i fizyczne RF433 pozostają niezmienione.
-
-**Nie uruchamiano testów ani kompilacji** zgodnie z wyraźną dyspozycją. Kod po tych zmianach jest UNVERIFIED; na urządzeniu jeszcze nie wdrożony. Szczegóły i kolejność następnych etapów: [checkpoint](checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md), [handoff](NEXT_CHAT.md).
-
-## IPO Runtime Bridge 2 — źródłowy magazyn całego profilu (2026-11-07)
-
-Dodano `src/climate/runtime/profile/IpoProfileWire.h` (typowany, wersjonowany, little-endian format całego grafu IPO i nastaw, CRC32, bounded 1536 B) oraz `IpoProfileNvsJournal.h/.cpp` (oddzielna przestrzeń NVS, dwie kopie, nieaktywny slot → weryfikacja → przełączenie aktywnego znacznika → readback, wykrywanie uszkodzenia i raport poprzedniej dobrej kopii). Ta warstwa odmówi zapisania profilu z unsupported driver/mapping na tym konkretnym CrowPanel. Jest to **kod magazynu przygotowany i dodany do listy źródeł**, lecz obecnie NIKT go nie wywołuje w boot ani w panelu; profile v2 nie są zapisywane, odczytywane ani stosowane do fizycznego sterowania. Cross-task synchronizacja musi być zapewniona przez przyszłego pojedynczego właściciela apply; nie ma jeszcze atomowego przełączenia konfiguracji runtime. Nie wykonywano testów/kompilacji.
-
-## IPO Runtime Bridge 3 — firmware parser, bez wykonania (2026-11-07)
-
-`IpoProfileJsonDecode.cpp` mapuje `DeviceProfile v2` JSON na bounded `Graph + RuntimeScheduleProfile` i **odrzuca** nieznane pola, niezgodne identyfikatory/kanały, drivery bez adaptacji sprzętowej oraz mapowania poza CrowPanel. `IpoProfileStagingCoordinator.h` tworzy izolowaną ścieżkę `preview → typed admission → zapis-tylko-do-NVS → readback`. Żaden komponent aktywnego bootstrapu jej nie wywołuje; nie ma nadawania uprawnień RF/OutputSupervisor i nie ma jeszcze aktualizacji aktywnego profilu z NVS. Kontrakt binary zapisuje semantyczną konfigurację wykonawczą, **nie** pełne stringowe etykiety JSON. `status` raportuje `schedule_hash` obecnego Mint RAM, a nie aktywny hash grafu v2. Bez testów i kompilacji: UNVERIFIED.
-
-**Dodatkowa bramka zgodności:** poprawne numery gniazdek nie wystarczą; adapter odrzuca graf bez kompletu pięciu wymaganych połączeń proces→efekt→wyjście znanych dla bieżącego Mint. Dalsze rozszerzanie ról wyjść wymaga nowych driverów i kwalifikacji; nie powoduje automatycznego odblokowania RF.
-
-
-## Bridge 4 — selection of real inputs + read-only NVS boot inspection (2026-11-07)
-
-W real-input runtime źródła `RuntimeInsideSource` i `RuntimeNearbySource` teraz używają **semantycznego selektora IPO** dla istniejącego, referencyjnego grafu CrowPanel. Identyfikatory: 1=TP357 (T/RH wewnątrz), 2=SCD41 (tylko CO₂), 3=Xiaomi (T/RH zewnętrzne). Odrzuca niefinitywne, invalid i starsze niż timeout profilu odczyty. Lamp safety korzysta nadal z niezależnego TP357 i nie przełącza się na SCD41. To jest faktyczne wpięcie selektora, ale nadal NIE jest dynamiczną rejestracją driverów z JSON v2.
-
-Na boot dodano **wyłącznie odczyt** osobnego IPO NVS journal. Nawet gdy znajduje poprawne zapisane bajty, nie podłącza ich do Rule, harmonogramu ani OutputSupervisor. Istniejąca konsola `status` pokazuje `ipo_store` (stan pamięci i generację, `applied=0`) osobno od `ipo_profile` (aktualne cele Mint w RAM) i `ipo_input` (ważność, wiek, źródło ostatnich pomiarów). Żadne urządzenie wykonawcze nie otrzymuje komend z tego magazynu. Nadal nie ma urządzeniowego API dla przeglądarki ani potwierdzenia fizycznego stanu RF433.
-
-**Uwaga dot. bezpieczeństwa:** warunkowanie świeżością pomiaru może zmieniać zachowanie Rule. Zmian nie kompilowano, nie testowano i nie wgrywano na ESP32 na życzenie operatora. Przed dopuszczeniem fizycznej aktywacji wymagana jest dedykowana, wąska kwalifikacja tej nowej ścieżki, a nie ponawianie historycznych testów badawczych.
-
-## B5 — granica „profil poprawny” vs „działa na tym sprzęcie”
-
-W konfiguratorze `/` pojawiła się **jawna ocena zgodności** `ipo-board-readiness.ts`, niezależna od ogólnej poprawności grafu. Potrafi opisać nowe wyjścia i czujniki bez ograniczenia przyszłych możliwości IPO, ale obecny CrowPanel nadal może ich nie umieć obsługiwać. Ocena sprawdza faktyczne drivery/adresy, **obowiązkowe wejście SCD41 CO₂**, procesy, komplet linków bezpieczeństwa, trzy wyjścia RF433 i minima ON/OFF. Zwraca wyłącznie informację, `applyEnabled=false` — nie uzyskuje pozwolenia na fizyczne wykonanie.
-
-Do wersji źródłowej firmware dodano byte-bound JSON 32 KiB oraz odrzucanie `exhaust_fan_available=false` dla obecnej pojedynczej drogi wentylacji. Eksport `/` jest zwarty i liczy bajty UTF-8 bez dodawanego końcowego LF; przy znacznikach Unicode etykiet aktualny C++ parser ogranicza je do 80 bajtów UTF-8. NVS odczyt przy starcie buforuje niekryptograficzny CRC32 całego zapisanego rekordu, a `IpoProfileReadback` odróżnia je od `schedule_hash` bieżącego Mint w RAM. `status` drukuje `ipo_health` oraz `ipo_readback`, lecz nie jest API live dla przeglądarki ani potwierdzeniem przełączenia RF433.
-
-Zapisano nowy host C++ i Vitest zestaw **regresji tego zakresu**. Nie uruchamiano ich ani kompilacji/flashowania, więc gate wykonawczy pozostaje OPEN. Zob. [checkpoint B5](checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md).
-
-## IPO v2 transaction owner — kwalifikacja hostowa, brak fizycznej aktywacji (2026-11-07)
-
-`IpoProfileActivationTransaction` jest jednym planowanym właścicielem zapisująco-aktywującym dla firmware; `IpoProfileStagingCoordinator` pozostaje narzędziem przygotowania, a `IpoProfileNvsJournal` wyłącznie składowaniem. Nie powstał drugi silnik sterowania wyjściami.
-
-1. **Preview:** pełna dekodowana i dopuszczona konfiguracja v2 dostaje token (CRC32 pełnego zakodowanego profilu + generacja NVS); właściciel zapamiętuje generację i hash RAM Rule/lamp. Bez zapisów i fizycznych efektów.
-2. **Validate/qualification:** ponowna walidacja grafu/CrowPanel, granice generacji i tokenu, jawnie niezależny gate bezpieczeństwa (dokładny SHA, świeże wejścia, lamp thermal lock, quiescence i wyłączna kontrola OutputSupervisor).
-3. **NVS Commit:** dwu-slotowy journal z weryfikacją zapisu, następnie wyraźny odczyt stored hash/generation. Commit sam w sobie oznacza jedynie `stored`.
-4. **Apply:** dopiero przy nieprzerwanej kwalifikacji atomowo wymieniany wspólny RAM `RuntimeScheduleProfileOwner`, z którego Rule i harmonogram lampy pobierają nastawy; graf pozostaje referencyjny, bez przekazania uprawnień wyjściom/ML.
-5. **Readback:** porównanie generacji, aktywnego fingerprintu harmonogramu RAM oraz generacji/fingerprintu NVS; tylko pełna zgodność oraz znacznik z bieżącej transakcji potwierdzają `operator_v2`.
-6. **Rollback:** powrót do poprzednich nastaw RAM i poprzedniego poprawnego slotu NVS (lub `NotFound`, jeśli startował z pustym NVS), obowiązkowy readback. Jeśli któregokolwiek nie uda się zweryfikować, wynik `Quarantined` wymaga zatrzaśniętego locku wyjść i nigdy nie raportuje applied.
-
-**Produkcyjny adapter gate pozostaje `ClosedIpoActivationGate`, a wejście jest niedostępne dla UI/UART.** Z tego powodu żadna próba fizycznej aktywacji v2 nie jest obecnie możliwa. Nawet po awarii zasilania między trwałym zapisem a RAM apply, boot nie wczytuje profilu v2: aktywny jest Mint; `stored != active` jest prawidłowo diagnozowane. CRC32 jest kontrolą integralności, nie podpisem/autoryzacją. Przy aktywacji zewnętrznej trzeba dopiero dodać bezpieczny, uwierzytelniony kanał i prawdziwą bramkę OutputSupervisor.
-
-**Weryfikacja:** Mac Local Agent na `977c48d221cd310be70f39653a33d8eb4abd5ebd`: CTest 2/2; Vitest 9/9, wyłącznie nowa bramka. Fake journal testuje konflikty, odmowy, rozjazd readback, symulowaną awarię po przełączeniu znacznika i rollback. Nie ma tu dowodu awaryjnego zachowania rzeczywistego NVS, kwalifikacji real-input ESP-IDF, termiki lampy ani fizycznego RF.
-
-
-## IPO v2 — CrowPanel build and production NVS adapter host fault matrix (2026-11-07)
-
-Real-input ESP-IDF CrowPanel + e-ink build on source SHA `1a1b3de8`: **PASS**, bin `0xd1e00`, 80% of 4 MiB app partition free. No flash or on-device evidence. The unchanged production `IpoProfileNvsJournal.cpp` now runs in `ipo_nvs_journal_tests` with simulated NVS API and power-cut before/after active-slot flip, corrupt CRC/backup, rollback to empty/previous and separation from output persistence. `make test-ipo` **3/3 PASS** on `45f3527`; separate LampSafety/TP357 stale-Rule/output lifecycle **3/3 PASS**.
-
-The authorized Mac serial port `/dev/cu.usbserial-120` was **absent**. Real flash/NVS and TP357/SCD41 device matrix, stack/heap/watchdog, supervisor quiescence and authenticated operator endpoint are not qualified. Production still injects `ClosedIpoActivationGate`; UI draft is not applied, NVS stored != active Mint after reboot, and RF433 transport is not physical acknowledgement. The research/demo `tools/panel` bridge is not the production authentication boundary. See [hardware checkpoint](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md).
+**Następny krok:** podłączyć `/dev/cu.usbserial-120` i fizycznie potwierdzić izolację wszystkich wyjść. Dopiero po tym wykonujemy zatwierdzone testy sprzętowe z wyjściami fake-locked; potem owner quiesce/lock OutputSupervisor, następnie bezpieczny uwierzytelniony endpoint istniejącego panelu. Szczegółowy plan: [NEXT_CHAT.md](NEXT_CHAT.md).
