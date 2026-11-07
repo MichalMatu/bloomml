@@ -4,3 +4,4 @@ export { AppMutedText, AppFieldMetaText, AppSectionTitle, AppSubsectionTitle } f
 export { AppSection, AppSectionIntro, AppStack, AppActionRow, AppPreviewSplit, AppCanvasFrame } from "./layout"
 export { AppCardBody, AppFormGrid, AppFormField, AppControlSurface, AppControlLabelBlock, AppFieldStack, AppFullWidth, AppSelectTrigger, AppHiddenFileInput } from "./form"
 export { AppErrorList } from "./errors"
+export { AppStyled } from "./styled"

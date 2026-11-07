@@ -24,6 +24,7 @@ export {
   AppSelectTrigger,
   AppPreviewSplit,
   AppCanvasFrame,
+  AppStyled,
 } from "./app-chrome/index"
 
 export type { AppPageWidth } from "./app-chrome/index"

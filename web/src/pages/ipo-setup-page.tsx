@@ -1,11 +1,11 @@
 import { useMemo, useRef, useState } from "react"
 import {
   AppActionRow, AppErrorList, AppFormField, AppPage, AppPageFooter,
-  AppPageHeader, AppSelectTrigger,
+  AppPageHeader, AppSelectTrigger, AppStyled,
 } from "@/components/app-chrome"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -270,27 +270,27 @@ export function IpoSetupPage() {
             kanałami. „Driver obecny” nie oznacza obsługi dynamicznego profilu w ESP32.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 lg:grid-cols-2">
+        <AppStyled as="CardContent" layout="spaceY4">
+          <AppStyled as="div" layout="gridGap3LgGridCols2">
             {profile.devices.map((d) => {
               const driver = DRIVER_CATALOG[d.driver]
               const mode = driver.channels.some((c) => c.direction === "input") ? "INPUT" : "OUTPUT"
               return (
-                <div key={d.id} className="space-y-3 rounded-lg border p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                <AppStyled key={d.id} as="div" layout="spaceY3RoundedLgBorderP3">
+                  <AppStyled as="div" layout="flexItemsCenterJustifyBetweenGap2">
+                    <AppStyled as="div" layout="flexItemsCenterGap2">
                       <Badge variant="outline">{mode}</Badge>
-                      <span className="text-xs text-muted-foreground">{d.id}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
+                      <AppStyled as="span" layout="textXsTextMutedForeground">{d.id}</AppStyled>
+                    </AppStyled>
+                    <AppStyled as="div" layout="flexItemsCenterGap2">
                       <Switch aria-label={"Aktywne: " + d.id} checked={d.enabled}
                         onCheckedChange={(checked) => changeDevice(d.id, { enabled: checked })} />
                       <Button type="button" variant="ghost"
                         onClick={() => removeDevice(d.id)}>Usuń</Button>
-                    </div>
-                  </div>
-                  <p className="text-sm font-medium">{driver.label} · {driver.status === "proposed" ? "driver planowany" : "driver w firmware"}</p>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                    </AppStyled>
+                  </AppStyled>
+                  <AppStyled as="p" layout="textSmFontMedium">{driver.label} · {driver.status === "proposed" ? "driver planowany" : "driver w firmware"}</AppStyled>
+                  <AppStyled as="div" layout="gridGap3SmGridCols2">
                     <AppFormField label="Nazwa" htmlFor={d.id + "_label"}>
                       <Input id={d.id + "_label"} value={d.label}
                         onChange={(e) => changeDevice(d.id, { label: e.target.value })}/>
@@ -299,24 +299,24 @@ export function IpoSetupPage() {
                       <Input id={d.id + "_locator"} value={d.locator}
                         onChange={(e) => changeDevice(d.id, { locator: e.target.value })}/>
                     </AppFormField>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
+                  </AppStyled>
+                  <AppStyled as="p" layout="textXsTextMutedForeground">
                     Kanały: {driver.channels.map((c) => c.id + " [" + c.unit + "]").join(", ")}
-                  </p>
-                </div>
+                  </AppStyled>
+                </AppStyled>
               )
             })}
-          </div>
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-64 flex-1">
+          </AppStyled>
+          <AppStyled as="div" layout="flexFlexWrapItemsEndGap3">
+            <AppStyled as="div" layout="minW64Flex1">
               <Pick id="add_driver" label="Nowe urządzenie · typ drivera" value={newDriver}
                 onChange={(v) => setNewDriver(v as DriverId)}
                 options={DRIVER_IDS.map((id) => option(id, DRIVER_CATALOG[id].label +
                   (DRIVER_CATALOG[id].status === "proposed" ? " · planowany" : "")))}/>
-            </div>
+            </AppStyled>
             <Button type="button" disabled={!canAddDevice} onClick={addDevice}>Dodaj urządzenie</Button>
-          </div>
-        </CardContent>
+          </AppStyled>
+        </AppStyled>
       </Card>
 
       <Card>
@@ -328,7 +328,7 @@ export function IpoSetupPage() {
             SCD41 T/RH jest dopiero planowanym fallbackiem w firmware.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3 lg:grid-cols-2">
+        <AppStyled as="CardContent" layout="gridGap3LgGridCols2">
           {SIGNAL_ROLE_IDS.map((role) => {
             const binding = profile.signals.find((s) => s.role === role)
             const possible = inputDevices.flatMap((device) =>
@@ -338,10 +338,10 @@ export function IpoSetupPage() {
             )
             const choices = [option("none", "Brak źródła"), ...possible]
             return (
-              <div key={role} className="space-y-3 rounded-lg border p-3">
-                <p className="text-sm font-medium">{SIGNAL_ROLES[role].label}</p>
-                <p className="text-xs text-muted-foreground">Rola: {role} · {SIGNAL_ROLES[role].unit}</p>
-                <div className="grid gap-3 sm:grid-cols-2">
+              <AppStyled key={role} as="div" layout="spaceY3RoundedLgBorderP3">
+                <AppStyled as="p" layout="textSmFontMedium">{SIGNAL_ROLES[role].label}</AppStyled>
+                <AppStyled as="p" layout="textXsTextMutedForeground">Rola: {role} · {SIGNAL_ROLES[role].unit}</AppStyled>
+                <AppStyled as="div" layout="gridGap3SmGridCols2">
                   <Pick id={role + "_primary"} label="Główny"
                     value={binding?.sources[0]
                       ? sourceValue(binding.sources[0].device_id, binding.sources[0].channel) : "none"}
@@ -350,11 +350,11 @@ export function IpoSetupPage() {
                     value={binding?.sources[1]
                       ? sourceValue(binding.sources[1].device_id, binding.sources[1].channel) : "none"}
                     options={choices} onChange={(value) => updateSource(role, 1, value)}/>
-                </div>
-              </div>
+                </AppStyled>
+              </AppStyled>
             )
           })}
-        </CardContent>
+        </AppStyled>
       </Card>
 
       <Card>
@@ -366,16 +366,16 @@ export function IpoSetupPage() {
             tylko stałą mapę trzech gniazd. Stan bezpieczny wyjścia to OFF.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 lg:grid-cols-2">
+        <AppStyled as="CardContent" layout="spaceY4">
+          <AppStyled as="div" layout="gridGap3LgGridCols2">
             {profile.actuators.map((a) => (
-              <div key={a.id} className="space-y-3 rounded-lg border p-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold">{a.id}</p>
+              <AppStyled key={a.id} as="div" layout="spaceY3RoundedLgBorderP3">
+                <AppStyled as="div" layout="flexItemsCenterJustifyBetween">
+                  <AppStyled as="p" layout="textSmFontSemibold">{a.id}</AppStyled>
                   <Button type="button" variant="ghost"
                     onClick={() => removeActuator(a.id)}>Usuń</Button>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                </AppStyled>
+                <AppStyled as="div" layout="gridGap3SmGridCols2">
                   <Pick id={a.id + "_role"} label="Funkcja" value={a.role}
                     options={Object.entries(OUTPUT_ROLES).map(([value,label]) => option(value,label))}
                     onChange={(v) => changeActuator(a.id, { role: v as OutputRole })}/>
@@ -396,21 +396,21 @@ export function IpoSetupPage() {
                       value={a.min_off_ms}
                       onChange={(e) => changeActuator(a.id, { min_off_ms: Number(e.target.value) })}/>
                   </AppFormField>
-                </div>
-                <p className="text-xs text-muted-foreground">Kanał: {a.channel} · fail-safe OFF · bez bezpośrednich komend GPIO/RF</p>
-              </div>
+                </AppStyled>
+                <AppStyled as="p" layout="textXsTextMutedForeground">Kanał: {a.channel} · fail-safe OFF · bez bezpośrednich komend GPIO/RF</AppStyled>
+              </AppStyled>
             ))}
-          </div>
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-48 flex-1">
+          </AppStyled>
+          <AppStyled as="div" layout="flexFlexWrapItemsEndGap3">
+            <AppStyled as="div" layout="minW48Flex1">
               <Pick id="new_output_role" label="Funkcja nowego wyjścia" value={newOutputRole}
                 options={Object.entries(OUTPUT_ROLES).map(([value,label]) => option(value,label))}
                 onChange={(value) => setNewOutputRole(value as OutputRole)}/>
-            </div>
+            </AppStyled>
             <Button type="button" disabled={!canAddActuator || outputDevices.length === 0}
               onClick={addActuator}>Dodaj wyjście</Button>
-          </div>
-        </CardContent>
+          </AppStyled>
+        </AppStyled>
       </Card>
 
       <Card>
@@ -422,17 +422,17 @@ export function IpoSetupPage() {
             OutputSupervisor mają nadrzędność. ML Shadow nie wysyła komend.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-2 lg:grid-cols-2">
+        <AppStyled as="CardContent" layout="spaceY4">
+          <AppStyled as="div" layout="gridGap2LgGridCols2">
             {profile.processes.map((p) => {
               const definition = PROCESS_CATALOG[p.kind]
               return (
-                <div key={p.id} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                <AppStyled key={p.id} as="div" layout="flexItemsCenterJustifyBetweenGap3RoundedLgBorderP3">
                   <div>
-                    <p className="text-sm font-medium">{definition.label}</p>
-                    <p className="text-xs text-muted-foreground">{p.id} · {definition.status} {definition.protected ? "· zabezpieczenie nieusuwalne" : ""}</p>
+                    <AppStyled as="p" layout="textSmFontMedium">{definition.label}</AppStyled>
+                    <AppStyled as="p" layout="textXsTextMutedForeground">{p.id} · {definition.status} {definition.protected ? "· zabezpieczenie nieusuwalne" : ""}</AppStyled>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <AppStyled as="div" layout="flexItemsCenterGap2">
                     <Switch aria-label={"Proces: " + p.id} checked={p.enabled}
                       disabled={definition.protected}
                       onCheckedChange={(enabled) => changeProcess(p.id, { enabled })}/>
@@ -440,38 +440,38 @@ export function IpoSetupPage() {
                       <Button type="button" variant="ghost"
                         onClick={() => removeProcess(p.id)}>Usuń</Button>
                     ) : null}
-                  </div>
-                </div>
+                  </AppStyled>
+                </AppStyled>
               )
             })}
-          </div>
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-48 flex-1">
+          </AppStyled>
+          <AppStyled as="div" layout="flexFlexWrapItemsEndGap3">
+            <AppStyled as="div" layout="minW48Flex1">
               <Pick id="new_process_kind" label="Nowy typ procesu" value={newProcessKind}
                 options={PROCESS_KIND_IDS.map((id) => option(id, PROCESS_CATALOG[id].label +
                   (PROCESS_CATALOG[id].status === "proposed" ? " · planowany" : "")))}
                 onChange={(value) => setNewProcessKind(value as ProcessKind)}/>
-            </div>
+            </AppStyled>
             <Button type="button" disabled={!canAddProcess}
               onClick={addProcess}>Dodaj proces</Button>
-          </div>
-          <div className="space-y-2">
-            <p className="font-semibold">Mapa powiązań</p>
+          </AppStyled>
+          <AppStyled as="div" layout="spaceY2">
+            <AppStyled as="p" layout="fontSemibold">Mapa powiązań</AppStyled>
             {profile.links.map((link, index) => (
-              <div key={index} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
-                <p className="text-sm">
+              <AppStyled key={index} as="div" layout="flexItemsCenterJustifyBetweenGap3RoundedLgBorderPx3Py2">
+                <AppStyled as="p" layout="textSm">
                   <strong>{profile.processes.find((p) => p.id === link.process_id)?.id ?? link.process_id}</strong>
                   {" → "}{EFFECT_LABELS[link.effect]}{" → "}
                   <strong>{profile.actuators.find((a) => a.id === link.actuator_id)?.id ?? link.actuator_id}</strong>
-                </p>
+                </AppStyled>
                 <Button type="button" variant="ghost"
                   onClick={() => setProfile((previous) => ({
                     ...previous, links: previous.links.filter((_, i) => i !== index),
                   }))}>Usuń</Button>
-              </div>
+              </AppStyled>
             ))}
-          </div>
-          <div className="grid items-end gap-3 lg:grid-cols-[1fr_1fr_auto]">
+          </AppStyled>
+          <AppStyled as="div" layout="gridItemsEndGap3LgGridColsCustom1fr1frAuto">
             <Pick id="link_process" label="Proces" value={newLinkProcess}
               options={profile.processes.map((p) => option(p.id, PROCESS_CATALOG[p.kind].label))}
               onChange={setNewLinkProcess}/>
@@ -482,8 +482,8 @@ export function IpoSetupPage() {
               onClick={addLink}>
               {candidateEffect ? "Połącz: " + EFFECT_LABELS[candidateEffect] : "Niekompatybilne"}
             </Button>
-          </div>
-        </CardContent>
+          </AppStyled>
+        </AppStyled>
       </Card>
 
       <Card>
@@ -495,8 +495,8 @@ export function IpoSetupPage() {
             termiczne lampy są nieedytowalne.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-4">
+        <AppStyled as="CardContent" layout="spaceY4">
+          <AppStyled as="div" layout="gridGap3MdGridCols4">
             <AppFormField label="Profil ID" htmlFor="ipo_profile_id">
               <Input id="ipo_profile_id" value={profile.profile_id} onChange={(e) =>
                 setProfile((p) => ({ ...p, profile_id: e.target.value }))}/>
@@ -518,11 +518,11 @@ export function IpoSetupPage() {
                   ...profile.control.schedule, night_start_hour: Number(e.target.value),
                 } })}/>
             </AppFormField>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
+          </AppStyled>
+          <AppStyled as="div" layout="gridGap3MdGridCols2">
             {(["day", "night"] as const).map((period) => (
-              <div key={period} className="grid gap-3 rounded-lg border p-3">
-                <p className="font-semibold">{period === "day" ? "Dzień" : "Noc"}</p>
+              <AppStyled key={period} as="div" layout="gridGap3RoundedLgBorderP3">
+                <AppStyled as="p" layout="fontSemibold">{period === "day" ? "Dzień" : "Noc"}</AppStyled>
                 <AppFormField label="Temperatura (°C)" htmlFor={"ipo_t_" + period}>
                   <Input id={"ipo_t_" + period} type="number" min={10} max={40} step={0.5}
                     value={profile.control.targets[period].air_temperature_c}
@@ -541,15 +541,15 @@ export function IpoSetupPage() {
                       profile.control.humidity_mode === "RH" ? "relative_humidity_pct" : "air_vpd_kpa",
                       Number(e.target.value))}/>
                 </AppFormField>
-              </div>
+              </AppStyled>
             ))}
-          </div>
-          <p className="text-xs text-muted-foreground">
+          </AppStyled>
+          <AppStyled as="p" layout="textXsTextMutedForeground">
             Czujniki mają flagi valid/age; brak lub stary odczyt nie oznacza zero.
             Obecne firmware nie realizuje jeszcze przełączania źródeł ani nastaw z profilu v2.
             Lamp safety: trip ≥28°C; recovery ≤26°C przez 10 min.
-          </p>
-        </CardContent>
+          </AppStyled>
+        </AppStyled>
       </Card>
 
       <Card>
@@ -561,46 +561,46 @@ export function IpoSetupPage() {
             po bezpiecznym adapterze runtime.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-4">
-            <div className="rounded-lg border p-3"><p className="text-2xl font-semibold">{profile.devices.length}</p><p className="text-xs text-muted-foreground">Urządzenia</p></div>
-            <div className="rounded-lg border p-3"><p className="text-2xl font-semibold">{profile.signals.length}</p><p className="text-xs text-muted-foreground">Role sygnałów</p></div>
-            <div className="rounded-lg border p-3"><p className="text-2xl font-semibold">{profile.actuators.length}</p><p className="text-xs text-muted-foreground">Wyjścia</p></div>
-            <div className="rounded-lg border p-3"><p className="text-2xl font-semibold">{profile.links.length}</p><p className="text-xs text-muted-foreground">Powiązania IPO</p></div>
-          </div>
-          {valid ? <p className="text-sm font-medium">Graf i dane szkicu: poprawne strukturalnie. To NIE jest kwalifikacja do sterowania sprzętem.</p>
+        <AppStyled as="CardContent" layout="spaceY4">
+          <AppStyled as="div" layout="gridGap3MdGridCols4">
+            <AppStyled as="div" layout="roundedLgBorderP3"><AppStyled as="p" layout="text2xlFontSemibold">{profile.devices.length}</AppStyled><AppStyled as="p" layout="textXsTextMutedForeground">Urządzenia</AppStyled></AppStyled>
+            <AppStyled as="div" layout="roundedLgBorderP3"><AppStyled as="p" layout="text2xlFontSemibold">{profile.signals.length}</AppStyled><AppStyled as="p" layout="textXsTextMutedForeground">Role sygnałów</AppStyled></AppStyled>
+            <AppStyled as="div" layout="roundedLgBorderP3"><AppStyled as="p" layout="text2xlFontSemibold">{profile.actuators.length}</AppStyled><AppStyled as="p" layout="textXsTextMutedForeground">Wyjścia</AppStyled></AppStyled>
+            <AppStyled as="div" layout="roundedLgBorderP3"><AppStyled as="p" layout="text2xlFontSemibold">{profile.links.length}</AppStyled><AppStyled as="p" layout="textXsTextMutedForeground">Powiązania IPO</AppStyled></AppStyled>
+          </AppStyled>
+          {valid ? <AppStyled as="p" layout="textSmFontMedium">Graf i dane szkicu: poprawne strukturalnie. To NIE jest kwalifikacja do sterowania sprzętem.</AppStyled>
             : <AppErrorList errors={errors}/>}
-          <div className="space-y-2 rounded-lg border p-3">
-            <p className="text-sm font-semibold">Zgodność z obecnym firmware CrowPanel</p>
-            <p className="text-sm text-muted-foreground">
+          <AppStyled as="div" layout="spaceY2RoundedLgBorderP3">
+            <AppStyled as="p" layout="textSmFontSemibold">Zgodność z obecnym firmware CrowPanel</AppStyled>
+            <AppStyled as="p" layout="textSmTextMutedForeground">
               {firmwareReadiness.matchesCurrentFirmware
                 ? "Profil mieści się w aktualnych możliwościach referencyjnej mapy Mint."
                 : "Profil jest poprawnym projektem IPO, ale obecne firmware nie obsługuje całej konfiguracji."}
               {" "}Rozmiar JSON: {firmwareReadiness.jsonBytes} bajtów.
               {" "}Aktywacja na urządzeniu: niedostępna; brak kwalifikowanego apply.
-            </p>
+            </AppStyled>
             {!firmwareReadiness.matchesCurrentFirmware ? (
               <details>
-                <summary className="cursor-pointer text-sm font-medium">
+                <AppStyled as="summary" layout="cursorPointerTextSmFontMedium">
                   Przyczyny niezgodności ({firmwareReadiness.reasons.length})
-                </summary>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                </AppStyled>
+                <AppStyled as="ul" layout="mt2ListDiscSpaceY1Pl5TextSmTextMutedForeground">
                   {firmwareReadiness.reasons.map((reason) => <li key={reason}>{reason}</li>)}
-                </ul>
+                </AppStyled>
               </details>
             ) : null}
-          </div>
-          <details className="rounded-lg border p-3">
-            <summary className="cursor-pointer text-sm font-medium">Zastrzeżenia sprzętowe i gotowość</summary>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+          </AppStyled>
+          <AppStyled as="details" layout="roundedLgBorderP3">
+            <AppStyled as="summary" layout="cursorPointerTextSmFontMedium">Zastrzeżenia sprzętowe i gotowość</AppStyled>
+            <AppStyled as="ul" layout="mt2ListDiscSpaceY1Pl5TextSmTextMutedForeground">
               {warnings.map((w) => <li key={w}>{w}</li>)}
-            </ul>
-          </details>
-          <p className="text-sm text-muted-foreground">
+            </AppStyled>
+          </AppStyled>
+          <AppStyled as="p" layout="textSmTextMutedForeground">
             Profil NIE jest zastosowany. Brak danych z fizycznego urządzenia,
             brak potwierdzonych stanów RF433. Zabezpieczenia i wyjścia należą nadal
             wyłącznie do aktywnego firmware.
-          </p>
+          </AppStyled>
           <AppActionRow>
             <Button type="button" disabled={!valid} onClick={downloadDraft}>Pobierz DeviceProfile v2</Button>
             <Button type="button" variant="outline" onClick={() => inputFile.current?.click()}>Wczytaj v2 lub migruj v1</Button>
@@ -616,9 +616,9 @@ export function IpoSetupPage() {
                 if (file) void importFile(file)
               }}/>
           </AppActionRow>
-          {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
+          {message ? <AppStyled as="p" layout="textSmTextMutedForeground">{message}</AppStyled> : null}
           <AppErrorList errors={importErrors}/>
-        </CardContent>
+        </AppStyled>
       </Card>
 
       <AppPageFooter>

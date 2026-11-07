@@ -48,6 +48,7 @@ export const ALLOWED_APP_CHROME_EXPORTS = [
   "AppSelectTrigger",
   "AppPreviewSplit",
   "AppCanvasFrame",
+  "AppStyled",
 ] as const
 
 export type AllowedAppChromeExport = (typeof ALLOWED_APP_CHROME_EXPORTS)[number]

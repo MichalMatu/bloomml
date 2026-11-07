@@ -299,3 +299,8 @@
     z-index: 1;
   }
 }
+
+/* IPO operator link editor: named owner for its nonstandard third column. */
+@media (min-width: 64rem) {
+  .app-ipo-link-grid { grid-template-columns: 1fr 1fr auto; }
+}

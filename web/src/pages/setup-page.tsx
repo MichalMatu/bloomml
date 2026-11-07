@@ -8,6 +8,7 @@ import {
   AppPage,
   AppPageFooter,
   AppPageHeader,
+  AppStyled,
 } from "@/components/app-chrome"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -186,23 +187,23 @@ export function SetupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-2">
+          <AppStyled as="div" layout="gridGap3MdGridCols2">
             {SENSOR_DEFINITIONS.map((sensor) => (
-              <div key={sensor.id} className="flex items-start justify-between gap-4 rounded-lg border p-4">
-                <div className="min-w-0 space-y-1">
-                  <p className="font-medium">{sensor.label}</p>
-                  <p className="text-sm text-muted-foreground">{sensor.signals}</p>
-                  <p className="text-xs text-muted-foreground">{sensor.role}</p>
+              <AppStyled key={sensor.id} as="div" layout="flexItemsStartJustifyBetweenGap4RoundedLgBorderP4">
+                <AppStyled as="div" layout="minW0SpaceY1">
+                  <AppStyled as="p" layout="fontMedium">{sensor.label}</AppStyled>
+                  <AppStyled as="p" layout="textSmTextMutedForeground">{sensor.signals}</AppStyled>
+                  <AppStyled as="p" layout="textXsTextMutedForeground">{sensor.role}</AppStyled>
                   {sensor.required ? <Badge variant="outline">Wymagany w obecnym runtime</Badge> : null}
-                </div>
+                </AppStyled>
                 <Switch
                   aria-label={"Zainstalowany: " + sensor.label}
                   checked={profile.hardware.sensors[sensor.id].installed}
                   onCheckedChange={(checked) => updateSensor(sensor.id, checked)}
                 />
-              </div>
+              </AppStyled>
             ))}
-          </div>
+          </AppStyled>
         </CardContent>
       </Card>
 
@@ -215,28 +216,28 @@ export function SetupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
+          <AppStyled as="div" layout="gridGap3MdGridCols3">
             {OUTPUT_DEFINITIONS.map((output) => (
-              <div key={output.id} className="space-y-2 rounded-lg border p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-medium">{output.label}</p>
+              <AppStyled key={output.id} as="div" layout="spaceY2RoundedLgBorderP4">
+                <AppStyled as="div" layout="flexItemsCenterJustifyBetweenGap3">
+                  <AppStyled as="p" layout="fontMedium">{output.label}</AppStyled>
                   <Switch
                     aria-label={"Zainstalowane wyjście: " + output.label}
                     checked={profile.hardware.outputs[output.id].installed}
                     onCheckedChange={(checked) => updateOutput(output.id, checked)}
                   />
-                </div>
-                <p className="text-xs font-mono text-muted-foreground">{output.endpoint}</p>
-                <p className="text-sm text-muted-foreground">{output.description}</p>
+                </AppStyled>
+                <AppStyled as="p" layout="textXsFontMonoTextMutedForeground">{output.endpoint}</AppStyled>
+                <AppStyled as="p" layout="textSmTextMutedForeground">{output.description}</AppStyled>
                 <Badge variant="outline">{output.kind === "schedule" ? "Harmonogram + safety" : "Rule / safety"}</Badge>
-              </div>
+              </AppStyled>
             ))}
-          </div>
-          <p className="mt-3 text-sm text-muted-foreground">
+          </AppStyled>
+          <AppStyled as="p" layout="mt3TextSmTextMutedForeground">
             Grzałka, chłodzenie, osuszacz, dozownik CO₂ i wentylator obiegowy są
             rolami koncepcyjnymi lub niepodłączonymi w bieżącym profilu, a nie
             dostępnymi przyciskami tego urządzenia.
-          </p>
+          </AppStyled>
         </CardContent>
       </Card>
 
@@ -251,7 +252,7 @@ export function SetupPage() {
         </CardHeader>
         <CardContent>
           <AppCardBody variant="form">
-            <div className="grid gap-4 md:grid-cols-3">
+            <AppStyled as="div" layout="gridGap4MdGridCols3">
               <AppFormField label="ID profilu" htmlFor="profile_id">
                 <Input
                   id="profile_id"
@@ -300,9 +301,9 @@ export function SetupPage() {
                   }
                 />
               </AppFormField>
-            </div>
+            </AppStyled>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <AppStyled as="div" layout="gridGap4MdGridCols2">
               <AppFormField label="Początek dnia (godzina lokalna)" htmlFor="day_start_hour">
                 <Input
                   id="day_start_hour"
@@ -325,12 +326,12 @@ export function SetupPage() {
                   onChange={(e) => updateSchedule("night_start_hour", Number(e.target.value))}
                 />
               </AppFormField>
-            </div>
+            </AppStyled>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <AppStyled as="div" layout="gridGap4MdGridCols2">
               {periods.map((period) => (
-                <div key={period.id} className="space-y-4 rounded-lg border p-4">
-                  <p className="font-semibold">{period.label}</p>
+                <AppStyled key={period.id} as="div" layout="spaceY4RoundedLgBorderP4">
+                  <AppStyled as="p" layout="fontSemibold">{period.label}</AppStyled>
                   {([
                     { key: "air_temperature_c" as const, label: "Docelowa temperatura (°C)", min: 10, max: 40, step: 0.5 },
                     humidityFields,
@@ -351,14 +352,14 @@ export function SetupPage() {
                       />
                     </AppFormField>
                   ))}
-                </div>
+                </AppStyled>
               ))}
-            </div>
-            <p className="text-sm text-muted-foreground">
+            </AppStyled>
+            <AppStyled as="p" layout="textSmTextMutedForeground">
               Światło: dzień = ON, noc = OFF. Zabezpieczenie temperatury lampy
               (wyłączenie od 28°C, powrót po ≤26°C przez 10 min) nie jest
               edytowalne z konfiguratora.
-            </p>
+            </AppStyled>
           </AppCardBody>
         </CardContent>
       </Card>
@@ -374,26 +375,26 @@ export function SetupPage() {
         </CardHeader>
         <CardContent>
           <AppCardBody variant="stack">
-            <p className="text-sm">
+            <AppStyled as="p" layout="textSm">
               <strong>Ścieżka sterowania:</strong> pomiary → Rule (ML shadow bez prawa
               wykonywania) → arbitraż/safety → OutputSupervisor → RF433 → telemetria → e-ink.
-            </p>
-            <p className="text-sm">
+            </AppStyled>
+            <AppStyled as="p" layout="textSm">
               <strong>Założone kanały:</strong> TP357 (T/RH) · SCD41 (CO₂) · Xiaomi
               (otoczenie) · DS3231 (czas). Brak odczytu nie oznacza wartości zero.
-            </p>
-            <p className="text-sm">
+            </AppStyled>
+            <AppStyled as="p" layout="textSm">
               <strong>Status połączenia:</strong> brak odczytu urządzenia z tej strony.
               To formularz offline, nie monitoring na żywo.
-            </p>
+            </AppStyled>
             <AppErrorList errors={validationErrors} />
             {warnings.length > 0 ? (
-              <div className="rounded-lg border p-3">
-                <p className="text-sm font-medium">Uwagi o wybranym wyposażeniu</p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              <AppStyled as="div" layout="roundedLgBorderP3">
+                <AppStyled as="p" layout="textSmFontMedium">Uwagi o wybranym wyposażeniu</AppStyled>
+                <AppStyled as="ul" layout="mt2ListDiscSpaceY1Pl5TextSmTextMutedForeground">
                   {warnings.map((item) => <li key={item}>{item}</li>)}
-                </ul>
-              </div>
+                </AppStyled>
+              </AppStyled>
             ) : null}
             <AppActionRow>
               <Button type="button" disabled={!valid} onClick={downloadDraft}>
@@ -421,7 +422,7 @@ export function SetupPage() {
                 }}
               />
             </AppActionRow>
-            {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
+            {message ? <AppStyled as="p" layout="textSmTextMutedForeground">{message}</AppStyled> : null}
             <AppErrorList errors={importErrors} />
           </AppCardBody>
         </CardContent>
