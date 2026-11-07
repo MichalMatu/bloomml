@@ -126,3 +126,10 @@ Zapisano nowy host C++ i Vitest zestaw **regresji tego zakresu**. Nie uruchamian
 **Produkcyjny adapter gate pozostaje `ClosedIpoActivationGate`, a wejście jest niedostępne dla UI/UART.** Z tego powodu żadna próba fizycznej aktywacji v2 nie jest obecnie możliwa. Nawet po awarii zasilania między trwałym zapisem a RAM apply, boot nie wczytuje profilu v2: aktywny jest Mint; `stored != active` jest prawidłowo diagnozowane. CRC32 jest kontrolą integralności, nie podpisem/autoryzacją. Przy aktywacji zewnętrznej trzeba dopiero dodać bezpieczny, uwierzytelniony kanał i prawdziwą bramkę OutputSupervisor.
 
 **Weryfikacja:** Mac Local Agent na `977c48d221cd310be70f39653a33d8eb4abd5ebd`: CTest 2/2; Vitest 9/9, wyłącznie nowa bramka. Fake journal testuje konflikty, odmowy, rozjazd readback, symulowaną awarię po przełączeniu znacznika i rollback. Nie ma tu dowodu awaryjnego zachowania rzeczywistego NVS, kwalifikacji real-input ESP-IDF, termiki lampy ani fizycznego RF.
+
+
+## IPO v2 — CrowPanel build and production NVS adapter host fault matrix (2026-11-07)
+
+Real-input ESP-IDF CrowPanel + e-ink build on source SHA `1a1b3de8`: **PASS**, bin `0xd1e00`, 80% of 4 MiB app partition free. No flash or on-device evidence. The unchanged production `IpoProfileNvsJournal.cpp` now runs in `ipo_nvs_journal_tests` with simulated NVS API and power-cut before/after active-slot flip, corrupt CRC/backup, rollback to empty/previous and separation from output persistence. `make test-ipo` **3/3 PASS** on `45f3527`; separate LampSafety/TP357 stale-Rule/output lifecycle **3/3 PASS**.
+
+The authorized Mac serial port `/dev/cu.usbserial-120` was **absent**. Real flash/NVS and TP357/SCD41 device matrix, stack/heap/watchdog, supervisor quiescence and authenticated operator endpoint are not qualified. Production still injects `ClosedIpoActivationGate`; UI draft is not applied, NVS stored != active Mint after reboot, and RF433 transport is not physical acknowledgement. The research/demo `tools/panel` bridge is not the production authentication boundary. See [hardware checkpoint](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md).
