@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-wur-4tu-api-preflight-20261104-v1",
+  "dedupe_key": "la-bloomml-wur-4tu-api-preflight-20261104-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 150,
+  "idle_timeout": 95,
+  "task_timeout": 270,
+  "memory_limit_mb": 400,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin || exit 41\necho \"ARCHIVE_TOOLS_BEGIN\"\nfor tool in 7zz 7z bsdtar tar unar python3; do command -v \"$tool\" || true; done\necho \"ARCHIVE_TOOLS_END\"\npython3 - <<'PY'\nfrom urllib.request import Request,urlopen\nfrom urllib.error import HTTPError,URLError\nimport json\nbase='https://data.4tu.nl/v2/articles/88d22c60-21b3-4ea8-90db-20249a5be2a7'\nfor endpoint in ('','/files'):\n try:\n  with urlopen(Request(base+endpoint,headers={'User-Agent':'BloomML-research-metadata/1.0','Accept':'application/json'}),timeout=35) as resp:\n   data=json.loads(resp.read(2000000).decode('utf-8'))\n  print('WUR_ENDPOINT|',endpoint or 'dataset','|OK',sep='')\n  files=data if isinstance(data,list) else data.get('files',[])\n  if not isinstance(files,list):files=[]\n  for f in files[:12]:\n   print('WUR_FILE|'+json.dumps({k:f.get(k) for k in ('name','id','uuid','size','download_url','supplied_md5','is_link_only','computed_md5')},ensure_ascii=False))\n  if isinstance(data,dict):\n   print('WUR_DATASET|'+json.dumps({k:data.get(k) for k in ('uuid','doi','title','published_date','license')},default=str,ensure_ascii=False)[:2000])\n except Exception as exc:\n  print('WUR_ENDPOINT|',endpoint or 'dataset','|FAIL|',type(exc).__name__,'|',str(exc)[:220],sep='')\nprint('WUR_PREFLIGHT_FINISHED')\nPY"
+  ]
+}

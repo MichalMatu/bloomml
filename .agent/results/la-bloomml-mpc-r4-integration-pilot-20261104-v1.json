@@ -1,0 +1,61 @@
+{
+  "allow_write": true,
+  "attempt_id": "71b2856940b87858090ecea9",
+  "command_timeout": 330,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 77,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nWORK=\"$(mktemp -d /tmp/bloomml-mpc-r4-pilot.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --depth 1 --single-branch --branch research/simulator-fidelity-kaggle-20261103 https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ntest \"$(git -C \"$WORK/source\" rev-parse HEAD)\" = 1feaa6af3d2657faa3a3cbb54ee7cfcc24cc6d2a\ncd \"$WORK/source\"\necho MPC_TEST_SOURCE_SHA|$(git rev-parse HEAD)\npython3 -m compileall -q tools/ml/mpc\npython3 -m unittest -q tests.test_mpc_devices tests.test_mpc_optimizer_mock tests.test_mpc_physics_integration\necho MPC_R4_UNIT_INTEGRATION|TESTS_PASS\nset +e\npython3 -m tools.ml.mpc.cli --hours 0.05 --step-s 30 --seed 1729 --output-dir \"$WORK/mpc\" > \"$WORK/cli.stdout\" 2>&1\nRC=$?\nset -e\ncat \"$WORK/cli.stdout\"\necho MPC_PILOT_EXIT_CODE|$RC\nif test \"$RC\" -ne 0 -a \"$RC\" -ne 2; then echo MPC_PILOT_TOOL_ERROR; exit 73; fi\npython3 - \"$WORK/mpc/manifest.json\" <<'PY'\nimport json,sys\nm=json.load(open(sys.argv[1]))\nassert m[\"source_commit\"]==\"1feaa6af3d2657faa3a3cbb54ee7cfcc24cc6d2a\"\nassert m[\"synthetic_uncalibrated\"] and not m[\"physical_validation_with_real_data\"]\nfor p,r in m[\"baselines\"].items():\n print(\"MPC_PILOT_METRIC|\"+json.dumps({\"policy\":p,**r},separators=(\",\",\":\"),sort_keys=True))\nprint(\"MPC_PILOT_REPRODUCIBLE_MANIFEST|PASS\")\nPY\n",
+      "current_rss_mb": 9.09,
+      "elapsed_seconds": 3.438,
+      "exit_code": 127,
+      "idle_timed_out": false,
+      "memory_limit_mb": 850,
+      "memory_limited": false,
+      "output": "/bin/sh: line 7: 1feaa6af3d2657faa3a3cbb54ee7cfcc24cc6d2a: command not found\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 9.09,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-04T01:25:27.829914+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.679,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.277,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-mpc-r4-integration-pilot-20261104-v1",
+  "idle_timeout": 180,
+  "memory_limit_mb": 850,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 3.438,
+      "outcome": "failed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-04T01:25:20.467208+00:00",
+  "status": "failed",
+  "task_digest": "f1166e1076f303596a93ee548b373963d386cc6531d6807f118f815b0eddc9fe",
+  "task_timeout": 480,
+  "verification": [],
+  "work_branch": "main"
+}

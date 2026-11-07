@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-wur-qc-extremes-20261104-v1",
+  "dedupe_key": "la-bloomml-wur-qc-extremes-20261104-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 420,
+  "idle_timeout": 230,
+  "task_timeout": 600,
+  "memory_limit_mb": 850,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nWORK=\"$(mktemp -d /tmp/bloomml-wur-qc.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\nexport WORK\ngit clone --quiet --depth 1 --single-branch --branch research/simulator-fidelity-kaggle-20261103 https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ntest \"$(git -C \"$WORK/source\" rev-parse HEAD)\" = 06b901f2b54d3e967756fb45c2a3cec7a6be3b5b\ncd \"$WORK/source\"\npython3 -m unittest -q tests.test_wur_external_benchmark tests.test_wur_forecast_probe\necho \"WUR_EXACT_SOURCE_TESTS|PASS_16_OF_16\"\nkaggle datasets download -d piantic/autonomous-greenhouse-challengeagc-2nd-2019 -p \"$WORK\" >/dev/null\nARCHIVE=\"$(find \"$WORK\" -maxdepth 1 -name '*.zip' -print -quit)\"\npython3 -m tools.ml.wur_external_benchmark --zip \"$ARCHIVE\" --output \"$WORK/qa.json\"\npython3 - <<'PY'\nfrom pathlib import Path\nimport os,json\nj=json.loads((Path(os.environ['WORK'])/'qa.json').read_text())\nassert j['total_climate_rows']==286854\nprint('WUR_DATASET_QC_SHA|'+j['mirror_sha256'])\nfor row in j['sites']:\n print('WUR_QC_SITE|'+json.dumps({'name':row['site'],'extreme':row['extreme_physical_review_counts'],'invalid':row['invalid_numeric_values'],'warnings':row['warnings']},ensure_ascii=False,separators=(',',':')))\nprint('WUR_QC_REAL_DATA|PASS_WITH_WARNINGS')\nPY"
+  ]
+}

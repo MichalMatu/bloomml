@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-ipo-v2-nvs-fault-matrix-20261107-v1",
+  "dedupe_key": "la-bloomml-ipo-v2-nvs-fault-matrix-20261107-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 1600,
+  "idle_timeout": 500,
+  "task_timeout": 2400,
+  "memory_limit_mb": 8192,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-nvs-matrix.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"347bcca2901cd4e5d4b52bf27301cad27411ce2a\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"SOURCE_SHA|$EXPECTED\"\ncmake -S test/host -B build/ipo-hwq -DCMAKE_BUILD_TYPE=Debug\ncmake --build build/ipo-hwq --target ipo_nvs_journal_tests --parallel 2\nctest --test-dir build/ipo-hwq -R '^ipo_nvs_journal_tests$' --output-on-failure\necho \"PRODUCTION_NVS_ADAPTER_FAULT_MATRIX|PASS\"\ncmake --build build/ipo-hwq --target stage28d_lamp_safety_tests stage27_fault_freshness_tests output_runtime_lifecycle_control_tests --parallel 2\nctest --test-dir build/ipo-hwq -R '^(stage28d_lamp_safety_tests|stage27_fault_freshness_tests|output_runtime_lifecycle_control_tests)$' --output-on-failure\necho \"SAFETY_RELEVANT_NARROW_REGRESSIONS|PASS\"\ngit diff --check\necho \"DIFF_CHECK|PASS\""
+  ]
+}

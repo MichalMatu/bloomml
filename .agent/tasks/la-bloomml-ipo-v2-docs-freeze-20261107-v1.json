@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-ipo-v2-docs-freeze-20261107-v1",
+  "dedupe_key": "la-bloomml-ipo-v2-docs-freeze-20261107-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 900,
+  "idle_timeout": 300,
+  "task_timeout": 1200,
+  "memory_limit_mb": 4096,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-doc-freeze.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"147211350ae646ef5e78686852dd5f49546c307d\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"EXACT_MAIN_SHA|$EXPECTED\"\ngit diff --check c4bf62cf70b5197f5b19906cf48175a75719785e HEAD\necho \"DIFF_CHECK|PASS\"\npython3 - <<'PY'\nfrom pathlib import Path\nimport re\nroot=Path.cwd()\ndocs=['docs/CURRENT_STATUS.md','docs/CONFIGURATION_FLOW.md','docs/PROJECT_ROADMAP.md','docs/NEXT_CHAT.md','docs/README.md','docs/ARCHITECTURE.md','docs/PRODUCT_DIRECTION.md','docs/HISTORY.md','docs/CHANGELOG.md','docs/checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md']\nassert all((root/p).is_file() for p in docs), 'missing docs'\nnext_chat=(root/'docs/NEXT_CHAT.md').read_text()\nstatus=(root/'docs/CURRENT_STATUS.md').read_text()\nroadmap=(root/'docs/PROJECT_ROADMAP.md').read_text()\ncheckpoint=(root/'docs/checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md').read_text()\nfor doc in (next_chat,status,roadmap,checkpoint):\n  assert '/dev/cu.usbserial-120' in doc\n  assert 'ClosedIpoActivationGate' in doc\nassert 'ABSENT' in next_chat and 'izolacj' in next_chat.lower()\nassert 'H0' in roadmap and 'H1' in roadmap and 'H2' in roadmap and 'H3' in roadmap\nassert 'CROWPANEL BUILD PASS' in status\nassert 'make test-ipo' in checkpoint\nassert 'ClosedIpoActivationGate' in (root/'src/climate/ClimateV6RealInputRuntime.cpp').read_text()\nassert 'ipo_nvs_journal_tests' in (root/'test/host/CMakeLists.txt').read_text()\nfor p in docs:\n  text=(root/p).read_text()\n  assert '\\u00a7' not in text, (p,'unrendered placeholder')\n  for target in re.findall(r'(?<!!)\\[[^]]*\\]\\(([^)]+)\\)', text):\n    if target.startswith(('http://','https://','#','mailto:')): continue\n    target=target.split('#',1)[0].strip()\n    if target:\n      assert (root/p).parent.joinpath(target).exists(), (p,target)\nprint('LINKS_AND_RESUME_INVARIANTS|PASS')\nPY\nCHANGED=\"$(git diff --name-only c4bf62cf70b5197f5b19906cf48175a75719785e HEAD)\"\nprintf '%s\\n' \"$CHANGED\" | grep -v '^docs/' && { echo \"NON_DOC_CHANGE|FAIL\"; exit 2; } || true\necho \"DOCS_ONLY_DIFF|PASS\"\ntest -z \"$(git status --porcelain)\"\necho \"CLEAN_WORKTREE|PASS\"\n"
+  ]
+}

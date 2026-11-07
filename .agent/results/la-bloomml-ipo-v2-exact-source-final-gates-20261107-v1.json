@@ -1,0 +1,61 @@
+{
+  "allow_write": false,
+  "attempt_id": "cc2db2adff0020eb8c7af0cd",
+  "command_timeout": 900,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 1956,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-hwq-final.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"347bcca2901cd4e5d4b52bf27301cad27411ce2a\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"SOURCE_SHA|$EXPECTED\"\nmake test-ipo\necho \"IPO_NEW_FULL_TARGET|PASS\"\ngrep -R -n -m2 'GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED' CMakeLists.txt cmake src scripts config 2>/dev/null | head -14 || true\nif test -e /dev/cu.usbserial-120; then echo \"AUTHORIZED_DEVICE_NODE|PRESENT_UNTOUCHED\"; else echo \"AUTHORIZED_DEVICE_NODE|ABSENT\"; fi\ntest ! -e /dev/cu.usbserial-10 || echo \"PROHIBITED_DEVICE_NODE|PRESENT_UNTOUCHED\"\ngit diff --check\ntest -z \"$(git status --porcelain)\"\necho \"SOURCE_CLEAN|PASS\"",
+      "current_rss_mb": 81.91,
+      "elapsed_seconds": 5.812,
+      "exit_code": 2,
+      "idle_timed_out": false,
+      "memory_limit_mb": 4096,
+      "memory_limited": false,
+      "output": "SOURCE_SHA|347bcca2901cd4e5d4b52bf27301cad27411ce2a\ncmake -S test/host -B build/host-tests\n-- The CXX compiler identification is AppleClang 21.0.0.21000101\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (0.8s)\n-- Generating done (0.2s)\n-- Build files have been written to: /tmp/bloomml-ipo-hwq-final.bJeQUm/source/build/host-tests\ncmake --build build/host-tests --target ipo_profile_tests ipo_activation_tests ipo_nvs_journal_tests --parallel 2\ngmake[1]: Entering directory '/private/tmp/bloomml-ipo-hwq-final.bJeQUm/source/build/host-tests'\n[  0%] Building CXX object CMakeFiles/ipo_profile_tests.dir/tmp/bloomml-ipo-hwq-final.bJeQUm/source/test/test_ipo_profile/test_main.cpp.o\n[100%] Linking CXX executable ipo_profile_tests\n[100%] Built target ipo_profile_tests\n[100%] Building CXX object CMakeFiles/ipo_activation_tests.dir/tmp/bloomml-ipo-hwq-final.bJeQUm/source/test/test_ipo_activation/test_main.cpp.o\n[100%] Linking CXX executable ipo_activation_tests\n[100%] Built target ipo_activation_tests\n[100%] Building CXX object CMakeFiles/ipo_nvs_journal_tests.dir/tmp/bloomml-ipo-hwq-final.bJeQUm/source/test/test_ipo_nvs_journal/test_main.cpp.o\n[100%] Building CXX object CMakeFiles/ipo_nvs_journal_tests.dir/tmp/bloomml-ipo-hwq-final.bJeQUm/source/src/climate/runtime/profile/IpoProfileNvsJournal.cpp.o\n[100%] Linking CXX executable ipo_nvs_journal_tests\n[100%] Built target ipo_nvs_journal_tests\ngmake[1]: Leaving directory '/private/tmp/bloomml-ipo-hwq-final.bJeQUm/source/build/host-tests'\nctest --test-dir build/host-tests -R '^(ipo_profile_tests|ipo_activation_tests|ipo_nvs_journal_tests) --output-on-failure\n/bin/sh: -c: line 0: unexpected EOF while looking for matching `''\n/bin/sh: -c: line 1: syntax error: unexpected end of file\nmake: *** [test-ipo] Error 2\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 81.91,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-07T12:37:52.991431+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.076,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.102,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-ipo-v2-exact-source-final-gates-20261107-v1",
+  "idle_timeout": 400,
+  "memory_limit_mb": 4096,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 5.812,
+      "outcome": "failed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-07T12:37:45.629040+00:00",
+  "status": "failed",
+  "task_digest": "c6241185697794f16c03f9f190b084be452eb089a72b5455d709a1e4b3a906b7",
+  "task_timeout": 1500,
+  "verification": [],
+  "work_branch": "main"
+}

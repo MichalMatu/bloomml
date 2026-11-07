@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-wur-4tu-api-preflight-20261104-v1",
+  "task_digest": "87b8f184cb1ab58b7f658e5f726ddb90613ad234ad59dcca5e6fa5a84298a964",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-04T00:34:37.746366+00:00",
+  "attempt_id": "a4091a98b61aa21ba62dac50",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 34977,
+  "updated_at": "2026-11-04T00:34:38.009961+00:00",
+  "pid": 34977
+}

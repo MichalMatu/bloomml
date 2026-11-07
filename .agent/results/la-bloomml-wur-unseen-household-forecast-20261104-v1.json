@@ -1,0 +1,61 @@
+{
+  "allow_write": true,
+  "attempt_id": "3593b794fdc464d683a5ec93",
+  "command_timeout": 650,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 3208,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin || exit 41\nWORK=\"$(mktemp -d /tmp/bloomml-wur-forecast.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\nexport WORK\ngit clone --quiet --depth 1 --branch research/simulator-fidelity-kaggle-20261103 --single-branch https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\nsha=\"$(git -C \"$WORK/source\" rev-parse HEAD)\"\ntest \"$sha\" = 40e4a864beb6024eb93f275fdfb330d1d715067d || { echo \"SOURCE_SHA_MISMATCH\"; exit 42; }\nprintf 'WUR_TRAINING_PROBE_SHA|%s\\n' \"$sha\"\ncd \"$WORK/source\"\npython3 -m unittest -v tests.test_wur_external_benchmark tests.test_wur_forecast_probe\necho 'WUR_BOTH_TEST_MODULES|PASS'\nkaggle datasets download -d piantic/autonomous-greenhouse-challengeagc-2nd-2019 -p \"$WORK\" >/dev/null\nARCHIVE=\"$(find \"$WORK\" -maxdepth 1 -name '*.zip' -print -quit)\"\ntest -n \"$ARCHIVE\"\npython3 -m tools.ml.wur_forecast_probe --zip \"$ARCHIVE\" --output \"$WORK/probe.json\"\npython3 - <<'PY'\nfrom pathlib import Path\nimport os,json\np=Path(os.environ['WORK'])/'probe.json'\nr=json.loads(p.read_text())\nassert len(r['reports'])==6\nassert r['original_byte_equivalence']=='NOT_VERIFIED'\nassert r['training_approval']=='DIAGNOSTIC_TRANSFER_ONLY_NOT_PRODUCTION'\nprint('WUR_RESEARCH_PROBE|PASS')\nfor report in r['reports']:\n for horizon in (5,15,60):\n  for target in ('temperature_c','relative_humidity_pct','co2_ppm'):\n   m=report['targets'][f'{target}@{horizon}min']\n   assert m['persistence']['n']==m['trained_trend']['n']\n   print('WUR_UNSEEN_SITE_RESULT|'+json.dumps({\n    'test_site':report['holdout_site'],'horizon_min':horizon,'target':target,\n    'n':m['comparable_test_pairs'],\n    'train_others_n':m['train_pair_count_five_other_sites'],\n    'alpha':round(m['trained_coefficient'],5),\n    'persistence_mae':round(m['persistence']['mae'],5),\n    'trend_mae':round(m['trained_trend']['mae'],5),\n    'gain_pct':round(m['improvement_mae_percent'],3) if m['improvement_mae_percent'] is not None else None\n   },separators=(',',':')))\nprint('WUR_UNSEEN_HOUSEHOLD_FORECAST_COMPLETE|EXPLORATORY_NOT_CALIBRATION')\nPY",
+      "current_rss_mb": 2.47,
+      "elapsed_seconds": 2.387,
+      "exit_code": 1,
+      "idle_timed_out": false,
+      "memory_limit_mb": 1100,
+      "memory_limited": false,
+      "output": "WUR_TRAINING_PROBE_SHA|40e4a864beb6024eb93f275fdfb330d1d715067d\ntest_6_houses_real_signal_boundaries_and_total_rows (tests.test_wur_external_benchmark.TestWurMirrorBenchmark.test_6_houses_real_signal_boundaries_and_total_rows) ... ok\ntest_excel_serial_is_not_silently_claimed_utc (tests.test_wur_external_benchmark.TestWurMirrorBenchmark.test_excel_serial_is_not_silently_claimed_utc) ... ok\ntest_nan_kept_missing_never_imputed (tests.test_wur_external_benchmark.TestWurMirrorBenchmark.test_nan_kept_missing_never_imputed) ... ok\ntest_persistence_5_15_60_minutes_per_day (tests.test_wur_external_benchmark.TestWurMirrorBenchmark.test_persistence_5_15_60_minutes_per_day) ... ok\ntest_reject_bad_holdout_parameter (tests.test_wur_external_benchmark.TestWurMirrorBenchmark.test_reject_bad_holdout_parameter) ... ok\ntest_reject_duplicate_or_reversed_tick (tests.test_wur_external_benchmark.TestWurMirrorBenchmark.test_reject_duplicate_or_reversed_tick) ... ok\ntest_reject_missing_or_conflicting_schema (tests.test_wur_external_benchmark.TestWurMirrorBenchmark.test_reject_missing_or_conflicting_schema) ... ok\ntest_reject_too_short_time_series (tests.test_wur_external_benchmark.TestWurMirrorBenchmark.test_reject_too_short_time_series) ... ok\ntest_sha_mismatch_fail_closed (tests.test_wur_external_benchmark.TestWurMirrorBenchmark.test_sha_mismatch_fail_closed) ... ok\ntest_weather_na_does_not_turn_into_false_observation (tests.test_wur_external_benchmark.TestWurMirrorBenchmark.test_weather_na_does_not_turn_into_false_observation) ... ok\ntest_evaluation_rejects_train_day_histories_and_uses_identical_pairs (tests.test_wur_forecast_probe.TestWurForecastProbe.test_evaluation_rejects_train_day_histories_and_uses_identical_pairs) ... ok\ntest_fit_does_not_consume_holdout_target_or_future (tests.test_wur_forecast_probe.TestWurForecastProbe.test_fit_does_not_consume_holdout_target_or_future) ... ok\ntest_original_source_not_qualified_as_same_bytes (tests.test_wur_forecast_probe.TestWurForecastProbe.test_original_source_not_qualified_as_same_bytes) ... FAIL\ntest_pinned_sha_is_mandatory_by_default (tests.test_wur_forecast_probe.TestWurForecastProbe.test_pinned_sha_is_mandatory_by_default) ... ok\ntest_train_on_five_houses_test_on_unseen_sixth (tests.test_wur_forecast_probe.TestWurForecastProbe.test_train_on_five_houses_test_on_unseen_sixth) ... ok\n\n======================================================================\nFAIL: test_original_source_not_qualified_as_same_bytes (tests.test_wur_forecast_probe.TestWurForecastProbe.test_original_source_not_qualified_as_same_bytes)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/private/tmp/bloomml-wur-forecast.p1xjw5/source/tests/test_wur_forecast_probe.py\", line 72, in test_original_source_not_qualified_as_same_bytes\n    self.assertIn(\"ORIGINAL_VERIFICATION_PENDING\", r[\"training_approval\"])\n    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'ORIGINAL_VERIFICATION_PENDING' not found in 'DIAGNOSTIC_TRANSFER_ONLY_NOT_PRODUCTION'\n\n----------------------------------------------------------------------\nRan 15 tests in 0.362s\n\nFAILED (failures=1)\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 2.47,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-04T00:43:19.178279+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.066,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.079,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-wur-unseen-household-forecast-20261104-v1",
+  "idle_timeout": 320,
+  "memory_limit_mb": 1100,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 2.387,
+      "outcome": "failed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-04T00:43:15.252555+00:00",
+  "status": "failed",
+  "task_digest": "ac46cdf9585cada873edd2a4f7f1f8b6d1cf932ca7931741c800fe6fee592292",
+  "task_timeout": 800,
+  "verification": [],
+  "work_branch": "main"
+}

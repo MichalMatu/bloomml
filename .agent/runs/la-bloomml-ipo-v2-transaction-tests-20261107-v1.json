@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-ipo-v2-transaction-tests-20261107-v1",
+  "task_digest": "43c0484430fb5c31358c3cfa1a005ba5fa812498d18792d8ae68882d6ed2d6e3",
+  "status": "failed",
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-07T11:32:09.357372+00:00",
+  "attempt_id": "8154f2175acb1c58148a5cd5",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 47061,
+  "updated_at": "2026-11-07T11:32:09.803251+00:00",
+  "pid": 47061
+}

@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-ipo-v2-transaction-tests-20261107-v2",
+  "dedupe_key": "la-bloomml-ipo-v2-transaction-tests-20261107-v2",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 1200,
+  "idle_timeout": 400,
+  "task_timeout": 1500,
+  "memory_limit_mb": 4096,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-tests2.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"977c48d221cd310be70f39653a33d8eb4abd5ebd\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"SOURCE_SHA|$EXPECTED\"\nmake test-ipo\necho \"IPO_CPP_B5_AND_ACTIVATION|PASS\"\nif command -v pnpm >/dev/null 2>&1; then\n if ! test -x web/node_modules/.bin/vitest; then\n   pnpm --dir web install --frozen-lockfile --prefer-offline --ignore-scripts || echo \"IPO_VITEST_INSTALL|BLOCKED\"\n fi\n if test -x web/node_modules/.bin/vitest; then\n   pnpm --dir web exec vitest run src/domain/ipo-board-readiness.test.ts\n   echo \"IPO_VITEST_B5|PASS\"\n else\n   echo \"IPO_VITEST_B5|BLOCKED_MISSING_DEPENDENCIES\"\n fi\nelse\n echo \"IPO_VITEST_B5|BLOCKED_NO_PNPM\"\nfi\ngit diff --check\necho \"DIFF_CHECK|PASS\""
+  ]
+}

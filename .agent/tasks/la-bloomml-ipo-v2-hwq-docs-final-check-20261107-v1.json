@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-ipo-v2-hwq-docs-final-check-20261107-v1",
+  "dedupe_key": "la-bloomml-ipo-v2-hwq-docs-final-check-20261107-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 600,
+  "idle_timeout": 300,
+  "task_timeout": 900,
+  "memory_limit_mb": 4096,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-hwq-final-docs.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"c4bf62cf70b5197f5b19906cf48175a75719785e\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"FINAL_SHA|$EXPECTED\"\ngit diff --check 1a1b3de8dada926a00f37be158ef99cd1393b860 HEAD\necho \"DIFF_CHECK|PASS\"\ntest -f docs/checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md\ngrep -Fq \"ClosedIpoActivationGate\" docs/NEXT_CHAT.md\ngrep -Fq \"ClosedIpoActivationGate\" src/climate/ClimateV6RealInputRuntime.cpp\ngrep -Fq \"ipo_nvs_journal_tests\" test/host/CMakeLists.txt\ngrep -Fq \"GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED\" config/runtime/GrowboxRuntimeConfig.cmake\ntest -z \"$(git status --porcelain)\"\necho \"CHECKPOINT_AND_CLOSED_GATE|PASS\"\necho \"SOURCE_CLEAN|PASS\""
+  ]
+}

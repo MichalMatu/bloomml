@@ -1,0 +1,60 @@
+{
+  "allow_write": false,
+  "attempt_id": "a4091a98b61aa21ba62dac50",
+  "command_timeout": 150,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 254,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin || exit 41\necho \"ARCHIVE_TOOLS_BEGIN\"\nfor tool in 7zz 7z bsdtar tar unar python3; do command -v \"$tool\" || true; done\necho \"ARCHIVE_TOOLS_END\"\npython3 - <<'PY'\nfrom urllib.request import Request,urlopen\nfrom urllib.error import HTTPError,URLError\nimport json\nbase='https://data.4tu.nl/v2/articles/88d22c60-21b3-4ea8-90db-20249a5be2a7'\nfor endpoint in ('','/files'):\n try:\n  with urlopen(Request(base+endpoint,headers={'User-Agent':'BloomML-research-metadata/1.0','Accept':'application/json'}),timeout=35) as resp:\n   data=json.loads(resp.read(2000000).decode('utf-8'))\n  print('WUR_ENDPOINT|',endpoint or 'dataset','|OK',sep='')\n  files=data if isinstance(data,list) else data.get('files',[])\n  if not isinstance(files,list):files=[]\n  for f in files[:12]:\n   print('WUR_FILE|'+json.dumps({k:f.get(k) for k in ('name','id','uuid','size','download_url','supplied_md5','is_link_only','computed_md5')},ensure_ascii=False))\n  if isinstance(data,dict):\n   print('WUR_DATASET|'+json.dumps({k:data.get(k) for k in ('uuid','doi','title','published_date','license')},default=str,ensure_ascii=False)[:2000])\n except Exception as exc:\n  print('WUR_ENDPOINT|',endpoint or 'dataset','|FAIL|',type(exc).__name__,'|',str(exc)[:220],sep='')\nprint('WUR_PREFLIGHT_FINISHED')\nPY",
+      "current_rss_mb": 13.45,
+      "elapsed_seconds": 70.407,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 400,
+      "memory_limited": false,
+      "output": "ARCHIVE_TOOLS_BEGIN\n/usr/bin/bsdtar\n/usr/bin/tar\n/Users/michal/.platformio/penv/bin/python3\nARCHIVE_TOOLS_END\nWUR_ENDPOINT|dataset|FAIL|URLError|<urlopen error timed out>\nWUR_ENDPOINT|/files|FAIL|URLError|<urlopen error timed out>\nWUR_PREFLIGHT_FINISHED\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 29.72,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-04T00:34:37.746366+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.071,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.112,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-wur-4tu-api-preflight-20261104-v1",
+  "idle_timeout": 95,
+  "memory_limit_mb": 400,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 70.407,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-04T00:33:25.784435+00:00",
+  "status": "done",
+  "task_digest": "87b8f184cb1ab58b7f658e5f726ddb90613ad234ad59dcca5e6fa5a84298a964",
+  "task_timeout": 270,
+  "verification": [],
+  "work_branch": "main"
+}
