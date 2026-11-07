@@ -150,7 +150,7 @@ export function SetupPage() {
   return (
     <AppPage width="wide">
       <AppPageHeader
-        title="BloomML · konfiguracja growboxa"
+        title="BloomML · archiwalny szkic profilu v1"
         badges={
           <>
             <Badge variant="secondary">Profil v1 · szkic</Badge>
@@ -166,6 +166,7 @@ export function SetupPage() {
         }
         actions={
           <AppActionRow>
+            <Button type="button" onClick={() => navigate(ROUTES.configurator)}>Nowy konfigurator IPO v2</Button>
             <Button type="button" variant="outline" onClick={() => navigate(ROUTES.chamber3d)}>
               Wizualizacja 3D
             </Button>

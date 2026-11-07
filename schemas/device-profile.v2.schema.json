@@ -1,0 +1,375 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MichalMatu/bloomml/blob/main/schemas/device-profile.v2.schema.json",
+  "title": "BloomML IPO DeviceProfile v2 — validated, bounded, draft-only device graph",
+  "description": "Declarative IPO registry, semantic signals, processes and many-to-one output links. No direct physical writes. Firmware adapter and Safety/OutputSupervisor review are separate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "deployment_status",
+    "profile_id",
+    "board",
+    "devices",
+    "signals",
+    "actuators",
+    "processes",
+    "links",
+    "control"
+  ],
+  "properties": {
+    "kind": {
+      "const": "bloomml.device-profile"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "deployment_status": {
+      "const": "draft_not_applied"
+    },
+    "profile_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{1,39}$"
+    },
+    "board": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 80
+    },
+    "devices": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "driver",
+          "locator",
+          "enabled"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{1,39}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "driver": {
+            "enum": [
+              "ble.tp357",
+              "ble.xiaomi",
+              "i2c.scd41",
+              "i2c.ds3231",
+              "i2c.bme280",
+              "i2c.bh1750",
+              "adc.soil",
+              "rf433.binary_socket",
+              "gpio.relay",
+              "pwm.channel",
+              "modbus.relay"
+            ]
+          },
+          "locator": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "signals": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "sources"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "inside.temperature_c",
+              "inside.humidity_pct",
+              "inside.co2_ppm",
+              "outside.temperature_c",
+              "outside.humidity_pct",
+              "clock.time",
+              "light.illuminance_lux",
+              "substrate.moisture_pct"
+            ]
+          },
+          "sources": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "device_id",
+                "channel"
+              ],
+              "properties": {
+                "device_id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_-]{1,39}$"
+                },
+                "channel": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "actuators": {
+      "type": "array",
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "device_id",
+          "channel",
+          "role",
+          "safe_state",
+          "min_on_ms",
+          "min_off_ms"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{1,39}$"
+          },
+          "device_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{1,39}$"
+          },
+          "channel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "role": {
+            "enum": [
+              "exhaust_fan",
+              "humidifier",
+              "light",
+              "heater",
+              "cooler",
+              "dehumidifier",
+              "co2_doser",
+              "circulation_fan",
+              "irrigation_pump"
+            ]
+          },
+          "safe_state": {
+            "const": "off"
+          },
+          "min_on_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3600000
+          },
+          "min_off_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3600000
+          }
+        }
+      }
+    },
+    "processes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "enabled"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{1,39}$"
+          },
+          "kind": {
+            "enum": [
+              "temperature",
+              "humidity",
+              "co2_safety",
+              "co2_target",
+              "light_schedule",
+              "circulation",
+              "irrigation"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "links": {
+      "type": "array",
+      "maxItems": 48,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "process_id",
+          "actuator_id",
+          "effect"
+        ],
+        "properties": {
+          "process_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{1,39}$"
+          },
+          "actuator_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{1,39}$"
+          },
+          "effect": {
+            "enum": [
+              "ventilate",
+              "humidify",
+              "illuminate",
+              "heat",
+              "cool",
+              "dehumidify",
+              "dose_co2",
+              "circulate",
+              "irrigate"
+            ]
+          }
+        }
+      }
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "humidity_mode",
+        "sensor_timeout_ms",
+        "schedule",
+        "targets"
+      ],
+      "properties": {
+        "humidity_mode": {
+          "enum": [
+            "RH",
+            "VPD"
+          ]
+        },
+        "sensor_timeout_ms": {
+          "type": "integer",
+          "minimum": 5000,
+          "maximum": 300000
+        },
+        "schedule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "day_start_hour",
+            "night_start_hour"
+          ],
+          "properties": {
+            "day_start_hour": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 23
+            },
+            "night_start_hour": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 23
+            }
+          }
+        },
+        "targets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "day",
+            "night"
+          ],
+          "properties": {
+            "day": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "air_temperature_c",
+                "relative_humidity_pct",
+                "air_vpd_kpa"
+              ],
+              "properties": {
+                "air_temperature_c": {
+                  "type": "number",
+                  "minimum": 10,
+                  "maximum": 40
+                },
+                "relative_humidity_pct": {
+                  "type": "number",
+                  "minimum": 20,
+                  "maximum": 90
+                },
+                "air_vpd_kpa": {
+                  "type": "number",
+                  "minimum": 0.2,
+                  "maximum": 3.5
+                }
+              }
+            },
+            "night": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "air_temperature_c",
+                "relative_humidity_pct",
+                "air_vpd_kpa"
+              ],
+              "properties": {
+                "air_temperature_c": {
+                  "type": "number",
+                  "minimum": 10,
+                  "maximum": 40
+                },
+                "relative_humidity_pct": {
+                  "type": "number",
+                  "minimum": 20,
+                  "maximum": 90
+                },
+                "air_vpd_kpa": {
+                  "type": "number",
+                  "minimum": 0.2,
+                  "maximum": 3.5
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$comment": "Runtime-dependent semantic compatibility, cross refs, duplicate physical endpoints, safety floor, input priorities and effect direction are checked by the typed IPO validator. JSON Schema catches shape and bounds only."
+}

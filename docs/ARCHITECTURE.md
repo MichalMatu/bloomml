@@ -4,6 +4,10 @@ Current state: [CURRENT_STATUS.md](CURRENT_STATUS.md).
 Product order: [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md).
 Display port contract: [DISPLAY_UI_PORT.md](DISPLAY_UI_PORT.md).
 
+## IPO v2 foundation boundary (unlinked)
+
+`schemas/device-profile.v2.schema.json` and `web/src/domain/ipo-*.ts` define a bounded declarative device/signal/process/output/link graph; portable C++17 `lib/ipo_profile/src/IpoGraph.h` provides a typed validation seam and **symbolic** compatible-intent aggregator. None is linked into the production firmware. Hardware driver adapter/registry, safe profile NVS, apply/readback, and qualification remain open. Never bypass the existing `OutputSupervisor` or thermal interlocks; do not allow unqualified shadow ML to actuate hardware.
+
 ## Stable design rules
 
 The portable climate controller is independent from concrete sensor libraries and physical actuator transports. Hardware code produces semantic measurements and consumes semantic output intent through explicit application/runtime boundaries.

@@ -8,7 +8,7 @@ For normal product work read, in order:
 
 1. `../AGENTS.md` — repository/work-mode and safety rules.
 2. `CURRENT_STATUS.md` — what is finished, what is active, and what must not be reopened without new evidence.
-3. `CONFIGURATION_FLOW.md` — one canonical sensor/parameter/control/output matrix and DeviceProfile v1 state.
+3. `CONFIGURATION_FLOW.md` — one canonical sensor/parameter/control/output matrix and DeviceProfile v2 draft/driver graph state.
 4. `PRODUCT_DIRECTION.md` — what the operator product is and which panels are only research/developer tools.
 5. `ARCHITECTURE.md` — ownership and runtime boundaries.
 6. `PROJECT_ROADMAP.md` — current order of work.

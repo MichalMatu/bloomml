@@ -50,3 +50,7 @@ At main `8ed884a56c91fcd8650796cdb3db7ea4cbf37312`, Local Agent result `agent-co
 ## 2026-11-07 configuration draft sprint
 
 Mapped actual TP357/SCD41/Xiaomi/DS3231 inputs, fixed RF433 sockets and day/night Mint control from source, then added an offline `DeviceProfile` v1 schema, example and simpler browser draft on `/` (research v5 retained under `/lab/v5`). One canonical matrix: `docs/CONFIGURATION_FLOW.md`. No profile apply/NVS/live readback in firmware. At operator request **NO test suites, typechecks or heavy builds were executed for this sprint**; newly added source remains UNVERIFIED until a separately requested qualification.
+
+## 2026-11-07 IPO Foundation v2 source-only
+
+Added bounded DeviceProfile v2 schema/example, driver catalog, prioritized signals, typed process-to-output links, import/migration, new browser homepage and unlinked portable C++17 DTO/graph arbiter. Canonical `docs/CONFIGURATION_FLOW.md`. No production runtime/physical output changes. No tests/typecheck/builds run per operator direction; code not executable-qualified. Firmware v2 parser/NVS/apply/readback remains OPEN.

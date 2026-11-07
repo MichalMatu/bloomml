@@ -1,0 +1,212 @@
+{
+  "kind": "bloomml.device-profile",
+  "schema_version": 2,
+  "deployment_status": "draft_not_applied",
+  "profile_id": "mint-ipo",
+  "board": "crowpanel-esp32s3-2_9-n8r8",
+  "devices": [
+    {
+      "id": "tp357",
+      "label": "TP357 — wewnątrz",
+      "driver": "ble.tp357",
+      "locator": "runtime:tp357",
+      "enabled": true
+    },
+    {
+      "id": "scd41",
+      "label": "SCD41 — CO2",
+      "driver": "i2c.scd41",
+      "locator": "i2c:0x62",
+      "enabled": true
+    },
+    {
+      "id": "xiaomi",
+      "label": "Xiaomi — otoczenie",
+      "driver": "ble.xiaomi",
+      "locator": "runtime:xiaomi",
+      "enabled": true
+    },
+    {
+      "id": "rtc",
+      "label": "DS3231 — zegar",
+      "driver": "i2c.ds3231",
+      "locator": "i2c:0x68",
+      "enabled": true
+    },
+    {
+      "id": "fan_socket",
+      "label": "Gniazdo 1 · wyciąg",
+      "driver": "rf433.binary_socket",
+      "locator": "socket:1",
+      "enabled": true
+    },
+    {
+      "id": "lamp_socket",
+      "label": "Gniazdo 2 · lampa",
+      "driver": "rf433.binary_socket",
+      "locator": "socket:2",
+      "enabled": true
+    },
+    {
+      "id": "humidifier_socket",
+      "label": "Gniazdo 3 · nawilżacz",
+      "driver": "rf433.binary_socket",
+      "locator": "socket:3",
+      "enabled": true
+    }
+  ],
+  "signals": [
+    {
+      "role": "inside.temperature_c",
+      "sources": [
+        {
+          "device_id": "tp357",
+          "channel": "temperature_c"
+        }
+      ]
+    },
+    {
+      "role": "inside.humidity_pct",
+      "sources": [
+        {
+          "device_id": "tp357",
+          "channel": "humidity_pct"
+        }
+      ]
+    },
+    {
+      "role": "inside.co2_ppm",
+      "sources": [
+        {
+          "device_id": "scd41",
+          "channel": "co2_ppm"
+        }
+      ]
+    },
+    {
+      "role": "outside.temperature_c",
+      "sources": [
+        {
+          "device_id": "xiaomi",
+          "channel": "temperature_c"
+        }
+      ]
+    },
+    {
+      "role": "outside.humidity_pct",
+      "sources": [
+        {
+          "device_id": "xiaomi",
+          "channel": "humidity_pct"
+        }
+      ]
+    },
+    {
+      "role": "clock.time",
+      "sources": [
+        {
+          "device_id": "rtc",
+          "channel": "unix_time"
+        }
+      ]
+    }
+  ],
+  "actuators": [
+    {
+      "id": "exhaust",
+      "device_id": "fan_socket",
+      "channel": "switch",
+      "role": "exhaust_fan",
+      "safe_state": "off",
+      "min_on_ms": 120000,
+      "min_off_ms": 120000
+    },
+    {
+      "id": "lamp",
+      "device_id": "lamp_socket",
+      "channel": "switch",
+      "role": "light",
+      "safe_state": "off",
+      "min_on_ms": 0,
+      "min_off_ms": 0
+    },
+    {
+      "id": "humidifier",
+      "device_id": "humidifier_socket",
+      "channel": "switch",
+      "role": "humidifier",
+      "safe_state": "off",
+      "min_on_ms": 180000,
+      "min_off_ms": 180000
+    }
+  ],
+  "processes": [
+    {
+      "id": "temperature",
+      "kind": "temperature",
+      "enabled": true
+    },
+    {
+      "id": "humidity",
+      "kind": "humidity",
+      "enabled": true
+    },
+    {
+      "id": "light",
+      "kind": "light_schedule",
+      "enabled": true
+    },
+    {
+      "id": "co2_guard",
+      "kind": "co2_safety",
+      "enabled": true
+    }
+  ],
+  "links": [
+    {
+      "process_id": "temperature",
+      "actuator_id": "exhaust",
+      "effect": "ventilate"
+    },
+    {
+      "process_id": "humidity",
+      "actuator_id": "exhaust",
+      "effect": "ventilate"
+    },
+    {
+      "process_id": "humidity",
+      "actuator_id": "humidifier",
+      "effect": "humidify"
+    },
+    {
+      "process_id": "light",
+      "actuator_id": "lamp",
+      "effect": "illuminate"
+    },
+    {
+      "process_id": "co2_guard",
+      "actuator_id": "exhaust",
+      "effect": "ventilate"
+    }
+  ],
+  "control": {
+    "humidity_mode": "RH",
+    "sensor_timeout_ms": 30000,
+    "schedule": {
+      "day_start_hour": 6,
+      "night_start_hour": 22
+    },
+    "targets": {
+      "day": {
+        "air_temperature_c": 24.5,
+        "relative_humidity_pct": 58,
+        "air_vpd_kpa": 1.2
+      },
+      "night": {
+        "air_temperature_c": 21.5,
+        "relative_humidity_pct": 65,
+        "air_vpd_kpa": 0.9
+      }
+    }
+  }
+}

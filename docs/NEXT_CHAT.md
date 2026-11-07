@@ -1,28 +1,27 @@
-# BloomML — next step after configuration profile draft (2026-11-07)
+# BloomML — continuation after IPO Foundation v2 (2026-11-07)
 
-## Read this first
+## Current baseline and work policy
 
-- `AGENTS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/CURRENT_STATUS.md`, `docs/ARCHITECTURE.md`, `docs/PRODUCT_DIRECTION.md`.
-- Fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any write or Local Agent operation.
-- Development only on `main`. Retain `agent-control` for Local Agent and `gh-pages` for publication. No Codex, Work or GitHub Actions.
-- Do not redo old tests, heavy builds, hardware gates or repeat the 110-commit research merge. Current operator expressly asked to defer those.
+- Source: `main` only. `agent-control` for Mac Local Agent; `gh-pages` publishing. Never Codex, Work, GitHub Actions.
+- Read `AGENTS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/CURRENT_STATUS.md`, `docs/ARCHITECTURE.md` and this file; fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any task.
+- Operator explicitly requested avoiding repeat tests and heavy builds. **No new test/build qualification for the IPO v2 source has been performed**; do not call it verified.
 
-## Completed this sprint
+## What was closed
 
-- One canonical map: `docs/CONFIGURATION_FLOW.md`, deriving the actual sensor, actuator and environmental parameters from firmware source.
-- Draft schema `schemas/device-profile.v1.schema.json`, sample `profiles/crowpanel-mint.v1.json`, strict offline draft validator/editor.
-- Browser `/` = simple profile; `/lab/v5` = original 228-field research editor; `/chamber-3d` unchanged preview.
-- Profile can be imported and exported as `draft_not_applied`; it **cannot be sent or applied to the ESP32-S3**. Do not claim runtime integration or real live status.
-- Production Rule, RF433, NVS output supervisor and e-ink behavior unchanged. No tests/compilations executed for this new source; software status **UNVERIFIED**.
+- `schemas/device-profile.v2.schema.json` + `profiles/crowpanel-ipo.v2.json`: open bounded IPO graph profile, not fixed 3-socket product limitation.
+- `web/src/domain/ipo-catalog.ts`, `ipo-profile.ts`: driver capabilities, semantic signal sources/fallback order, physical output registry, process→effect→output bindings, draft validation, v1 migration, symbolic MAX intents.
+- Browser `/` is the new single main v2 editor; `/lab/profile-v1` preserves v1, `/lab/v5` preserves research v5; `/chamber-3d` independent geometry.
+- `lib/ipo_profile/src/IpoGraph.h`: unlinked C++17 bounded DTO, structural graph validator, symbolic arbiter for future firmware integration.
+- Canonical matrix/limitations: `docs/CONFIGURATION_FLOW.md`. Checkpoint: `docs/checkpoints/2026-11-07-bloomml-ipo-foundation-v2.md`.
 
-## Single next sprint: safe runtime application
+## Next sprint: connect v2 to real runtime WITHOUT rewriting existing safety
 
-1. Introduce a typed, bounded, versioned production profile parser/validator using `schemas/device-profile.v1.schema.json`; do not treat JSON as an ML v4/v5/v6 feature vector.
-2. Keep actual fixed RF433 endpoints and sensor sources until a safe remapping mechanism exists. Feed validated targets/clock/schedule/capability flags into existing runtime ownership, sharing exactly one snapshot for schedule lamp + climate targets.
-3. Implement separate profile NVS persistence with version/recovery/rollback; preserve existing output state/policy NVS, strict safety and Rule authority.
-4. Add readback of active applied profile hash, actual sensor validity/age, desired Rule and shadow proposal, applied vs attempted output, fault state. Only after real device API exists attach the existing browser page's preview/apply/readback and status; keep e-ink observer-only.
-5. New physical qualification remains explicitly OPEN until separately authorized. Avoid repetitive broad gates.
+1. Decide supported physical driver set for this CrowPanel and parse v2 into typed bounded DTO, fail closed on unknown/unsupported driver/locator. New drivers require explicit adapter, not generic arbitrary code.
+2. Attach sensor roles with freshness/valid/fallback, preserving TP357 current role and acknowledging SCD41 currently CO₂-only.
+3. Apply a coherent, validated day/night target/schedule snapshot to both climate Rule and lamp schedule.
+4. Map compatible logical output intents through existing `OutputSupervisor` and binary policies only, preserving thermal safety and transport attempt-vs-physical observed distinction. ML remains shadow.
+5. Implement dedicated profile NVS version/CRC/hash, active/pending/known-good, atomic commit/readback/recovery and revert to Mint on invalid state. Output state persistence remains separate.
+6. Expose actual status + active profile hash through one safe local API and existing panel/e-ink observer, not a second control owner.
+7. Separate explicit targeted qualification when requested; don't re-run full historical batteries by default.
 
-## Known limitations
-
-SCD41 is currently used for CO₂ **only**; T/RH come from TP357 BLE. Xiaomi BLE supplies outside T/RH; DS3231 supplies time. Runtime has three RF433 roles: exhaust, scheduled light, humidifier. CO₂ dose, heater/cooler/dehumidifier, PPFD/DLI, irrigation and active MPC are **not** working production features. MPC research still has 19/22 hard-case FAILs and no empirical growbox calibration.
+The v2 browser export is **draft_not_applied**; no real device API/apply/readback exists yet, so do not claim the board runs the v2 graph. MPC research 19/22 prior hard-case FAIL and no empirical growbox calibration remain open; no active hardware authority.

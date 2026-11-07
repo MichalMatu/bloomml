@@ -20,7 +20,7 @@ For a fresh task read, in order:
 1. `AGENTS.md`
 2. `docs/README.md`
 3. `docs/CURRENT_STATUS.md`
-4. `docs/CONFIGURATION_FLOW.md` (one supported sensor/target/output map and draft-vs-runtime truth)
+4. `docs/CONFIGURATION_FLOW.md` (canonical IPO v2 graph, actual vs planned driver/output and draft-vs-runtime truth)
 5. `docs/PRODUCT_DIRECTION.md` (operator product, schema boundaries)
 6. `docs/ARCHITECTURE.md`
 7. `docs/PROJECT_ROADMAP.md`
@@ -29,6 +29,8 @@ For a fresh task read, in order:
 Then fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any write or Local Agent task.
 
 Historical Stage27/Stage28 handoffs, temporary prompts and superseded audits are not live documentation. Use `docs/HISTORY.md`, `docs/CHANGELOG.md` and Git history when historical evidence is needed.
+
+IPO v2 is an isolated draft: `schemas/device-profile.v2.schema.json`, `web/src/domain/ipo-*.ts`, and unlinked `lib/ipo_profile/src/IpoGraph.h`. These do not authorize hardware writes or replace existing Rule, Safety and OutputSupervisor. Dynamic adapters, safe NVS apply/readback and qualification are OPEN.
 
 Research documents such as `DATA_CONTRACT.md`, `CONFIG_MATRIX.*` and `docs/simulator/*` may describe the older v4 128-feature/15-output toolchain. Do not treat them as the production climate-v6 runtime contract unless the task explicitly targets that research toolchain.
 

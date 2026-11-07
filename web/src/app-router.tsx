@@ -1,10 +1,15 @@
 import { lazy, Suspense } from "react"
 
-import { SetupPage } from "@/pages/setup-page"
+import { IpoSetupPage } from "@/pages/ipo-setup-page"
 import { AppPageLoading } from "@/components/app-chrome"
 import { ROUTES, usePathname } from "@/lib/routing"
 
-/** Keep research and 3D modules out of the operator setup entry bundle. */
+/** Keep legacy v1/v5 and 3D out of the operator IPO editor bundle. */
+const LegacyV1Page = lazy(async () => {
+  const module = await import("@/pages/setup-page")
+  return { default: module.SetupPage }
+})
+
 const ResearchV5Page = lazy(async () => {
   const module = await import("@/App")
   return { default: module.App }
@@ -35,5 +40,13 @@ export function AppRouter() {
     )
   }
 
-  return <SetupPage />
+  if (pathname === ROUTES.profileV1) {
+    return (
+      <Suspense fallback={<AppPageLoading>Ładowanie archiwalnego profilu v1…</AppPageLoading>}>
+        <LegacyV1Page />
+      </Suspense>
+    )
+  }
+
+  return <IpoSetupPage />
 }

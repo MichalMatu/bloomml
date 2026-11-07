@@ -10,7 +10,7 @@ Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for ac
 ├── CMakeLists.txt
 ├── config/                     # board/runtime/IDF profiles
 ├── profiles/                   # example user/controller profiles
-├── schemas/                    # production climate-v6 + research contracts
+├── schemas/                    # device profiles v1/v2 + climate-v6 inference + research contracts
 ├── docs/                       # current docs, research references, compact history
 ├── reports/                    # committed ML/model evaluation artifacts
 ├── tools/                      # host, ML, panel and sandbox tooling
@@ -21,6 +21,7 @@ Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for ac
 │   └── litegraph_epd_port/     # read-only Clay/EPD donor snapshot; not built
 ├── web/                        # browser configurator/chamber UI
 ├── lib/
+│   ├── ipo_profile/            # bounded C++17 graph and symbolic arbiter; unlinked
 │   ├── environment_control/    # portable climate-v6 controller core
 │   ├── growbox_display_model/  # neutral C++17 semantic display page DTO
 │   └── growbox_clay_ui/        # isolated C++20 Clay layout/raster component
@@ -45,7 +46,7 @@ Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for ac
 ## UI and research ownership
 
 - `tools/panel/`: local **demo/serial** panel using v4 research scenario commands; not production device-profile UI or a safe remote server. Keep default loopback binding and do not expose it to untrusted networks.
-- `web/`: offline v5 research hardware JSON configurator and optional 3D geometric preview; not the current climate-v6 production setup or physical simulation.
+- `web/`: `/` is draft IPO v2 editor with dynamic device/signal/process/output graph; `/lab/profile-v1` preserves fixed v1, `/lab/v5` research v5, `/chamber-3d` geometry. None applies configuration to actual firmware yet.
 - `src/climate/display/`: physical e-ink observer/navigation, never control or output authority.
 - `tools/ml/` on `main`: research physics/MPC/Kaggle; no production runtime dependency or output authority.
 - `docs/PRODUCT_DIRECTION.md`: intended future unified operator workflow and versioned configuration ownership.

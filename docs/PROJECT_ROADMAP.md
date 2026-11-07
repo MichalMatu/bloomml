@@ -10,11 +10,15 @@ Broad architecture cleanup, the SCD41/e-ink recovery closeout, runtime persisten
 
 The deployed product must remain standalone on the ESP32-S3. External foundation models, training services or cloud inference may be used only in offline research/development and must not become runtime dependencies.
 
+## Current sprint milestone (2026-11-07)
+
+IPO v2 foundation SOURCE DONE, UNVERIFIED: bounded v2 schema/example, driver capability catalog, prioritized signal graph, process/output mappings, safe symbolic arbitration, one browser root editor, v1 migration, unlinked portable C++ DTO. No new tests/builds were run per operator request. Actual firmware registration, NVS apply/rollback, readback and real-status UI are OPEN. Canonical truth: `CONFIGURATION_FLOW.md`, handoff: `NEXT_CHAT.md`.
+
 ## Product integration priorities — operator outcome
 
 The target is not two admin panels and another training loop. See `PRODUCT_DIRECTION.md` for the decided user journey and scope boundaries. Never treat the research v4 panel, browser v5 JSON/3D, and production climate-v6 as interchangeable contracts.
 
-1. **P0 PARTIAL — real I/O map + v1 draft:** `CONFIGURATION_FLOW.md` documents roles and limitations; `schemas/device-profile.v1.schema.json`, Mint sample and strict browser draft at `/` are present. Browser v5 moved to `/lab/v5`. Firmware application and validation gates are NOT done.
+1. **P0 SUPERSEDED by v2 source foundation (unverified) — earlier v1 milestone:** `CONFIGURATION_FLOW.md` documents roles and limitations; `schemas/device-profile.v1.schema.json`, Mint sample and strict browser draft at `/` are present. Browser v5 moved to `/lab/v5`. Firmware application and validation gates are NOT done.
 2. **P1 NEXT — close the actual setup-to-runtime slice:** typed validated firmware profile → coherent schedule/target snapshot → durable, recoverable NVS → apply/readback → real measurements/output truth in existing panel/e-ink. No second admin backend; no unsafe dynamic RF role mapping.
 3. **P2, capture actual own-growbox trajectories** with sensor provenance and applied/observed outputs; calibrate physics and compare deterministic Rule/persistence/PID baselines.
 4. **P3, qualify ML/MPC in shadow:** robust hard-case matrix, held-out trajectories, fault/fallback, bounded ESP32-S3 inference and physical sign-off; only then consider explicit active authority.

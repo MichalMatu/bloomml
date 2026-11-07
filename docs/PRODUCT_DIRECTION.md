@@ -2,6 +2,10 @@
 
 Decision date: 2026-11-07. This document describes the intended product and current limitations; it does not authorize ML to actuate hardware.
 
+## IPO v2 evolution (2026-11-07)
+
+The operator homepage now edits a bounded, draft-only **DeviceProfile v2**, with device/driver instances, prioritized signals, typable processing, output roles and many-to-one links. Fixed v1 is preserved at `/lab/profile-v1`; v5 research at `/lab/v5`. Actual hardware still uses fixed Mint and three RF433 outputs. This is not a firmware apply/readback or active ML feature. Details and capability truth are in `CONFIGURATION_FLOW.md`.
+
 ## Product promise
 
 An operator should be able to:

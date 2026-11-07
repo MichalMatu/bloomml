@@ -19,7 +19,11 @@ Status: **production feature/performance work remains paused pending the new-hos
 
 The current architecture split remains intentional: `ClimatePolicy.*` owns stateless Rule generation/arbitration/safety policy, while `ClimateRuntimeController.*` owns stateful trend/effective-action estimation, ML orchestration and execution reconciliation.
 
-## Operator configuration draft — 2026-11-07
+## IPO Foundation v2 source sprint — 2026-11-07
+
+The single browser homepage `/` now edits draft IPO v2: variable device instances, driver catalog, typed signals with primary/fallback, processes, logical outputs and many-to-one effect links. C++17 portable `lib/ipo_profile/src/IpoGraph.h` adds a bounded *unlinked* graph and symbolic mixer. Previous v1 is at `/lab/profile-v1`; research v5 stays `/lab/v5`. See `CONFIGURATION_FLOW.md`. Actual Rule/Safety/OutputSupervisor/RF433/NVS/e-ink unchanged: **no v2 firmware apply, dynamic I/O or live status**. Operator requested no tests or heavy builds; new code remains UNVERIFIED.
+
+## Previous operator v1 draft (historical) — 2026-11-07
 
 The first **offline** DeviceProfile v1 editor is now on the browser homepage (`/`): declarations for current TP357/SCD41/Xiaomi/DS3231 sources and the three fixed RF433 outputs, RH-or-VPD targets, day/night schedule and strict JSON import/export. The legacy research v5 editor is at `/lab/v5`; 3D is geometry-only. See [CONFIGURATION_FLOW.md](CONFIGURATION_FLOW.md) for the complete supported/unsupported matrix. **Firmware still uses the fixed Mint schedule; there is no profile apply, NVS storage or live browser status. No tests/builds were run for this sprint at the operator's direction.**
 
