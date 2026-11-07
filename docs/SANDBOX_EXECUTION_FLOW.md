@@ -13,7 +13,7 @@ Nothing from PhotoMaps or another project is reused implicitly.
 1. **GitHub `main` is the source of truth.**
 2. **ChatGPT Sandbox is the default software worker** for repository-only implementation, Python/ML checks, portable C++ tests, frontend checks and ESP-IDF compilation/static analysis.
 3. **Local Agent is reserved for machine/device evidence**: USB, flashing, serial monitor, real ESP32-S3 board tests, screenshots that require the local desktop, or other host-specific state.
-4. GitHub Actions remains the canonical clean-room verification before merge.
+4. GitHub Actions are forbidden in this work mode. Manually executed exact-SHA gates in Linux Sandbox or authorized Local Agent are the evidence.
 
 A source snapshot is immutable and named:
 
@@ -170,7 +170,7 @@ Bootstrap performs only offline dependency installation from the pack. It does n
 
 Hardware tests are never claimed by sandbox profiles.
 
-## GitHub Actions: Sandbox Pack
+## Historical GitHub workflow definitions — not executed
 
 `.github/workflows/sandbox-pack.yml` creates:
 
@@ -180,7 +180,7 @@ Hardware tests are never claimed by sandbox profiles.
 
 This means ordinary source changes create a new small source snapshot but continue to reuse existing dependency packs.
 
-The normal `.github/workflows/ci.yml` remains canonical for clean CI. A green pack workflow proves pack construction/integrity; a green normal CI proves the repository's official gates.
+Historical `.github/workflows/ci.yml` and `sandbox-pack.yml` definitions are not execution authority or evidence of a passing gate. Do not run or query GitHub Actions; record manual exact-SHA gate results instead.
 
 ## Expected task flow
 
@@ -195,8 +195,8 @@ For each new software task:
 7. Implement the change.
 8. Run the narrowest relevant profile first.
 9. Run broader profiles when the changed surface requires them.
-10. Publish on a feature branch / PR.
-11. Require canonical GitHub CI green before merge.
+10. Publish a small verified fast-forward to `main` using GitHub Connector or authorized Local Agent. No new branches.
+11. Record exact-SHA manual gate results and unresolved checks without GitHub Actions.
 12. After merge, store the new exact source snapshot in Library.
 13. Store a new dependency pack only when its key changed.
 

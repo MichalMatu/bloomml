@@ -6,6 +6,10 @@
 
 **JEDYNY NASTĘPNY KROK:** podłączyć autoryzowany CrowPanel do Maca i potwierdzić **fizyczną izolację wszystkich wyjść**. Ostatni odczyt Mac Local Agent: `/dev/cu.usbserial-120` **ABSENT**. Nie otwierano portów, nie flashowano ani nie uruchamiano RF. Dopóki obecność i izolacja nie zostaną zweryfikowane, nie rozpoczynać testów sprzętowych ani nie udostępniać API aktywacji. [Instrukcja wznowienia](NEXT_CHAT.md).
 
+## Najnowszy sprint software — bez aktywacji IPO
+
+Naprawy `cf1c434` (web typecheck, HTTP diagnostics POST), `196c305` (96 naruszeń lint przeniesionych do wspólnego `app-chrome`) i `4aadf5f` (świeżość odczytu, timeout 504) zakończone. Web na `196c305`: **114/114 Vitest PASS**, typecheck/lint/build PASS; panel na `4aadf5f`: **135/135 pytest PASS**; host C++/display na `cf1c434`: **PASS**; bazowy IPO CTest na `54c486d`: **3/3 PASS**. Są to wyniki software na Macu, nie fizyczne testy CrowPanel. [Pełny checkpoint](checkpoints/2026-11-07-bloomml-general-repository-repair.md).
+
 ## Co naprawdę działa w źródłach
 
 | Warstwa | Stan i granica |

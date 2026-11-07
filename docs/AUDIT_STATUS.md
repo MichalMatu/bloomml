@@ -71,3 +71,10 @@ Read-only IPO NVS boot inspection, reference-graph filtering of actual TP357/SCD
 ## 2026-11-07 B5 IPO Quality Gate (source, **unqualified**)
 
 Changed strict board admission: CO₂ input required, exhaust capability cannot be false; bounded raw reading count/float projection; 32 KiB UTF-8 JSON parser alignment and browser reference-only compatibility report with precise size/byte-label checks. Added cached NVS record CRC32, separate active-vs-stored readback and human-readable UART status. Added focused portable C++ and Vitest tests only. **No test execution, typecheck, lint, builds or physical flash** at operator request; PASS is NOT claimed. See `docs/checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md`.
+
+## 2026-11-07 — General repository repair sprint
+
+- Preflight clean `main@54c486d`, 911 tracked files, 148 commits / last 7 days, 148 / 30 days, 968 / 90 days (Mac git log). Three small fixes `cf1c434`, `196c305`, `4aadf5f` repaired four TS button-size errors, 96 ESLint style violations and diagnostics GET/old-cache false success. No new product features or active output changes.
+- Web `196c305`: 114/114 Vitest, typecheck, lint, build **PASS**, with nonfatal 3D chunk-size warning; panel `4aadf5f`: 135/135 pytest **PASS** in isolated venv; host C++/display `cf1c434` **PASS**; IPO preflight `54c486d`: 3/3 CTest **PASS**. Mac exact-source clean clones, not Linux pack or physical acceptance.
+- Unqualified: exact-HEAD ESP-IDF firmware build (Mac `idf.py` not on PATH), `clang-format`/`clang-tidy`, broad dependency advisory scan, manual browser-to-device E2E and physical H0-H3; `/dev/cu.usbserial-120` absent. No formal claim to exhaustive correctness of all 911 files.
+- [Checkpoint](checkpoints/2026-11-07-bloomml-general-repository-repair.md); [NEXT_CHAT](NEXT_CHAT.md). Maintain Rule/OutputSupervisor authority and closed production IPO activation.
