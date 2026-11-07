@@ -62,3 +62,8 @@ Source changes introduce shared typed Mint-compatible runtime schedule owner, re
 ## 2026-11-07 IPO Runtime Bridge 3 — NOT QUALIFIED
 
 Strict cJSON device-profile v2 decoder (schema/fields/ID and CrowPanel admission) and dormant stage-only coordinator added; current in-RAM Mint schedule fingerprint included in read-only console status. Code is not called for active configuration; no test, build or hardware acceptance of these additions performed by explicit user instruction. Full JSON labels are not preserved by binary runtime snapshot. Do not mark production v2 enabled.
+
+
+## 2026-11-07 IPO Runtime Bridge 4 qualification
+
+Read-only IPO NVS boot inspection, reference-graph filtering of actual TP357/SCD41/Xiaomi observations and UART source-validity provenance added. No use of journal commit, profile activation or new actuator driver. This *does* affect real-source freshness semantics and is untested/unbuilt/undeployed per user's previous instruction; cannot mark production safety as PASS for modified code. Checkpoint: `docs/checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md`.

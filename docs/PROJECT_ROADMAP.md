@@ -137,3 +137,8 @@ Rank work by practical growbox value, safety risk, ownership clarity, ESP32-S3 r
 - the former research branch's complete ancestry is merged; its code remains unqualified for direct actuation.
 
 For each new task start from `docs/README.md`, `CURRENT_STATUS.md` and the relevant subsystem contract.
+
+
+## IPO Runtime Bridge 4 (2026-11-07) — source integration closed, physical acceptance open
+
+Zrealizowano w kodzie wybór rzeczywistych sygnałów TP357/SCD41/Xiaomi przez referencyjny IPO selector, diagnostykę source/age/valid oraz **read-only** odczyt IPO NVS na boot. Zapisany profil nie jest aktywowany. Kolejny blok: celowana kwalifikacja wpływu valid/age na Rule + test przerwanego zapisu/rollback journal, następnie kontrolowany jednozadaniowy adapter apply dla wspieranych wejść i wyjść. Bez dynamicznych komend do RF433 z samego JSON. Nowy kod nie został skompilowany, testowany ani wdrożony.

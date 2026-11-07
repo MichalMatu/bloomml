@@ -47,3 +47,12 @@ Remaining: device-side validation/parity, power-cut/generation/CRC tests for new
 ## Final conservative admission hardening
 
 `IpoBoardAdmission.h` now additionally requires all five current Mint process→effect→output routes (temperature/exhaust, humidity/exhaust, humidity/humidifier, CO₂ safety/exhaust, light schedule/lamp) with active processes before declaring a board-compatible reference. A graph with correctly numbered RF sockets but missing a critical route is rejected. This admission remains read-only; `apply_authorized=false`, no new runtime call or output command. No build/test executed.
+
+
+## Bridge 4 final — real-input IPO selection, NVS readback, operator diagnostics
+
+- `src/climate/runtime/RuntimeAdapters.h/.cpp`: real-input sources accept a reference `ipo::Graph` and `RuntimeScheduleProfileOwner`; primary TP357 (inside T/RH), SCD41 (inside CO₂), Xiaomi (outside T/RH) are projected via `selectFreshSignal`. This rejects invalid/stale/NaN data using active schedule timeout. A null-graph compatibility path maintains former constructors for existing consumers. **No SCD41 T/RH backup is enabled**; lamp safety still directly samples TP357 and OutputSupervisor unchanged.
+- `ClimateV6RealInputRuntime.cpp`: passes read-only reference graph/profile to actual input sources; fails locked if reference admission invalid. Reads `IpoProfileNvsJournal` at boot **read-only** (if NVS available); valid stored profile is reported but **never applied**. No write or staged commit caller, no dynamic RF endpoint mapping.
+- Existing UART `status` reports `ipo_store` stored/backup/generation vs `ipo_profile` currently active built-in Mint, plus per-role `ipo_input` validity, source numeric ID, fallback and age from last source sample. Source IDs: 1=TP357, 2=SCD41, 3=Xiaomi. This is *measurement provenance*, not proof of relay state.
+- **Risk/qualification note**: 30-second staleness gating on real inputs can alter Rule behavior; before flashing it needs a fresh focused gate on freshness boundary, missing TP357, missing CO₂, safety-lamp fallback and restart/NVS state. The operator disallowed repeated tests and heavy compilation; **none were run**. No physical ESP32 deployment took place.
+- No new browser live status API, no active IPO v2 profile; old static source graph and three supervised RF roles remain the only actual wiring.

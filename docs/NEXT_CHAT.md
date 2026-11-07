@@ -28,3 +28,12 @@ No v2 profile has been saved to NVS or applied to real board. Do not claim activ
 - Source registration in `src/CMakeLists.txt`; there is still **NO active apply transport, no full-profile load on boot, no NVS profile writes, no new physical output authority**.
 - Typed durable binary excludes original UI labels/names; do not promise lossless JSON round-trip from the MCU yet.
 - Continue with isolated, targeted contract/power-failure qualification before any physical profile activation. Do not rerun older green suites or heavy builds without specific need.
+
+
+## Bridge 4 — completed source changes, do not repeat (2026-11-07)
+
+- Real-input `RuntimeInsideSource` / `RuntimeNearbySource` now use **`IpoSignalSelector` with the compiled-in reference graph** when called from real firmware: TP357 inside T/RH (device 1), SCD41 CO₂ (2), Xiaomi outside T/RH (3). Reads must be finite, valid and younger than the active Mint 30-second timeout; missing/stale data stays invalid, never implicitly zero. Legacy no-graph constructors remain for isolated legacy callers. Crucially: **no SCD41 T/RH fallback yet**; separate TP357 lamp-safety source unchanged.
+- `IpoProfileNvsJournal::load()` is now called at real-input boot **read-only** when NVS is available. Stored generation, backup/corrupt/notfound status are logged and surfaced in existing service-console `status`; a stored profile is NEVER installed into Rule/schedule/output. Active source remains built-in Mint and `profile_v2_applied=0`.
+- Console `status` additionally reports last selected sensor source ID, age, validity, fallback marker for inside/outside roles. These are prior-cycle data, not physical RF acknowledgment.
+- No tests/builds/flashing by operator instruction; **all new runtime behavior unverified**. Because source validity filtering can change Rule decisions, hardware activation requires a focused verification gate before flashing. Do not claim fully operational flexible v2 drivers, browser API or profile apply.
+- **Next focus**: narrowly qualify sensor selection, NVS boot read and binary journal/codec; then a single-owner guarded `apply` transaction and active profile provenance, after that supervised dynamic output role/driver adapters and web status. Don't repeat the completed offline IPO mapper/parser/UI or previous research gates.

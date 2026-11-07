@@ -94,3 +94,12 @@ Dodano `src/climate/runtime/profile/IpoProfileWire.h` (typowany, wersjonowany, l
 `IpoProfileJsonDecode.cpp` mapuje `DeviceProfile v2` JSON na bounded `Graph + RuntimeScheduleProfile` i **odrzuca** nieznane pola, niezgodne identyfikatory/kanały, drivery bez adaptacji sprzętowej oraz mapowania poza CrowPanel. `IpoProfileStagingCoordinator.h` tworzy izolowaną ścieżkę `preview → typed admission → zapis-tylko-do-NVS → readback`. Żaden komponent aktywnego bootstrapu jej nie wywołuje; nie ma nadawania uprawnień RF/OutputSupervisor i nie ma jeszcze aktualizacji aktywnego profilu z NVS. Kontrakt binary zapisuje semantyczną konfigurację wykonawczą, **nie** pełne stringowe etykiety JSON. `status` raportuje `schedule_hash` obecnego Mint RAM, a nie aktywny hash grafu v2. Bez testów i kompilacji: UNVERIFIED.
 
 **Dodatkowa bramka zgodności:** poprawne numery gniazdek nie wystarczą; adapter odrzuca graf bez kompletu pięciu wymaganych połączeń proces→efekt→wyjście znanych dla bieżącego Mint. Dalsze rozszerzanie ról wyjść wymaga nowych driverów i kwalifikacji; nie powoduje automatycznego odblokowania RF.
+
+
+## Bridge 4 — selection of real inputs + read-only NVS boot inspection (2026-11-07)
+
+W real-input runtime źródła `RuntimeInsideSource` i `RuntimeNearbySource` teraz używają **semantycznego selektora IPO** dla istniejącego, referencyjnego grafu CrowPanel. Identyfikatory: 1=TP357 (T/RH wewnątrz), 2=SCD41 (tylko CO₂), 3=Xiaomi (T/RH zewnętrzne). Odrzuca niefinitywne, invalid i starsze niż timeout profilu odczyty. Lamp safety korzysta nadal z niezależnego TP357 i nie przełącza się na SCD41. To jest faktyczne wpięcie selektora, ale nadal NIE jest dynamiczną rejestracją driverów z JSON v2.
+
+Na boot dodano **wyłącznie odczyt** osobnego IPO NVS journal. Nawet gdy znajduje poprawne zapisane bajty, nie podłącza ich do Rule, harmonogramu ani OutputSupervisor. Istniejąca konsola `status` pokazuje `ipo_store` (stan pamięci i generację, `applied=0`) osobno od `ipo_profile` (aktualne cele Mint w RAM) i `ipo_input` (ważność, wiek, źródło ostatnich pomiarów). Żadne urządzenie wykonawcze nie otrzymuje komend z tego magazynu. Nadal nie ma urządzeniowego API dla przeglądarki ani potwierdzenia fizycznego stanu RF433.
+
+**Uwaga dot. bezpieczeństwa:** warunkowanie świeżością pomiaru może zmieniać zachowanie Rule. Zmian nie kompilowano, nie testowano i nie wgrywano na ESP32 na życzenie operatora. Przed dopuszczeniem fizycznej aktywacji wymagana jest dedykowana, wąska kwalifikacja tej nowej ścieżki, a nie ponawianie historycznych testów badawczych.

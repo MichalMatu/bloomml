@@ -27,7 +27,8 @@ Stage28ServiceConsole::Stage28ServiceConsole(Config config, native::BleClimateSc
                        *this),
       storage_commands_(config.storage_logger, *this),
       system_commands_({config.firmware_sha, config.real_outputs_active, config.timing_metrics,
-                        config.schedule_profile},
+                        config.schedule_profile, config.profile_store,
+                        config.inside_source, config.nearby_source},
                        ble, scd41, clock, rf_diagnostics, *this, output_commands_) {}
 
 bool Stage28ServiceConsole::realOutputsActive() const noexcept {

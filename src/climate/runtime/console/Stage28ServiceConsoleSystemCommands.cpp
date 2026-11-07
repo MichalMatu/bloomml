@@ -8,6 +8,8 @@
 #include "climate/runtime/diagnostics/Stage28ePlatformDiagnostics.h"
 #include "climate/runtime/schedule/EuropeWarsawTime.h"
 #include "climate/runtime/schedule/RuntimeScheduleProfile.h"
+#include "climate/runtime/profile/IpoProfileNvsJournal.h"
+#include "climate/runtime/RuntimeAdapters.h"
 #include "climate/storage/Stage27TelemetryLogger.h"
 
 #include <array>
@@ -146,6 +148,45 @@ void Stage28ServiceConsoleSystemCommands::printStatus(std::uint64_t now_ms) noex
       static_cast<unsigned long>(task_captured), task_status != nullptr);
 
   status_contributor_.printStatusDetails();
+  // Source selection comes from the previous completed control sample. No
+  // fabricated readings or implicit confirmation of a physical RF output.
+  if (config_.inside_source != nullptr) {
+    const auto& selected = config_.inside_source->lastSelections();
+    sink_.writeFormatted(
+        "ipo_input inside_t_valid=%d inside_t_device=%u inside_t_fallback=%d inside_t_age_ms=%llu "
+        "inside_rh_valid=%d inside_rh_device=%u inside_rh_fallback=%d inside_rh_age_ms=%llu "
+        "co2_valid=%d co2_device=%u co2_age_ms=%llu\r\n",
+        selected[0].usable(), static_cast<unsigned>(selected[0].device_id),
+        selected[0].usable() && selected[0].fallback,
+        static_cast<unsigned long long>(selected[0].usable() ? selected[0].age_ms : 0U),
+        selected[1].usable(), static_cast<unsigned>(selected[1].device_id),
+        selected[1].usable() && selected[1].fallback,
+        static_cast<unsigned long long>(selected[1].usable() ? selected[1].age_ms : 0U),
+        selected[2].usable(), static_cast<unsigned>(selected[2].device_id),
+        static_cast<unsigned long long>(selected[2].usable() ? selected[2].age_ms : 0U));
+  }
+  if (config_.nearby_source != nullptr) {
+    const auto& selected = config_.nearby_source->lastSelections();
+    sink_.writeFormatted(
+        "ipo_input outside_t_valid=%d outside_t_device=%u outside_t_age_ms=%llu "
+        "outside_rh_valid=%d outside_rh_device=%u outside_rh_age_ms=%llu\r\n",
+        selected[0].usable(), static_cast<unsigned>(selected[0].device_id),
+        static_cast<unsigned long long>(selected[0].usable() ? selected[0].age_ms : 0U),
+        selected[1].usable(), static_cast<unsigned>(selected[1].device_id),
+        static_cast<unsigned long long>(selected[1].usable() ? selected[1].age_ms : 0U));
+  }
+
+  // Read-only profile journal state at boot. It is NEVER an active profile
+  // acknowledgement and does not trigger any NVS writes or output commands.
+  if (config_.profile_store != nullptr) {
+    const auto& store = *config_.profile_store;
+    sink_.writeFormatted(
+        "ipo_store status=%u stored=%d backup=%d stored_generation=%lu "
+        "runtime_source=builtin_mint profile_v2_applied=0\r\n",
+        static_cast<unsigned>(store.status), store.stored, store.selected_backup,
+        static_cast<unsigned long>(store.stored ? store.profile.generation : 0U));
+  }
+
 
   // Read-only active target/schedule evidence. This is an in-RAM profile
   // snapshot, not confirmation of a deployed v2 graph or NVS write.

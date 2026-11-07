@@ -13,6 +13,7 @@
 #include "climate/output/OutputBindings.h"
 #include "climate/runtime/RuntimeAdapters.h"
 #include "climate/runtime/RuntimeBuildConfig.h"
+#include "climate/runtime/profile/IpoProfileNvsJournal.h"
 #include "climate/runtime/console/Stage28ServiceConsole.h"
 #include "climate/runtime/core/RealInputRuntimeComposition.h"
 #include "climate/runtime/core/RealInputRuntimeCoordinator.h"
@@ -109,8 +110,6 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
   static runtime::RuntimeTimingMetrics runtime_timing{};
   runtime_timing.loop_active.budget_us = kTickIntervalMs * 1000U;
 
-  runtime::RuntimeInsideSource inside(ble, scd41);
-  runtime::RuntimeNearbySource outside(ble);
   // Shared, typed and validated profile owner. Only the built-in Mint profile is active:
   // no external v2 apply/NVS writes are enabled by this integration milestone.
   // v2 topology is visible to runtime for capability diagnostics only.
@@ -125,12 +124,31 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
            static_cast<unsigned>(ipo_reference.actuator_count),
            static_cast<unsigned>(ipo_reference.link_count));
 
+  // Read-only journal inspection. Even a valid stored v2 profile is NOT
+  // activated on boot: the compiled Mint Rule and OutputSupervisor stay authoritative.
+  static runtime::profile::IpoProfileNvsJournal ipo_journal;
+  static runtime::profile::IpoJournalReadResult ipo_boot_store{};
+  if (nvs_ready) {
+    ipo_boot_store = ipo_journal.load();
+  } else {
+    ipo_boot_store.status = runtime::profile::IpoJournalStatus::StorageUnavailable;
+  }
+  ESP_LOGI(kTag, "ipo_nvs boot_read_status=%u stored=%d backup=%d generation=%lu applied=0",
+           static_cast<unsigned>(ipo_boot_store.status),
+           ipo_boot_store.stored, ipo_boot_store.selected_backup,
+           static_cast<unsigned long>(ipo_boot_store.stored
+                                          ? ipo_boot_store.profile.generation : 0U));
+
   static runtime::RuntimeScheduleProfileOwner profile_owner;
+  runtime::RuntimeInsideSource inside(
+      ble, scd41, &ipo_reference, &profile_owner);
+  runtime::RuntimeNearbySource outside(
+      ble, &ipo_reference, &profile_owner);
   const bool schedule_profile_valid = profile_owner.valid();
   runtime::ConfiguredScheduleConfigSource schedule_config(profile_owner);
   CompositeClimateSnapshotProvider composite(inside, outside, clock, schedule_config);
-  if (!schedule_profile_valid) {
-    ESP_LOGE(kTag, "Runtime schedule profile invalid; locking physical outputs");
+  if (!schedule_profile_valid || !ipo_admission.matches_compiled_board) {
+    ESP_LOGE(kTag, "IPO reference or schedule invalid; locking physical outputs");
     execution_status.transport_available = false;
     execution_status.output_ready = false;
   }
@@ -145,7 +163,8 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
       {runtime_config::kServiceConsoleEnabled, runtime_config::kFirmwareGitSha,
        &execution_status.output_ready, &storage_logger, &runtime_timing,
        &output_owner.automationControl(), &output_owner.manualControl(),
-       &output_owner.maintenanceControl(), &profile_owner},
+       &output_owner.maintenanceControl(), &profile_owner, &ipo_boot_store,
+       &inside, &outside},
       ble, scd41, clock, rf_diagnostics);
   const bool service_console_ready = service_console.begin();
 

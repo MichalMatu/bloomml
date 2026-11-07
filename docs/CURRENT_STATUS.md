@@ -96,3 +96,8 @@ When the M1 Pro / 32 GB machine is available:
 7. re-open physical SCD41/button qualification only when the required hardware/operator interaction is available.
 
 Historical Stage/Phase handoffs, closed audit narratives and benchmark task ids are not active state. Recover them from Git history when evidence is needed instead of expanding this file again.
+
+
+## IPO Runtime Bridge 4 (2026-11-07) — real sensor binding in source, unqualified
+
+Istniejące źródła TP357/SCD41/Xiaomi w realnym adapterze zostały podłączone do `IpoSignalSelector` na **stałym referencyjnym** grafie; `valid/age/finite` decyduje o ważności, brak pomiaru nie zostaje zastąpiony zerem. Stare konstruktory/adaptacja fallback pozostają tylko jako kompatybilność bez grafu. To NIE oznacza dowolnych driverów ani backup SCD41 T/RH. NVS journal ma teraz wyłącznie **read-only boot load** i raport do `status` (nie wykonuje `commit` ani `apply`). Konsola pokazuje również wiek i źródło wybranych pomiarów. Aktywne nastawy nadal Mint z RAM; `profile_v2_applied=0`. **Nie wykonano kompilacji/testów/flashowania.** Zmiana filtrowania ważności wejść może wpływać na Rule; nowy runtime unqualified.
