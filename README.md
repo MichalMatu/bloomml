@@ -4,11 +4,13 @@ Native ESP-IDF controller for an ESP32-S3 growbox with deterministic climate con
 
 ## Current state
 
-The CrowPanel 2.9-inch SSD1680 display and SCD41 runtime path are operational enough for normal development; the SCD41 recovery closeout is no longer the active blocker.
+The CrowPanel 2.9-inch SSD1680 display path has an integrated software baseline. Physical SCD41-with-sensor-present and manual button/visual qualification remain open.
 
-Clay display Phases 1-3 are integrated: the isolated C++20 Clay 0.14 renderer now lays out the four production operator pages and writes directly into the existing single framebuffer owned by the native SSD1680 backend, behind the existing asynchronous display transaction. The next display stage is true dirty-region RAM-window partial transfer, followed later by native buttons/menu mechanics.
+Clay display Phases 1-6 are integrated, including dirty-region partial transfer, native button input and a read-only four-page chooser; outstanding physical qualification is not a software integration failure. The C++20 Clay 0.14 renderer writes into the single SSD1680 backend-owned framebuffer behind the existing asynchronous display transaction.
 
-Canonical branch: `main`.
+Canonical product branch: `main`. The separate `research/simulator-fidelity-kaggle-20261103` branch holds non-production Kaggle/physics/MPC work; it has not been integrated.
+
+**Product direction:** one operator flow for installed sensors/outputs, targets, safe autonomous control and monitoring. Today `tools/panel/` is a local **v4 demo/serial** panel, `web/` is a **v5 research** configurator and geometric 3D preview, while production firmware uses **climate-v6**. These schemas are not interchangeable. See [product direction](docs/PRODUCT_DIRECTION.md), [audit ledger](docs/AUDIT_STATUS.md) and [next-chat handoff](docs/NEXT_CHAT.md).
 
 Read first:
 
@@ -56,7 +58,7 @@ That target builds the actual CrowPanel N8R8 + Stage27 NimBLE + Stage27C + `clim
 
 Target: ESP32-S3 CrowPanel 2.9-inch e-paper, N8R8 profile.
 
-Authorized growbox serial device: `/dev/cu.usbserial-1130`.
+Authorized growbox serial device in current `AGENTS.md`: `/dev/cu.usbserial-120` (verify fresh Local Agent host state before any operation).
 Never use `/dev/cu.usbserial-10`; do not use `/dev/cu.usbserial-1120` without explicit authorization.
 
 Hardware references:

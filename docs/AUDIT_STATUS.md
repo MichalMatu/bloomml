@@ -1,0 +1,40 @@
+# BloomML — repository audit and repair ledger
+
+As of 2026-11-07. Scope: `MichalMatu/bloomml`. Source baseline `main@d5044b712b9f7b56278c31f5770d853836089071`. Separate research branch `research/simulator-fidelity-kaggle-20261103@73de11be282d40d03767275cc6a0891e58ed23f8`.
+
+## Reconstructed state
+
+- Main: stable production climate-v6 with Rule authority, configured-output safety and CrowPanel observer. Recent main history: the last 7 and 30 days contain the Nov 3/Nov 5 manual-only CI/storage commits; larger 90-day history includes display, architecture, ML decisions and performance tooling.
+- Research: 110 commits ahead of the common base and one main commit behind; the research-only branch contains physics R4, Kaggle 2×T4 runs, datasets and MPC. **Do not count this as production firmware.**
+- Local Agent: `agent-control:.agent/status/daemon.json` observed idle with no active task; daemon 4.20.16 on 2026-11-07. No hardware/Mac/Kaggle task launched as part of this audit.
+- Archive: Library snapshot `growbox-source-deb68799899450d248b7e300e2bc20374b42ba8a.tar.zst` checksum verified; it predates current main and is NOT an exact current-main checkout. Several target panel files match current main blob SHAs.
+
+## Confirmed issues and actions
+
+| Finding | Action | Verification |
+| --- | --- | --- |
+| Two separate research/admin interfaces are presented without a single production setup path | `PRODUCT_DIRECTION.md`, revised readmes and roadmap describe explicit ownership; no dangerous schema conversion | Documentation and source-inventory review |
+| v4/v5/v6 contracts are conflated in browser text and `web/README.md` | Corrected browser wording, fallback filename, source-of-truth label; clear research-only v5 disclaimer | Offline web snapshot: typecheck, lint, 104 Vitest tests, production build PASS |
+| Local serial panel accepted cross-origin POST and unbounded Content-Length | Same-origin / fetch-site check, loopback Host check, JSON-only POST, 256 KiB body cap; regression suite | Local 62 focused pytest checks PASS using pyserial import stub |
+| Main README described display Phases 1–3 as current despite 4–6 being integrated | Documentation correction | Source status cross-check |
+| Research MPC gate not satisfied (19/22 hard scenarios FAIL, physical fidelity UNKNOWN) | Preserve research isolation; document promotion criteria and next retest | Existing checkpoint only; **not rerun** |
+| Physical button and SCD41 qualification open | Preserve as open physical gate | **Not run** |
+
+## Evidence boundaries
+
+The panel suite was run in ChatGPT Linux Sandbox from the checksum-verified archived snapshot with exact-current-main panel server and existing relevant tests (matching Git blob hashes); the sandbox lacked pyserial, so an **import-only stub** was used and no real serial transport was tested. The new HTTP security tests used loopback ThreadingHTTPServer.
+
+The web quality gate ran against the archived offline dependency snapshot and patched v5 UI text: `pnpm gate` (typecheck, ESLint, 104 Vitest tests, build) PASS; bundle-size warning for 3D remains. This is not an exact-current-main clean-room build. No current-main ESP-IDF build, end-to-end browser-to-firmware setup, physical sensor/output test or fresh Kaggle MPC benchmark has been demonstrated here.
+
+No claim of a full repository audit or hardware qualification is made. Do not disable gates or silently convert UNKNOWN/BLOCKED into PASS.
+
+## Remaining audit work (bounded, not repeated)
+
+1. Fresh exact-HEAD source/dependency snapshot; full project layout/dependency/security inspection and all relevant host/web/IDF gates.
+2. Local Agent host preflight + authorized SCD41/buttons physical qualification when hardware/operator conditions are available.
+3. Device-profile design with explicit v4/v5/v6 isolation; prototype only after contract and acceptance tests.
+4. On research branch: retest latest hard-stop patch, analyze 19/22 MPC failures, then bounded CPU/GPU/Kaggle work. Do not cherry-pick unqualified MPC to main.
+
+## Checkpoint discipline
+
+This is a scoped repair checkpoint rather than a false "all gates green" declaration. Current source HEAD must be fetched anew before a subsequent change, and final commit SHA is reported by the publisher rather than embedded recursively in this file.

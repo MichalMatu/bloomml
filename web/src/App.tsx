@@ -34,7 +34,7 @@ import {
   updateFeatureValue,
   updateMetadata,
 } from "@/domain/configuration"
-import { schema } from "@/domain/schema"
+import { POT_COUNT, schema } from "@/domain/schema"
 import type { Configuration, JsonValue } from "@/domain/types"
 import { navigate, ROUTES } from "@/lib/routing"
 import { actuatorTitle, featuresForGroup, potTitle, UI_GROUPS } from "@/app/ui-groups"
@@ -50,7 +50,7 @@ function downloadConfiguration(configuration: Configuration): void {
   const profile =
     typeof exported.profile_id === "string" && exported.profile_id.length > 0
       ? exported.profile_id
-      : "growbox-v4"
+      : "growbox-v5"
   anchor.href = url
   anchor.download = `${profile}-${stamp}.json`
   anchor.click()
@@ -121,9 +121,10 @@ export function App() {
         }
         description={
           <>
-            Opisz zainstalowany sprzęt w kontrakcie v4 i pobierz jeden plik JSON.
+            Eksperymentalny szablon sprzętu v5 (JSON), a nie konfiguracja
+            produkcyjnego firmware climate-v6.
             Brak modułu = <code>available/validity = false</code> i zerowe pola
-            capability — sloty doniczek zawsze zostają (4).
+            capability — liczba slotów doniczek wynosi {POT_COUNT}.
           </>
         }
         actions={
@@ -175,7 +176,8 @@ export function App() {
         <CardHeader>
           <CardTitle>Import / eksport</CardTitle>
           <CardDescription>
-            Import przyjmuje wyłącznie dokument przechodzący te same reguły co eksport v4.
+            Import przyjmuje wyłącznie dokument zgodny z eksportem v5.
+            Nie wysyłaj tego JSON bezpośrednio do firmware climate-v6.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -264,7 +266,7 @@ export function App() {
       ))}
 
       <AppPageFooter>
-        SSOT: <code>schemas/environment-controller.json</code> · gate:{" "}
+        Schemat tej strony: <code>web/schema/environment-controller.v5.json</code> · gate:{" "}
         <code>pnpm gate</code>
       </AppPageFooter>
     </AppPage>

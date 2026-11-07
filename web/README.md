@@ -2,7 +2,7 @@
 
 React + TypeScript + Vite frontend for the BloomML project.
 
-Public surfaces:
+Public research/design surfaces (not a deployed operator-admin backend):
 
 - `/` — schema-driven hardware / JSON configurator
 - `/chamber-3d` — interactive React Three Fiber growbox chamber configurator
@@ -20,7 +20,7 @@ The browser uses its own explicit bundled contract snapshot:
 
 That contract is **schema v5: up to 9 pot slots, 228 model features and 25 outputs**.
 
-The repository-root `schemas/environment-controller.json` remains the firmware/controller v4 contract. Migrating firmware from v4 to v5 is separate architecture work and must be deliberate.
+The repository-root `schemas/environment-controller.json` is the older **research v4** contract (128 inputs / 15 outputs), not the current production firmware interface. Production uses `schemas/environment-controller.v6.json` (44 ML inputs / 6 outputs), which is an inference contract, not a complete editable device profile. The v5 browser export is a research hardware template and **cannot be uploaded directly to production climate-v6**. A versioned production profile adapter must be designed and validated first.
 
 `src/domain/schema.ts` validates the browser-side schema version and dimensions at startup so an accidental contract mismatch fails visibly.
 

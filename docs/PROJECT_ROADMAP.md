@@ -1,6 +1,6 @@
 # Growbox ML project roadmap
 
-Updated: 2026-09-28
+Updated: 2026-11-07 (product-direction reconciliation)
 
 ## Direction
 
@@ -10,7 +10,18 @@ Broad architecture cleanup, the SCD41/e-ink recovery closeout, runtime persisten
 
 The deployed product must remain standalone on the ESP32-S3. External foundation models, training services or cloud inference may be used only in offline research/development and must not become runtime dependencies.
 
-## Active work
+## Product integration priorities — operator outcome
+
+The target is not two admin panels and another training loop. See `PRODUCT_DIRECTION.md` for the decided user journey and scope boundaries. Never treat the research v4 panel, browser v5 JSON/3D, and production climate-v6 as interchangeable contracts.
+
+1. **P0, unify requirements and a versioned DeviceProfile contract:** inventory physical inputs/output roles, targets, schedule, limits, NVS/persistence and replay/diagnostic evidence; write validation and migration tests before changing any UI.
+2. **P1, one minimal operator setup-to-result slice:** choose existing UI elements, apply a validated profile through the proper runtime/output owners, reboot/recover, see real measurements/output truth. No second admin backend.
+3. **P2, capture actual own-growbox trajectories** with sensor provenance and applied/observed outputs; calibrate physics and compare deterministic Rule/persistence/PID baselines.
+4. **P3, qualify ML/MPC in shadow:** robust hard-case matrix, held-out trajectories, fault/fallback, bounded ESP32-S3 inference and physical sign-off; only then consider explicit active authority.
+
+Existing product hardware stabilization and research work below are **separate** gates. This audit did not launch a new feature slice.
+
+## Existing subsystem work (independently gated)
 
 ### 1. Clay/menu/button/simulator display stage
 

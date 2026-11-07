@@ -24,6 +24,43 @@ BRIDGE = SerialBridge()
 
 
 PANEL_PERMISSIONS_POLICY = "unload=(self)"
+# Keep even malformed/untrusted HTTP clients from allocating unbounded request bodies.
+MAX_JSON_BODY_BYTES = 256 * 1024
+
+
+def _same_origin_post(handler: BaseHTTPRequestHandler) -> bool:
+    """Reject browser cross-origin writes to the local serial command bridge."""
+    site = handler.headers.get("Sec-Fetch-Site", "").lower()
+    if site and site not in {"none", "same-origin"}:
+        return False
+    host = handler.headers.get("Host", "")
+    try:
+        host_name = urlparse(f"http://{host}").hostname
+    except ValueError:
+        return False
+    # A browser must not reach a loopback-bound panel via a DNS-rebound hostname.
+    listen_host = handler.server.server_address[0]
+    if listen_host in {"127.0.0.1", "::1", "localhost"} and host_name not in {
+        "127.0.0.1", "::1", "localhost"
+    }:
+        return False
+    origin = handler.headers.get("Origin")
+    if origin is None:
+        return True  # Non-browser CLI clients do not supply an Origin header.
+    try:
+        parsed = urlparse(origin)
+    except ValueError:
+        return False
+    return (
+        parsed.scheme == "http"
+        and parsed.netloc == handler.headers.get("Host")
+        and parsed.path in {"", "/"}
+        and not parsed.params
+        and not parsed.query
+        and not parsed.fragment
+        and not parsed.username
+        and not parsed.password
+    )
 
 
 def _panel_headers(handler: BaseHTTPRequestHandler) -> None:
@@ -41,8 +78,13 @@ def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: Any) -
 
 
 def _read_json(handler: BaseHTTPRequestHandler) -> dict[str, Any]:
+    content_type = handler.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+    if content_type != "application/json":
+        raise ValueError("Content-Type must be application/json")
     length = int(handler.headers.get("Content-Length", "0"))
-    if length <= 0:
+    if length < 0 or length > MAX_JSON_BODY_BYTES:
+        raise ValueError("JSON request body exceeds allowed size")
+    if length == 0:
         return {}
     raw = handler.rfile.read(length)
     parsed = json.loads(raw.decode("utf-8"))
@@ -92,6 +134,9 @@ class PanelHandler(BaseHTTPRequestHandler):
             _json_response(self, HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
 
     def do_POST(self) -> None:
+        if not _same_origin_post(self):
+            _json_response(self, HTTPStatus.FORBIDDEN, {"error": "cross_origin_request_rejected"})
+            return
         path = urlparse(self.path).path
         try:
             body = _read_json(self)

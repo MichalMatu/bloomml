@@ -42,6 +42,14 @@ Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for ac
 └── tests/                      # Python/tooling tests
 ```
 
+## UI and research ownership
+
+- `tools/panel/`: local **demo/serial** panel using v4 research scenario commands; not production device-profile UI or a safe remote server. Keep default loopback binding and do not expose it to untrusted networks.
+- `web/`: offline v5 research hardware JSON configurator and optional 3D geometric preview; not the current climate-v6 production setup or physical simulation.
+- `src/climate/display/`: physical e-ink observer/navigation, never control or output authority.
+- `tools/ml/` and branch `research/simulator-fidelity-kaggle-20261103`: research physics/MPC/Kaggle; no production runtime dependency.
+- `docs/PRODUCT_DIRECTION.md`: intended future unified operator workflow and versioned configuration ownership.
+
 ## Runtime boundary map
 
 - `lib/environment_control/src/climate/ClimatePolicy.*`: stateless Rule/arbitration/safety policy;
