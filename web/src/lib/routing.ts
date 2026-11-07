@@ -29,5 +29,6 @@ export function usePathname(): string {
 
 export const ROUTES = {
   configurator: "/",
+  legacyV5: "/lab/v5",
   chamber3d: "/chamber-3d",
 } as const

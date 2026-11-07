@@ -112,7 +112,7 @@ export function App() {
   return (
     <AppPage width="standard">
       <AppPageHeader
-        title="Konfigurator sprzętu growbox"
+        title="Laboratorium sprzętu v5 · pełny schemat"
         badges={
           <>
             <Badge variant="secondary">schema v{schema.schema_version}</Badge>
@@ -128,9 +128,14 @@ export function App() {
           </>
         }
         actions={
-          <Button type="button" variant="outline" onClick={() => navigate(ROUTES.chamber3d)}>
-            Podgląd 3D (osobna strona)
-          </Button>
+          <AppActionRow>
+            <Button type="button" onClick={() => navigate(ROUTES.configurator)}>
+              Konfiguracja growboxa
+            </Button>
+            <Button type="button" variant="outline" onClick={() => navigate(ROUTES.chamber3d)}>
+              Podgląd 3D
+            </Button>
+          </AppActionRow>
         }
       />
 

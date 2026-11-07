@@ -1,0 +1,57 @@
+{
+  "kind": "bloomml.device-profile",
+  "schema_version": 1,
+  "deployment_status": "draft_not_applied",
+  "profile_id": "mint-crowpanel",
+  "hardware": {
+    "board": "crowpanel-esp32s3-2_9-n8r8",
+    "sensors": {
+      "tp357_inside": {
+        "installed": true
+      },
+      "scd41_inside": {
+        "installed": true
+      },
+      "xiaomi_nearby": {
+        "installed": true
+      },
+      "ds3231_clock": {
+        "installed": true
+      }
+    },
+    "outputs": {
+      "exhaust_fan": {
+        "installed": true,
+        "endpoint": "rf433_socket_1"
+      },
+      "scheduled_light": {
+        "installed": true,
+        "endpoint": "rf433_socket_2"
+      },
+      "humidifier": {
+        "installed": true,
+        "endpoint": "rf433_socket_3"
+      }
+    }
+  },
+  "control": {
+    "humidity_mode": "RH",
+    "sensor_timeout_ms": 30000,
+    "schedule": {
+      "day_start_hour": 6,
+      "night_start_hour": 22
+    },
+    "targets": {
+      "day": {
+        "air_temperature_c": 24.5,
+        "relative_humidity_pct": 58,
+        "air_vpd_kpa": 1.2
+      },
+      "night": {
+        "air_temperature_c": 21.5,
+        "relative_humidity_pct": 65,
+        "air_vpd_kpa": 0.9
+      }
+    }
+  }
+}

@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MichalMatu/bloomml/blob/main/schemas/device-profile.v1.schema.json",
+  "title": "BloomML CrowPanel operator device profile — draft contract",
+  "description": "Safe export/import draft only; not an ESP32-S3 executable config or a model feature vector. Control/output application requires a separately qualified firmware adapter.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "schema_version",
+    "deployment_status",
+    "profile_id",
+    "hardware",
+    "control"
+  ],
+  "properties": {
+    "kind": {
+      "const": "bloomml.device-profile"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "deployment_status": {
+      "const": "draft_not_applied"
+    },
+    "profile_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,39}$"
+    },
+    "hardware": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "board",
+        "sensors",
+        "outputs"
+      ],
+      "properties": {
+        "board": {
+          "const": "crowpanel-esp32s3-2_9-n8r8"
+        },
+        "sensors": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tp357_inside",
+            "scd41_inside",
+            "xiaomi_nearby",
+            "ds3231_clock"
+          ],
+          "properties": {
+            "tp357_inside": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "installed"
+              ],
+              "properties": {
+                "installed": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "scd41_inside": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "installed"
+              ],
+              "properties": {
+                "installed": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "xiaomi_nearby": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "installed"
+              ],
+              "properties": {
+                "installed": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "ds3231_clock": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "installed"
+              ],
+              "properties": {
+                "installed": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "outputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "exhaust_fan",
+            "scheduled_light",
+            "humidifier"
+          ],
+          "properties": {
+            "exhaust_fan": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "installed",
+                "endpoint"
+              ],
+              "properties": {
+                "installed": {
+                  "type": "boolean"
+                },
+                "endpoint": {
+                  "const": "rf433_socket_1"
+                }
+              }
+            },
+            "scheduled_light": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "installed",
+                "endpoint"
+              ],
+              "properties": {
+                "installed": {
+                  "type": "boolean"
+                },
+                "endpoint": {
+                  "const": "rf433_socket_2"
+                }
+              }
+            },
+            "humidifier": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "installed",
+                "endpoint"
+              ],
+              "properties": {
+                "installed": {
+                  "type": "boolean"
+                },
+                "endpoint": {
+                  "const": "rf433_socket_3"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "humidity_mode",
+        "sensor_timeout_ms",
+        "schedule",
+        "targets"
+      ],
+      "properties": {
+        "humidity_mode": {
+          "enum": [
+            "RH",
+            "VPD"
+          ]
+        },
+        "sensor_timeout_ms": {
+          "type": "integer",
+          "minimum": 5000,
+          "maximum": 300000
+        },
+        "schedule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "day_start_hour",
+            "night_start_hour"
+          ],
+          "properties": {
+            "day_start_hour": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 23
+            },
+            "night_start_hour": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 23
+            }
+          }
+        },
+        "targets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "day",
+            "night"
+          ],
+          "properties": {
+            "day": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "air_temperature_c",
+                "relative_humidity_pct",
+                "air_vpd_kpa"
+              ],
+              "properties": {
+                "air_temperature_c": {
+                  "type": "number",
+                  "minimum": 10,
+                  "maximum": 40
+                },
+                "relative_humidity_pct": {
+                  "type": "number",
+                  "minimum": 20,
+                  "maximum": 90
+                },
+                "air_vpd_kpa": {
+                  "type": "number",
+                  "minimum": 0.2,
+                  "maximum": 3.5
+                }
+              }
+            },
+            "night": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "air_temperature_c",
+                "relative_humidity_pct",
+                "air_vpd_kpa"
+              ],
+              "properties": {
+                "air_temperature_c": {
+                  "type": "number",
+                  "minimum": 10,
+                  "maximum": 40
+                },
+                "relative_humidity_pct": {
+                  "type": "number",
+                  "minimum": 20,
+                  "maximum": 90
+                },
+                "air_vpd_kpa": {
+                  "type": "number",
+                  "minimum": 0.2,
+                  "maximum": 3.5
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

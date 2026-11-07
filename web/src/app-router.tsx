@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react"
 
 import { App } from "@/App"
+import { SetupPage } from "@/pages/setup-page"
 import { AppPageLoading } from "@/components/app-chrome"
 import { ROUTES, usePathname } from "@/lib/routing"
 
@@ -10,7 +11,7 @@ const Chamber3dPage = lazy(async () => {
   return { default: module.Chamber3dPage }
 })
 
-/** Thin shell: configurator at `/`, R3F playground at `/chamber-3d`. */
+/** Operator setup at `/`, original research v5 at `/lab/v5`, optional R3F preview. */
 export function AppRouter() {
   const pathname = usePathname()
 
@@ -22,5 +23,7 @@ export function AppRouter() {
     )
   }
 
-  return <App />
+  if (pathname === ROUTES.legacyV5) return <App />
+
+  return <SetupPage />
 }
