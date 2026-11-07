@@ -1,27 +1,20 @@
-# BloomML — continuation after IPO Foundation v2 (2026-11-07)
+# BloomML — IPO Runtime Bridge continuation (2026-11-07)
 
-## Current baseline and work policy
+## Repo / execution
+One development branch: `main`; `agent-control` Local Agent, `gh-pages` publishing. No Codex, Work, GitHub Actions. Read `AGENTS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/ARCHITECTURE.md`, `docs/CURRENT_STATUS.md` and checkpoint `docs/checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md`; fetch current HEAD, never assume an old SHA.
 
-- Source: `main` only. `agent-control` for Mac Local Agent; `gh-pages` publishing. Never Codex, Work, GitHub Actions.
-- Read `AGENTS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/CURRENT_STATUS.md`, `docs/ARCHITECTURE.md` and this file; fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any task.
-- Operator explicitly requested avoiding repeat tests and heavy builds. **No new test/build qualification for the IPO v2 source has been performed**; do not call it verified.
+## Implemented, do not repeat
+- `DeviceProfile v2` open bounded graph (devices, semantic input roles/fallback priorities, processes/effects, outputs, links) in `schemas/device-profile.v2.schema.json`, `web/src/domain/ipo-*.ts`, browser `/`, legacy `/lab/profile-v1` and `/lab/v5`.
+- New firmware-facing shared **in-RAM** `RuntimeScheduleProfileOwner` with strictly validated Mint-compatible day/night targets; real Rule snapshot and lamp schedule now read the same owner through `RuntimeAdapters` and `RealInputRuntimeCoordinator`; existing Mint factory maintained.
+- `status` console exposes profile generation and day/night values with explicit `persisted=0`, `profile_v2_applied=0`.
+- `lib/ipo_profile/src/IpoBoardAdmission.h`: reference CrowPanel graph, current physical driver/mapping admission, **apply_authorized always false**. `IpoSignalSelector.h`: semantic priority/freshness selector, not yet connected to real sensors. Firmware startup logs read-only admission. OutputSupervisor/Safety/actual output policy untouched.
+- Operator requested **no repeated tests or heavy builds**; none run. New integration is **UNVERIFIED** (no MCU deployment).
 
-## What was closed
+## Next autonomous sprint (bounded and closable)
+1. Implement strict, bounded v2 JSON → typed graph/profile decoding, reject unknown device drivers, locators, invalid source/channel and unsafe mappings at the firmware seam. Do not allow arbitrary code/RF.
+2. Full-profile NVS staging/commit with integrity/version, known-good and rollback, separate from existing output policy/command persistence. Do not expose active physical `apply` until validators and recovery are proven.
+3. Use signal-selector to safely route timestamped sensor readings (TP357 primary, SCD41 CO₂; T/RH backup requires separate evidence). Do not claim all proposed drivers work.
+4. Connect any approved process output intent only through `OutputSupervisor`, and add exact-state readback, transport attempt vs independently observed truth.
+5. Provide browser profile `preview → validate → apply → readback` only when a real local device API exists. E-ink observer only, Shadow passive.
 
-- `schemas/device-profile.v2.schema.json` + `profiles/crowpanel-ipo.v2.json`: open bounded IPO graph profile, not fixed 3-socket product limitation.
-- `web/src/domain/ipo-catalog.ts`, `ipo-profile.ts`: driver capabilities, semantic signal sources/fallback order, physical output registry, process→effect→output bindings, draft validation, v1 migration, symbolic MAX intents.
-- Browser `/` is the new single main v2 editor; `/lab/profile-v1` preserves v1, `/lab/v5` preserves research v5; `/chamber-3d` independent geometry.
-- `lib/ipo_profile/src/IpoGraph.h`: unlinked C++17 bounded DTO, structural graph validator, symbolic arbiter for future firmware integration.
-- Canonical matrix/limitations: `docs/CONFIGURATION_FLOW.md`. Checkpoint: `docs/checkpoints/2026-11-07-bloomml-ipo-foundation-v2.md`.
-
-## Next sprint: connect v2 to real runtime WITHOUT rewriting existing safety
-
-1. Decide supported physical driver set for this CrowPanel and parse v2 into typed bounded DTO, fail closed on unknown/unsupported driver/locator. New drivers require explicit adapter, not generic arbitrary code.
-2. Attach sensor roles with freshness/valid/fallback, preserving TP357 current role and acknowledging SCD41 currently CO₂-only.
-3. Apply a coherent, validated day/night target/schedule snapshot to both climate Rule and lamp schedule.
-4. Map compatible logical output intents through existing `OutputSupervisor` and binary policies only, preserving thermal safety and transport attempt-vs-physical observed distinction. ML remains shadow.
-5. Implement dedicated profile NVS version/CRC/hash, active/pending/known-good, atomic commit/readback/recovery and revert to Mint on invalid state. Output state persistence remains separate.
-6. Expose actual status + active profile hash through one safe local API and existing panel/e-ink observer, not a second control owner.
-7. Separate explicit targeted qualification when requested; don't re-run full historical batteries by default.
-
-The v2 browser export is **draft_not_applied**; no real device API/apply/readback exists yet, so do not claim the board runs the v2 graph. MPC research 19/22 prior hard-case FAIL and no empirical growbox calibration remain open; no active hardware authority.
+No v2 profile has been saved to NVS or applied to real board. Do not claim active v2 or successful build/tests. Research MPC 19/22 old hard-case FAIL, no empirical growbox calibration remain open.

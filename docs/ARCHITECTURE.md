@@ -177,3 +177,9 @@ Legacy controller/demo code remains available only through explicit `legacy` app
 - hardware qualification only when a fresh physical executable claim is required.
 
 Simulator/host/build PASS is software evidence, not physical acknowledgement.
+
+## IPO Runtime Bridge 1 — integration without output ownership transfer (2026-11-07)
+
+Production `RuntimeScheduleProfileOwner` is an in-memory validated snapshot holding the built-in Mint values. `ConfiguredScheduleConfigSource` for Rule and `buildScheduleIntent(..., profile)` for lamp schedule consume the **same configuration owner**, not independent hard-coded constants. The owner does not parse browser JSON or load NVS yet. A read-only `status` line reports generation/default Mint and marks `persisted=0` and `profile_v2_applied=0`.
+
+`lib/ipo_profile/src/IpoBoardAdmission.h` is a read-only CrowPanel driver and fixed RF433 reference admission layer; the firmware bootstrap logs the admission result with `apply_authorized=false`. `IpoSignalSelector.h` is a bounded freshness/priority helper, not a runtime sensor authority yet. Physical output path still belongs solely to `OutputSupervisor`, existing safety and fixed RF433 endpoints. The code has **not been compiled or physically qualified** in this sprint.

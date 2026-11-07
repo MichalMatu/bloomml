@@ -1,4 +1,5 @@
 #include "climate/ClimateV6RealInputRuntime.h"
+#include "IpoBoardAdmission.h"
 
 #include "climate/application/ClimateApplication.h"
 #include "climate/application/ClimateCompositeInput.h"
@@ -112,6 +113,18 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
   runtime::RuntimeNearbySource outside(ble);
   // Shared, typed and validated profile owner. Only the built-in Mint profile is active:
   // no external v2 apply/NVS writes are enabled by this integration milestone.
+  // v2 topology is visible to runtime for capability diagnostics only.
+  // It cannot actuate or replace the fixed OutputSupervisor bindings.
+  static const ::growbox::ipo::Graph ipo_reference =
+      ::growbox::ipo::makeCrowPanelMintReferenceGraph();
+  const auto ipo_admission = ::growbox::ipo::assessCrowPanelReference(ipo_reference);
+  ESP_LOGI(kTag, "ipo_graph board_reference=%d admission=%u can_apply=%d devices=%u inputs=%u outputs=%u links=%u",
+           ipo_admission.matches_compiled_board, static_cast<unsigned>(ipo_admission.status),
+           ipo_admission.apply_authorized, static_cast<unsigned>(ipo_reference.device_count),
+           static_cast<unsigned>(ipo_reference.signal_count),
+           static_cast<unsigned>(ipo_reference.actuator_count),
+           static_cast<unsigned>(ipo_reference.link_count));
+
   static runtime::RuntimeScheduleProfileOwner profile_owner;
   const bool schedule_profile_valid = profile_owner.valid();
   runtime::ConfiguredScheduleConfigSource schedule_config(profile_owner);

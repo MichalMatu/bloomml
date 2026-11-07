@@ -19,6 +19,10 @@ Status: **production feature/performance work remains paused pending the new-hos
 
 The current architecture split remains intentional: `ClimatePolicy.*` owns stateless Rule generation/arbitration/safety policy, while `ClimateRuntimeController.*` owns stateful trend/effective-action estimation, ML orchestration and execution reconciliation.
 
+## IPO Runtime Bridge 1 (2026-11-07) — code present, unqualified
+
+W real-input firmware utworzono **jeden, typowany, walidowany właściciel profilu RAM** do celów Rule oraz harmonogramu lampy, z domyślnym bez zmian Mint. Do konsoli `status` dodano rozpoznawalny readback tego snapshotu (NVS=0/v2 applied=0). `lib/ipo_profile` ma teraz przenośny selektor świeżych sygnałów i rygorystyczne dopuszczenie referencyjnego grafu CrowPanel; bootstrap raportuje tylko informacyjną zgodność (apply=0). Nie ma jeszcze v2 JSON parsera na ESP, NVS profilu, włączonego fallbacku, dynamicznych wyjść ani live API. **Nie uruchamiano kompilacji/testów ani nie flashowano urządzenia.** Status tych zmian: UNVERIFIED. Patrz `CONFIGURATION_FLOW.md` i `checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md`.
+
 ## IPO Foundation v2 source sprint — 2026-11-07
 
 The single browser homepage `/` now edits draft IPO v2: variable device instances, driver catalog, typed signals with primary/fallback, processes, logical outputs and many-to-one effect links. C++17 portable `lib/ipo_profile/src/IpoGraph.h` adds a bounded *unlinked* graph and symbolic mixer. Previous v1 is at `/lab/profile-v1`; research v5 stays `/lab/v5`. See `CONFIGURATION_FLOW.md`. Actual Rule/Safety/OutputSupervisor/RF433/NVS/e-ink unchanged: **no v2 firmware apply, dynamic I/O or live status**. Operator requested no tests or heavy builds; new code remains UNVERIFIED.

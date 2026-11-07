@@ -163,6 +163,7 @@ target_include_directories(${COMPONENT_LIB} PRIVATE "${GROWBOX_GENERATED_INCLUDE
 target_include_directories(
   ${COMPONENT_LIB}
   PRIVATE "${GROWBOX_PROJECT_ROOT}/lib/growbox_display_model/include"
+          "${GROWBOX_PROJECT_ROOT}/lib/ipo_profile/src"
 )
 
 # Keep only switches that are intentionally consumed by the preprocessor. Runtime values are

@@ -76,3 +76,11 @@ Limity szkicu: 24 urządzenia, 16 ról sygnałów, 24 wyjścia, 16 procesów, 48
 ## Uczciwe bramki
 
 Zmieniono tylko izolowane DTO/katalog/walidację i przeglądarkowy profil. **Nie zmieniono fizycznego Rule, Safety, OutputSupervisor, NVS, RF433 ani e-ink.** Nie wykonano testów ani ciężkich kompilacji zgodnie z życzeniem operatora. Nowy kod ma status niezweryfikowanego szkicu integracyjnego.
+
+## IPO Runtime Bridge 1 — wpięcie w C++ firmware (2026-11-07)
+
+Prócz samego szkicu v2 działa teraz w kodzie **wspólny typowany właściciel profilu RAM** `RuntimeScheduleProfileOwner`, odczytywany zarówno przez `ConfiguredScheduleConfigSource` (Rule), jak i `ScheduleIntentAdapter` (harmonogram lampy). Nadal stosuje tylko wbudowany Mint; brak wejścia z JSON, NVS, fizycznego apply. Stare entrypointy Mint zachowano. Nie udawać, że dwa czytania zegara w jednym cyklu są gwarantowanie jednym identycznym pomiarem czasu — wspólna jest konfiguracja, a dedykowany clock snapshot pozostaje dalszą integracją.
+
+Nowe `lib/ipo_profile/src/IpoBoardAdmission.h` ma fabrykę **referencyjnego** grafu aktualnego CrowPanel oraz ścisłą bramkę obecnych driverów/wejść i RF433. `IpoSignalSelector.h` implementuje niezależny wybór świeżego źródła (valid/age/priority), **bez** podłączenia go do produkcyjnych sensorów. Real firmware otrzymał tylko **diagnostyczny** odczyt zgodności grafu przy boot (`can_apply=0`). Komenda konsoli `status` pokazuje snapshot w RAM: generację i bieżące cele/harmonogram, jawnie `persisted=0`, `profile_v2_applied=0`. `OutputSupervisor` i fizyczne RF433 pozostają niezmienione.
+
+**Nie uruchamiano testów ani kompilacji** zgodnie z wyraźną dyspozycją. Kod po tych zmianach jest UNVERIFIED; na urządzeniu jeszcze nie wdrożony. Szczegóły i kolejność następnych etapów: [checkpoint](checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md), [handoff](NEXT_CHAT.md).
