@@ -21,7 +21,7 @@ The machine does the rest **only within proven capabilities**. A transparent det
 
 | Surface | Intended audience | Current implementation | Direction |
 | --- | --- | --- | --- |
-| Production setup + status | Growbox operator | **One offline v1 setup draft** on browser `/`; firmware still fixed Mint and e-ink observer-only | Add safe profile apply/persistence/readback and live status through existing runtime owners |
+| Production setup + status | Growbox operator | **One offline IPO v2 setup draft** on browser `/`; firmware still fixed Mint and e-ink observer-only | Add safe profile apply/persistence/readback and live status through existing runtime owners |
 | Local hardware/demo service | Developer/technician | `tools/panel/`, serial protocol with **research v4** scenario controls | Developer diagnostics only; never represent as the production configuration backend |
 | Research v5 + 3D | Research/design | `web/` now keeps v5 on `/lab/v5`; `/chamber-3d` is optional independent geometry | Keep as clearly marked research/design surfaces, not a physical simulation or device backend |
 | Physics / ML / MPC lab | Research/development | `tools/ml/`, simulator, replay, Kaggle and runtime-isolated MPC | Offline qualification, training, failure analysis; no runtime dependency |
@@ -33,7 +33,7 @@ The machine does the rest **only within proven capabilities**. A transparent det
 - Browser research v5: `web/schema/environment-controller.v5.json`, 228 features / 25 outputs.
 - Production climate-v6: `schemas/environment-controller.v6.json`, 44 ML features / 6 climate outputs. This is an inference contract, **not yet a complete operator device-profile API**.
 
-The v1 **draft** of the missing product piece is now a small, versioned, validated **operator device profile** (real sensor identity/role, output role/transport, targets, schedules, physical limits). It must be mapped through existing application/runtime/output owners, not implemented by sharing experimental schemas or exposing raw RF. The offline draft UI exists; the firmware adapter and fresh tests/build qualification remain open. See [CONFIGURATION_FLOW.md](CONFIGURATION_FLOW.md) before any additional implementation.
+The v2 **draft** of the operator setup is a bounded, versioned **device/signal/process/output graph** (real sensor identity/role, output role/transport, targets, schedules, physical limits). It must be mapped through existing application/runtime/output owners, not implemented by sharing experimental schemas or exposing raw RF. The offline v2 draft UI, a strict firmware parser, read-only IPO NVS boot inspection, and a fixed-board signal selector exist in source; safe active apply, new driver qualification and device tests/build remain open. See [CONFIGURATION_FLOW.md](CONFIGURATION_FLOW.md) before any additional implementation.
 
 ## Runtime authority and safety
 

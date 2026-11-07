@@ -1,39 +1,27 @@
-# BloomML — IPO Runtime Bridge continuation (2026-11-07)
+# BloomML — handoff po IPO Runtime Bridge 4 (2026-11-07)
 
-## Repo / execution
-One development branch: `main`; `agent-control` Local Agent, `gh-pages` publishing. No Codex, Work, GitHub Actions. Read `AGENTS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/ARCHITECTURE.md`, `docs/CURRENT_STATUS.md` and checkpoint `docs/checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md`; fetch current HEAD, never assume an old SHA.
+## Wejście
 
-## Implemented, do not repeat
-- `DeviceProfile v2` open bounded graph (devices, semantic input roles/fallback priorities, processes/effects, outputs, links) in `schemas/device-profile.v2.schema.json`, `web/src/domain/ipo-*.ts`, browser `/`, legacy `/lab/profile-v1` and `/lab/v5`.
-- New firmware-facing shared **in-RAM** `RuntimeScheduleProfileOwner` with strictly validated Mint-compatible day/night targets; real Rule snapshot and lamp schedule now read the same owner through `RuntimeAdapters` and `RealInputRuntimeCoordinator`; existing Mint factory maintained.
-- `status` console exposes profile generation and day/night values with explicit `persisted=0`, `profile_v2_applied=0`.
-- `lib/ipo_profile/src/IpoBoardAdmission.h`: reference CrowPanel graph, current physical driver/mapping admission, **apply_authorized always false**. `IpoSignalSelector.h`: semantic priority/freshness selector, not yet connected to real sensors. Firmware startup logs read-only admission.
-- `src/climate/runtime/profile/IpoProfileWire.h` + `IpoProfileNvsJournal.h/.cpp`: **whole typed v2 graph + targets** wire codec (length/magic/version/CRC, cap admission), separate dual-slot NVS journal with readback/backup and generation checks. Source is included in real-input CMake, but **not invoked at runtime**; no profile NVS write/read or apply occurs. OutputSupervisor/Safety/output policy untouched.
-- Operator requested **no repeated tests or heavy builds**; none run. New integration is **UNVERIFIED** (no MCU deployment).
+- Repo `MichalMatu/bloomml`, źródło tylko `main`, `agent-control` dla Local Agent, `gh-pages` publikacyjne.
+- Startuj od **świeżego HEAD**, nie utrwalaj SHA ze starej rozmowy. Sprawdź stan `.agent/status/daemon.json` przed nowym zadaniem Local Agent. Nie używaj Codex, Work ani GitHub Actions.
+- Czytaj `AGENTS.md`, `docs/README.md`, `docs/CURRENT_STATUS.md`, `docs/CONFIGURATION_FLOW.md` i `docs/ARCHITECTURE.md` przed zmianami.
+- Operator wprost prosił **bez ponawiania testów i ciężkich kompilacji**; w Bridge 1–4 żadnych nie wykonano. Nowy kod pozostaje **UNVERIFIED**. Przed fizycznym wgraniem nowego firmware konieczna nowa celowana kwalifikacja dotkniętej ścieżki — nie historycznych badań ML.
 
-## Next autonomous sprint (bounded and closable)
-1. Implement strict, bounded v2 JSON → typed graph/profile decoding, reject unknown device drivers, locators, invalid source/channel and unsafe mappings at the firmware seam. Do not allow arbitrary code/RF.
-2. **Do not redo the now-authored full-profile binary codec/two-slot NVS journal.** Add its focused corruption/torn-write/generation/back-up qualification when explicitly permitted, then a privileged single-task coordinator: decode/validate → stage NVS → atomic apply → readback/rollback. The journal source is currently dormant, without boot invocation or browser API.
-3. Use signal-selector to safely route timestamped sensor readings (TP357 primary, SCD41 CO₂; T/RH backup requires separate evidence). Do not claim all proposed drivers work.
-4. Connect any approved process output intent only through `OutputSupervisor`, and add exact-state readback, transport attempt vs independently observed truth.
-5. Provide browser profile `preview → validate → apply → readback` only when a real local device API exists. E-ink observer only, Shadow passive.
+## Zamknięte źródłowo — nie powtarzać
 
-No v2 profile has been saved to NVS or applied to real board. Do not claim active v2 or successful build/tests. Research MPC 19/22 old hard-case FAIL, no empirical growbox calibration remain open.
+1. Jeden offline edytor `DeviceProfile v2` na `/` wraz z driver catalog, signal registry, process/effect/output links, migracja z v1. Nowszy v2 szkic **nie jest aktywną konfiguracją**; v1 zachowany `/lab/profile-v1`, v5 research `/lab/v5`.
+2. Bounded `lib/ipo_profile`: C++ `IpoGraph`, `IpoBoardAdmission` wymagający pełnych pięciu referencyjnych połączeń Mint, `IpoSignalSelector` ze świeżością i priorytetami. Admission = referencja, **apply_authorized=false**.
+3. Wspólny `RuntimeScheduleProfileOwner` dla Rule i harmonogramu lampy, wbudowany Mint pozostaje aktywny.
+4. Bounded typowany firmware JSON parser `IpoProfileJsonDecode`, full-profile `IpoProfileWire` z magic/version/CRC, osobna `IpoProfileNvsJournal` dwuslotowa, dormant `IpoProfileStagingCoordinator` stored-only. Nie wywoływać NVS `commit` jako substytutu aktywnego apply.
+5. W **real-input** nowy selektor jest podpięty do TP357 T/RH, SCD41 CO₂, Xiaomi T/RH przy zachowaniu osobnej lamp Safety TP357. Zapisany profil NVS jest na boot wyłącznie odczytywany i **nigdy automatycznie stosowany**.
+6. `Stage28ServiceConsole status` rozróżnia `ipo_store` (zapis), `ipo_profile` (aktywny Mint/schedule_hash) i `ipo_input` (valid, source id, age, fallback poprzedniego cyklu). Żadne z nich nie potwierdza fizycznego stanu RF433.
+7. Dokumentacja prawdy: `docs/CONFIGURATION_FLOW.md`; checkpoint `docs/checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md`.
 
-## Source-only update since Bridge 2 (same 2026-11-07 sprint)
+## Jeden następny sprint
 
-- `IpoProfileJsonDecode.h/.cpp`: strict bounded 8192-byte v2 JSON → typed graph+target snapshot, normalized numeric runtime IDs, driver/physical CrowPanel admission, no NVS or actuation side effect.
-- `IpoProfileStagingCoordinator.h`: isolated `prepare → persisted-only commit → exact readback`, not instantiated anywhere in runtime.
-- Serial `status` adds `schedule_hash` for *current Mint target/schedule values*, NOT a hash of an active v2 device graph.
-- Source registration in `src/CMakeLists.txt`; there is still **NO active apply transport, no full-profile load on boot, no NVS profile writes, no new physical output authority**.
-- Typed durable binary excludes original UI labels/names; do not promise lossless JSON round-trip from the MCU yet.
-- Continue with isolated, targeted contract/power-failure qualification before any physical profile activation. Do not rerun older green suites or heavy builds without specific need.
+- Przed aktywacją fizyczną wykonać **skoncentrowaną** kwalifikację nowych ścieżek: valid/stale TP357 i SCD41, Rule+lamp Safety, kodowanie i power-loss NVS, rozróżnienie stored/active, ponowny start. Nie powtarzać starych historycznych testów; gdy operator nadal wyklucza testy, pozostać przy kodzie dormant/read-only.
+- Następnie przy jednym właścicielu i po spełnieniu bramek: `preview → validate → stage NVS → safe apply → readback active hash → rollback`, bez drugiego silnika wyjść. Tylko jawnie wspierane endpointy i adaptery; `OutputSupervisor` i bezpieczeństwo nadrzędne.
+- Dopiero później sieciowe/lokalne API do już istniejącego operator UI i e-ink observer; brak fałszywego `applied` na podstawie zapisanych bajtów.
+- ML pozostaje Shadow, symulator/Kaggle offline, MPC research nie ma prawa aktywacji.
 
-
-## Bridge 4 — completed source changes, do not repeat (2026-11-07)
-
-- Real-input `RuntimeInsideSource` / `RuntimeNearbySource` now use **`IpoSignalSelector` with the compiled-in reference graph** when called from real firmware: TP357 inside T/RH (device 1), SCD41 CO₂ (2), Xiaomi outside T/RH (3). Reads must be finite, valid and younger than the active Mint 30-second timeout; missing/stale data stays invalid, never implicitly zero. Legacy no-graph constructors remain for isolated legacy callers. Crucially: **no SCD41 T/RH fallback yet**; separate TP357 lamp-safety source unchanged.
-- `IpoProfileNvsJournal::load()` is now called at real-input boot **read-only** when NVS is available. Stored generation, backup/corrupt/notfound status are logged and surfaced in existing service-console `status`; a stored profile is NEVER installed into Rule/schedule/output. Active source remains built-in Mint and `profile_v2_applied=0`.
-- Console `status` additionally reports last selected sensor source ID, age, validity, fallback marker for inside/outside roles. These are prior-cycle data, not physical RF acknowledgment.
-- No tests/builds/flashing by operator instruction; **all new runtime behavior unverified**. Because source validity filtering can change Rule decisions, hardware activation requires a focused verification gate before flashing. Do not claim fully operational flexible v2 drivers, browser API or profile apply.
-- **Next focus**: narrowly qualify sensor selection, NVS boot read and binary journal/codec; then a single-owner guarded `apply` transaction and active profile provenance, after that supervised dynamic output role/driver adapters and web status. Don't repeat the completed offline IPO mapper/parser/UI or previous research gates.
+**Konkretny stan:** nowy firmware zmienia selekcję/odrzucanie starych pomiarów, ale nie został skompilowany ani wgrany. Nie deklarować PASS/uruchomienia.

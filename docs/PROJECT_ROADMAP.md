@@ -10,6 +10,12 @@ Broad architecture cleanup, the SCD41/e-ink recovery closeout, runtime persisten
 
 The deployed product must remain standalone on the ESP32-S3. External foundation models, training services or cloud inference may be used only in offline research/development and must not become runtime dependencies.
 
+## Current priority — IPO Runtime Bridge 4 (2026-11-07)
+
+**Source code committed / EXECUTION UNVERIFIED.** Current real inputs TP357/SCD41/Xiaomi use the IPO reference selector with validity/age checks; read-only boot inspection of the isolated profile NVS store and console source-provenance are present. Mint Rule and OutputSupervisor retain physical authority, no dynamic v2 apply, no new actuator role. The next work is *focused qualification* of changed inputs and NVS before any active apply, then one atomic single-owner apply/readback/rollback path, then live operator status. No repeat of completed research suites or another UI. See `CURRENT_STATUS.md` and `NEXT_CHAT.md`.
+
+## Archived source milestones (not active tasks)
+
 ## IPO Runtime Bridge 3 — strict v2 typed admission and dormant staging source (2026-11-07)
 
 Parser JSON→bounded C++ graph/targets with CrowPanel admission + a separate non-running prepare/persist-only/readback coordinator are implemented in source. `status` now includes hash of the current in-RAM schedule. This is **NOT active v2 deployment**, no NVS profile is stored by runtime and no new outputs/fallbacks are enabled. Next: targeted validation of changed source, privileged single-owner activation, safe rollback, source routing, verified physical output mapping and live panel. Do not regress into extra UI panels.
@@ -137,8 +143,3 @@ Rank work by practical growbox value, safety risk, ownership clarity, ESP32-S3 r
 - the former research branch's complete ancestry is merged; its code remains unqualified for direct actuation.
 
 For each new task start from `docs/README.md`, `CURRENT_STATUS.md` and the relevant subsystem contract.
-
-
-## IPO Runtime Bridge 4 (2026-11-07) — source integration closed, physical acceptance open
-
-Zrealizowano w kodzie wybór rzeczywistych sygnałów TP357/SCD41/Xiaomi przez referencyjny IPO selector, diagnostykę source/age/valid oraz **read-only** odczyt IPO NVS na boot. Zapisany profil nie jest aktywowany. Kolejny blok: celowana kwalifikacja wpływu valid/age na Rule + test przerwanego zapisu/rollback journal, następnie kontrolowany jednozadaniowy adapter apply dla wspieranych wejść i wyjść. Bez dynamicznych komend do RF433 z samego JSON. Nowy kod nie został skompilowany, testowany ani wdrożony.

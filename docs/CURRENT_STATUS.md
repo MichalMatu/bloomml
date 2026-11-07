@@ -1,51 +1,33 @@
-# Current controller status
+# BloomML — bieżący stan kontrolera
 
-Updated: **2026-11-07**
-Repository: `MichalMatu/bloomml`
-Canonical source branch: `main`
+Data: **2026-11-07** · Repo: `MichalMatu/bloomml` · branch: `main`.
 
-Status: **production feature/performance work remains paused pending the new-host baseline and hardware qualification**. A bounded 2026-11-07 product-direction/documentation and local demo-panel request-security repair was completed; it did not enable ML or change firmware control.
+**Status:** IPO v2 runtime bridge **SOURCE IMPLEMENTED / UNVERIFIED**. Poprzednie wyniki sprzętowe dotyczą wcześniejszego kodu i nie kwalifikują zmian z 7 listopada. Kod nie został skompilowany, przetestowany ani wgrany na ESP32 w tym sprincie — zgodnie z dyspozycją operatora. **Nie twierdzić, że nowy firmware jest już wdrożony.**
 
-## Current product state
+## Jaka jest prawda produkcyjna
 
-- Deterministic Rule control is production authority.
-- ML remains shadow/research-only and must not become control authority by convenience.
-- `OutputSupervisor` remains the normal owner of configured physical outputs.
-- Unavailable transport must not be reported as successful execution.
-- E-ink/UI remains observer-side and must not mutate control, output or safety state.
-- Slow display, filesystem and network work stays outside the 1-second control hot path.
-- Lamp thermal trip remains `>= 28 C`.
-- Lamp recovery remains `<= 26 C` continuously for 10 minutes.
+- Sterowanie: deterministyczny **Rule**; ML/MPC tylko Shadow/research. Żadnego automatycznego awansu ML.
+- Fizyczne wyjścia: wyłącznie `OutputSupervisor`; stałe RF433 gniazda 1 (wyciąg), 2 (lampa), 3 (nawilżacz). Transmisja nie dowodzi rzeczywistego przełączenia odbiornika.
+- Bezpieczeństwo lampy: wyłączenie przy **≥28°C**, wznowienie dopiero po **≤26°C przez 10 minut**. Źródłem Safety nadal bezpośredni TP357, bez przełączenia na SCD41 T/RH.
+- E-ink/panel pozostają obserwatorami, bez własności sterowania; transport nie może być deklarowany jako sukces przy błędzie lub braku potwierdzenia.
 
-The current architecture split remains intentional: `ClimatePolicy.*` owns stateless Rule generation/arbitration/safety policy, while `ClimateRuntimeController.*` owns stateful trend/effective-action estimation, ML orchestration and execution reconciliation.
+## Co jest w kodzie IPO v2 — ale nie jest jeszcze aktywnym profilem operatora
 
-## IPO Runtime Bridge 3 (2026-11-07) — firmware v2 decoder and dormant staging source
+- `/` to jeden offline konfigurator **DeviceProfile v2**: urządzenia, drivery, role sygnałów, źródła primary/fallback, procesy, wyjścia, powiązania, cele i import/eksport szkicu. v1: `/lab/profile-v1`, badawczy v5: `/lab/v5`, 3D jest podglądem.
+- Wspólny walidowany `RuntimeScheduleProfileOwner` trzyma aktualny **wbudowany Mint w RAM** dla Rule i harmonogramu lampy. Nie jest zasilany zapisanym profilem v2.
+- Real-input `RuntimeInsideSource` / `RuntimeNearbySource` są w nowym kodzie podłączone do ograniczonego **referencyjnego** grafu IPO: TP357 T/RH (ID 1), SCD41 CO₂ (ID 2), Xiaomi zewnętrzne T/RH (ID 3); valid/finite/age filtrują odczyty według timeoutu. Dynamiczne dodawanie czujników oraz SCD41 T/RH jako fallback pozostają **niewdrożone**.
+- Istnieje ścisły parser JSON v2 → bounded typowany graf, walidacja możliwości CrowPanel, kod wersjonowanego binary codec/CRC oraz dwuslotowy magazyn `gb_ipoprof` z zachowaniem poprzedniej dobrej kopii. `IpoProfileStagingCoordinator` ma metodę prepare/stored-only/readback, ale **nie jest wywoływany przez aktywny runtime**.
+- Podczas startu kod **tylko odczytuje** stan IPO NVS journal. Konsola `status` rozdziela `ipo_store` (stan zapisu), `ipo_profile` (aktywne cele wbudowanego Mint, generation/schedule_hash) i `ipo_input` (źródło/wiek/ważność pomiaru). Profil v2 **nie jest zastosowany**: `profile_v2_applied=0`.
 
-Dodany w kodzie surowo walidujący `IpoProfileJsonDecode` (JSON v2 → bounded graph/targets → aktualne CrowPanel admission), nieaktywny `IpoProfileStagingCoordinator` (prepare / trwały zapis-only / weryfikacja), i `schedule_hash` diagnostyki istniejącego RAM Mint. Parser jest w źródłach real-input, ale brak jakiegokolwiek caller-a operacji NVS `commit` w produkcyjnym runtime; NIC nie zapisuje profilu, ani nie umożliwia jego zastosowania z panelu. Brak testów/kompilacji/flashowania: UNVERIFIED. `CONFIGURATION_FLOW.md` i checkpoint opisują granice.
+## Otwarte bramki
 
-## IPO Runtime Bridge 2 (2026-11-07) — durable profile source staged, NOT ACTIVE
+1. Wąska kwalifikacja nowego kodu: kompilowalność, zachowanie Rule przy granicy stale/invalid, niezależność lamp Safety, korupcja/przerwanie zapisu NVS, recovery i reboot.
+2. Jeden uprzywilejowany, synchronizowany owner transakcji konfiguracji: validate → stage → journal commit → bezpieczne apply → active hash/readback → rollback. Nie odblokowywać przed kwalifikacją.
+3. Wybieralne rzeczywiste fallbacki i kolejne drivery/output role przez jawnie wspierane adaptery oraz istniejący `OutputSupervisor`; bez arbitralnych komend z JSON.
+4. Rzeczywiste API do istniejącego panelu, odczyt tego samego stanu w e-ink, kalibracja symulatora prawdziwymi trajektoriami.
 
-Dodano `IpoProfileWire.h` (cały typowany graf i cele, bounded wersja+CRC) i `IpoProfileNvsJournal.h/.cpp` (oddzielna dwuslotowa domena NVS z odczytem zwrotnym i możliwością wykrycia dobrej poprzedniej kopii). Kod dołączono do listy źródeł real-input, ale nie jest wywoływany, niczego nie zapisuje/odczytuje w boot i nie zmienia aktywnego profilu. Brak weryfikacji wykonawczej lub sprzętowej; `active IPO v2` nadal NIE ISTNIEJE. Więcej: `CONFIGURATION_FLOW.md`.
+Pełna mapa IPO, wspierane i projektowane role: [CONFIGURATION_FLOW.md](CONFIGURATION_FLOW.md). Kontynuacja bez powtarzania wykonanych prac: [NEXT_CHAT.md](NEXT_CHAT.md). Dowód kodowy: [checkpoint 2026-11-07](checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md).
 
-## IPO Runtime Bridge 1 (2026-11-07) — code present, unqualified
-
-W real-input firmware utworzono **jeden, typowany, walidowany właściciel profilu RAM** do celów Rule oraz harmonogramu lampy, z domyślnym bez zmian Mint. Do konsoli `status` dodano rozpoznawalny readback tego snapshotu (NVS=0/v2 applied=0). `lib/ipo_profile` ma teraz przenośny selektor świeżych sygnałów i rygorystyczne dopuszczenie referencyjnego grafu CrowPanel; bootstrap raportuje tylko informacyjną zgodność (apply=0). Nie ma jeszcze v2 JSON parsera na ESP, NVS profilu, włączonego fallbacku, dynamicznych wyjść ani live API. **Nie uruchamiano kompilacji/testów ani nie flashowano urządzenia.** Status tych zmian: UNVERIFIED. Patrz `CONFIGURATION_FLOW.md` i `checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md`.
-
-## IPO Foundation v2 source sprint — 2026-11-07
-
-The single browser homepage `/` now edits draft IPO v2: variable device instances, driver catalog, typed signals with primary/fallback, processes, logical outputs and many-to-one effect links. C++17 portable `lib/ipo_profile/src/IpoGraph.h` adds a bounded *unlinked* graph and symbolic mixer. Previous v1 is at `/lab/profile-v1`; research v5 stays `/lab/v5`. See `CONFIGURATION_FLOW.md`. Actual Rule/Safety/OutputSupervisor/RF433/NVS/e-ink unchanged: **no v2 firmware apply, dynamic I/O or live status**. Operator requested no tests or heavy builds; new code remains UNVERIFIED.
-
-## Previous operator v1 draft (historical) — 2026-11-07
-
-The first **offline** DeviceProfile v1 editor is now on the browser homepage (`/`): declarations for current TP357/SCD41/Xiaomi/DS3231 sources and the three fixed RF433 outputs, RH-or-VPD targets, day/night schedule and strict JSON import/export. The legacy research v5 editor is at `/lab/v5`; 3D is geometry-only. See [CONFIGURATION_FLOW.md](CONFIGURATION_FLOW.md) for the complete supported/unsupported matrix. **Firmware still uses the fixed Mint schedule; there is no profile apply, NVS storage or live browser status. No tests/builds were run for this sprint at the operator's direction.**
-
-## Product-convergence baseline
-
-The target is **one operator setup/status workflow**: real sensors/outputs -> desired targets/schedules/safety -> offline autonomous controller -> observed state and diagnostics. The validated browser draft is present, but the safe runtime apply/readback leg does not exist yet. The serial `tools/panel/` UI is a v4 developer/demo service; the browser `web/` now uses a separate v1 operator draft at `/`, retains v5 at `/lab/v5` and provides geometry-only 3D; production firmware is climate-v6 with fixed real-input composition. See `PRODUCT_DIRECTION.md` before extending any panel.
-
-The former research branch's R4/Kaggle/MPC files and full commit history are now on `main`. Its 19/22 hard MPC scenario failures and missing physical fidelity prevent production promotion; see `docs/simulator/RESEARCH_STATUS.md`.
-
-This scoped repair's evidence and remaining full-audit gates live in `AUDIT_STATUS.md`; the next step is `NEXT_CHAT.md`. The current main code/firmware has NOT been completely requalified on the latest exact SHA.
 
 ## MPC / Kaggle research now in main (2026-11-07)
 
@@ -97,7 +79,3 @@ When the M1 Pro / 32 GB machine is available:
 
 Historical Stage/Phase handoffs, closed audit narratives and benchmark task ids are not active state. Recover them from Git history when evidence is needed instead of expanding this file again.
 
-
-## IPO Runtime Bridge 4 (2026-11-07) — real sensor binding in source, unqualified
-
-Istniejące źródła TP357/SCD41/Xiaomi w realnym adapterze zostały podłączone do `IpoSignalSelector` na **stałym referencyjnym** grafie; `valid/age/finite` decyduje o ważności, brak pomiaru nie zostaje zastąpiony zerem. Stare konstruktory/adaptacja fallback pozostają tylko jako kompatybilność bez grafu. To NIE oznacza dowolnych driverów ani backup SCD41 T/RH. NVS journal ma teraz wyłącznie **read-only boot load** i raport do `status` (nie wykonuje `commit` ani `apply`). Konsola pokazuje również wiek i źródło wybranych pomiarów. Aktywne nastawy nadal Mint z RAM; `profile_v2_applied=0`. **Nie wykonano kompilacji/testów/flashowania.** Zmiana filtrowania ważności wejść może wpływać na Rule; nowy runtime unqualified.
