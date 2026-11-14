@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-wur-unseen-household-forecast-20261104-v1",
+  "dedupe_key": "la-bloomml-wur-unseen-household-forecast-20261104-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 650,
+  "idle_timeout": 320,
+  "task_timeout": 800,
+  "memory_limit_mb": 1100,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin || exit 41\nWORK=\"$(mktemp -d /tmp/bloomml-wur-forecast.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\nexport WORK\ngit clone --quiet --depth 1 --branch research/simulator-fidelity-kaggle-20261103 --single-branch https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\nsha=\"$(git -C \"$WORK/source\" rev-parse HEAD)\"\ntest \"$sha\" = 40e4a864beb6024eb93f275fdfb330d1d715067d || { echo \"SOURCE_SHA_MISMATCH\"; exit 42; }\nprintf 'WUR_TRAINING_PROBE_SHA|%s\\n' \"$sha\"\ncd \"$WORK/source\"\npython3 -m unittest -v tests.test_wur_external_benchmark tests.test_wur_forecast_probe\necho 'WUR_BOTH_TEST_MODULES|PASS'\nkaggle datasets download -d piantic/autonomous-greenhouse-challengeagc-2nd-2019 -p \"$WORK\" >/dev/null\nARCHIVE=\"$(find \"$WORK\" -maxdepth 1 -name '*.zip' -print -quit)\"\ntest -n \"$ARCHIVE\"\npython3 -m tools.ml.wur_forecast_probe --zip \"$ARCHIVE\" --output \"$WORK/probe.json\"\npython3 - <<'PY'\nfrom pathlib import Path\nimport os,json\np=Path(os.environ['WORK'])/'probe.json'\nr=json.loads(p.read_text())\nassert len(r['reports'])==6\nassert r['original_byte_equivalence']=='NOT_VERIFIED'\nassert r['training_approval']=='DIAGNOSTIC_TRANSFER_ONLY_NOT_PRODUCTION'\nprint('WUR_RESEARCH_PROBE|PASS')\nfor report in r['reports']:\n for horizon in (5,15,60):\n  for target in ('temperature_c','relative_humidity_pct','co2_ppm'):\n   m=report['targets'][f'{target}@{horizon}min']\n   assert m['persistence']['n']==m['trained_trend']['n']\n   print('WUR_UNSEEN_SITE_RESULT|'+json.dumps({\n    'test_site':report['holdout_site'],'horizon_min':horizon,'target':target,\n    'n':m['comparable_test_pairs'],\n    'train_others_n':m['train_pair_count_five_other_sites'],\n    'alpha':round(m['trained_coefficient'],5),\n    'persistence_mae':round(m['persistence']['mae'],5),\n    'trend_mae':round(m['trained_trend']['mae'],5),\n    'gain_pct':round(m['improvement_mae_percent'],3) if m['improvement_mae_percent'] is not None else None\n   },separators=(',',':')))\nprint('WUR_UNSEEN_HOUSEHOLD_FORECAST_COMPLETE|EXPLORATORY_NOT_CALIBRATION')\nPY"
+  ]
+}

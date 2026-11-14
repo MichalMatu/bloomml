@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-general-audit-web-style-owner-repair-20261107-v1",
+  "task_digest": "78f5bfcc1ae335e845267beda196b761a989ca2f90e507a42a0f41b2bfc96a8b",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-07T17:05:56.271731+00:00",
+  "attempt_id": "b56bca39229b78fc630cbc9b",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 56701,
+  "updated_at": "2026-11-07T17:05:58.526477+00:00",
+  "pid": 56701
+}

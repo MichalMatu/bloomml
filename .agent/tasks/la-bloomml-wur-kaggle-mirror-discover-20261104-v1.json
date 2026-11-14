@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-wur-kaggle-mirror-discover-20261104-v1",
+  "dedupe_key": "la-bloomml-wur-kaggle-mirror-discover-20261104-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 150,
+  "idle_timeout": 100,
+  "task_timeout": 240,
+  "memory_limit_mb": 460,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin || exit 41\nkaggle --version\necho 'KAGGLE_DATASET_INFO_BEGIN'\nkaggle datasets files piantic/autonomous-greenhouse-challengeagc-2nd-2019 --page-size 100 || true\necho 'KAGGLE_DATASET_INFO_END'\necho 'KAGGLE_SEARCH_BEGIN'\nkaggle datasets list -s 'Autonomous Greenhouse Challenge' --page-size 20 --csv | head -n 20 || true\necho 'KAGGLE_SEARCH_END'\necho 'MIRROR_PREFLIGHT_FINISHED'"
+  ]
+}

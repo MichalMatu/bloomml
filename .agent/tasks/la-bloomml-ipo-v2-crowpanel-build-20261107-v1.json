@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-ipo-v2-crowpanel-build-20261107-v1",
+  "dedupe_key": "la-bloomml-ipo-v2-crowpanel-build-20261107-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 1600,
+  "idle_timeout": 600,
+  "task_timeout": 2400,
+  "memory_limit_mb": 8192,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-hwq.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"1a1b3de8dada926a00f37be158ef99cd1393b860\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"SOURCE_SHA|$EXPECTED\"\necho \"MAC_TOOLCHAIN|$(uname -m)\"\necho \"BOARD_BUILD_FLAGS|$(rg -n 'REAL_OUTPUTS|REAL_INPUT|fake.lock|THERMAL_TEST' Makefile sdkconfig.defaults* CMakeLists.txt src/climate/runtime/RuntimeBuildConfig.h 2>/dev/null | head -60 || true)\"\nif command -v idf.py >/dev/null 2>&1; then echo \"IDF_COMMAND|available\"; else echo \"IDF_COMMAND|not-on-path\"; fi\nif command -v pio >/dev/null 2>&1; then echo \"PIO_COMMAND|available\"; else echo \"PIO_COMMAND|not-on-path\"; fi\nmake build-crowpanel\necho \"CROWPANEL_EXACT_SHA_BUILD|PASS\"\ngit diff --check\necho \"GIT_DIFF_CHECK|PASS\"\necho \"WORKTREE|$(git status --porcelain | wc -l | tr -d ' ')\""
+  ]
+}

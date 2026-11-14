@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-mpc-r4-hourly-20261104-v1",
+  "dedupe_key": "la-bloomml-mpc-r4-hourly-20261104-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 1200,
+  "idle_timeout": 400,
+  "task_timeout": 1500,
+  "memory_limit_mb": 1100,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nWORK=\"$(mktemp -d /tmp/bloomml-mpc-hourly.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --depth 1 --single-branch --branch research/simulator-fidelity-kaggle-20261103 https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\ntest \"$(git rev-parse HEAD)\" = \"227c7be00265f3a360b493497a1231fdc72a73a4\"\nprintf 'MPC_EXTENDED_SOURCE_SHA|%s\\n' \"$(git rev-parse HEAD)\"\npython3 -m compileall -q tools/ml/mpc tests/test_mpc_device_responses.py tests/test_mpc_lab_observability.py\npython3 -m unittest -q tests.test_mpc_devices tests.test_mpc_optimizer_mock tests.test_mpc_baselines tests.test_mpc_device_responses tests.test_mpc_physics_integration tests.test_mpc_lab_observability\necho 'MPC_EXTENDED_TESTS|PASS'\nset +e\npython3 -m tools.ml.mpc.cli --hours 1 --step-s 60 --seed 1729 --output-dir \"$WORK/pilot\" > \"$WORK/cli.log\" 2>&1\nRC=$?\nset -e\nif test \"$RC\" -ne 0 -a \"$RC\" -ne 2; then cat \"$WORK/cli.log\"; printf 'MPC_1H_TOOL_FAILURE|%s\\n' \"$RC\"; exit 73; fi\npython3 - \"$WORK/pilot\" <<'PY'\nfrom pathlib import Path\nimport json,math,sys\nbase=Path(sys.argv[1]); manifest=json.loads((base/'manifest.json').read_text())\nassert manifest['source_commit']=='227c7be00265f3a360b493497a1231fdc72a73a4'\nassert manifest['config']['steps']==60\nassert manifest['synthetic_uncalibrated'] is True and manifest['physical_validation_with_real_data'] is False\nfor policy in ('mpc','threshold','hysteresis'):\n data=[json.loads(s) for s in (base/(policy+'.ndjson')).read_text().splitlines()]\n assert len(data)==60\n assert all(r['source_commit']=='227c7be00265f3a360b493497a1231fdc72a73a4' for r in data)\n assert all(math.isfinite(r['water_residual_kg']) and abs(r['water_residual_kg'])<1e-7 for r in data)\n assert all(r['virtual_execution_status']=='simulated_applied' for r in data)\n assert all(r['status'] in ('PASS','FAIL','BLOCKED','UNKNOWN') for r in data)\n report=manifest['baselines'][policy]\n assert report['steps']==60\n print('MPC_1H_METRIC|'+json.dumps({'policy':policy,**report},sort_keys=True,separators=(',',':')))\n if policy=='mpc':\n  assert all(r['prediction_uncertainty']=='synthetic_uncalibrated' for r in data)\n  assert all(r['one_step_prediction_error'] is not None for r in data if r['predictions'])\n  print('MPC_1H_MAX_FORECAST_RESIDUAL_C|'+str(max(abs(r['one_step_prediction_error']['temperature_c']) for r in data if r['one_step_prediction_error'])))\nprint('MPC_1H_EVIDENCE_MANIFEST|PASS')\nPY\nprintf 'MPC_1H_CLI_GATE_EXIT|%s\\n' \"$RC\""
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "allow_write": false,
+  "attempt_id": "59f504ba819c3e5ffa4ee69f",
+  "command_timeout": 600,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 117,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-hwq-final-docs.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"c4bf62cf70b5197f5b19906cf48175a75719785e\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"FINAL_SHA|$EXPECTED\"\ngit diff --check 1a1b3de8dada926a00f37be158ef99cd1393b860 HEAD\necho \"DIFF_CHECK|PASS\"\ntest -f docs/checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md\ngrep -Fq \"ClosedIpoActivationGate\" docs/NEXT_CHAT.md\ngrep -Fq \"ClosedIpoActivationGate\" src/climate/ClimateV6RealInputRuntime.cpp\ngrep -Fq \"ipo_nvs_journal_tests\" test/host/CMakeLists.txt\ngrep -Fq \"GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED\" config/runtime/GrowboxRuntimeConfig.cmake\ntest -z \"$(git status --porcelain)\"\necho \"CHECKPOINT_AND_CLOSED_GATE|PASS\"\necho \"SOURCE_CLEAN|PASS\"",
+      "current_rss_mb": 12.09,
+      "elapsed_seconds": 3.698,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 4096,
+      "memory_limited": false,
+      "output": "FINAL_SHA|c4bf62cf70b5197f5b19906cf48175a75719785e\nDIFF_CHECK|PASS\nCHECKPOINT_AND_CLOSED_GATE|PASS\nSOURCE_CLEAN|PASS\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 12.09,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-07T12:47:17.726745+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.077,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.176,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-ipo-v2-hwq-docs-final-check-20261107-v1",
+  "idle_timeout": 300,
+  "memory_limit_mb": 4096,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 3.698,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-07T12:47:11.630744+00:00",
+  "status": "done",
+  "task_digest": "8e4e88a060e753d858b2b4d14bfd4d30d6e960f4724d2578fcecfe306dccd163",
+  "task_timeout": 900,
+  "verification": [],
+  "work_branch": "main"
+}

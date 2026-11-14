@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-wur-kaggle-mirror-raw-schema-20261104-v1",
+  "dedupe_key": "la-bloomml-wur-kaggle-mirror-raw-schema-20261104-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 370,
+  "idle_timeout": 225,
+  "task_timeout": 520,
+  "memory_limit_mb": 650,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin || exit 41\nWORK=\"$(mktemp -d /tmp/bloomml-wur-mirror-qa.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\nexport WORK\nkaggle datasets download -d piantic/autonomous-greenhouse-challengeagc-2nd-2019 -p \"$WORK\"\npython3 - <<'PY'\nfrom pathlib import Path\nfrom collections import Counter\nfrom datetime import datetime\nfrom hashlib import sha256\nfrom zipfile import ZipFile\nfrom io import TextIOWrapper\nimport csv,json,os\nbase=Path(os.environ['WORK'])\narchives=list(base.glob('*.zip'))\nassert len(archives)==1, 'single pinned Kaggle mirror archive expected'\nzip_path=archives[0]\nprint('MIRROR_DOWNLOAD|',zip_path.stat().st_size,'|SHA256|',sha256(zip_path.read_bytes()).hexdigest(),sep='')\nwith ZipFile(zip_path) as z:\n names=z.namelist()\n print('MIRROR_ARCHIVE_FILE_COUNT|',len(names),sep='')\n for name in names:\n  if name.endswith('GreenhouseClimate.csv') or name.endswith('Weather.csv'):\n   info=z.getinfo(name)\n   if info.file_size>25_000_000:raise ValueError('unexpected oversized single CSV')\n   with z.open(name) as raw, TextIOWrapper(raw,encoding='utf-8-sig',errors='replace',newline='') as f:\n    reader=csv.DictReader(f)\n    cols=reader.fieldnames or []\n    rows=0;first=[];last=[]\n    nonempty=Counter()\n    for row in reader:\n     rows+=1\n     if rows<=2:first.append({k:str(row.get(k,''))[:50] for k in cols[:12]})\n     last=[{k:str(row.get(k,''))[:50] for k in cols[:8]}]\n     for k in cols:\n      v=row.get(k)\n      if v is not None and v.strip() not in ('','nan','NaN','None','null'):nonempty[k]+=1\n    print('WUR_KAGGLE_FILE|'+json.dumps({\n     'path':name,'size_uncompressed':info.file_size,'rows':rows,\n     'columns_count':len(cols),'columns':cols[:130],\n     'first_rows':first,'last_row':last[0] if last else None,\n     'nonempty':{k:nonempty[k] for k in cols[:90]}\n    },ensure_ascii=False,separators=(',',':')))\nprint('KAGGLE_MIRROR_RAW_SCHEMA_AUDIT_DONE')\nPY"
+  ]
+}

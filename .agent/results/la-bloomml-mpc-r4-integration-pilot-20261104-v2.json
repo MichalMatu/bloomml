@@ -1,0 +1,60 @@
+{
+  "allow_write": true,
+  "attempt_id": "9392f822994a013c8f5b590a",
+  "command_timeout": 330,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 3349,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nWORK=\"$(mktemp -d /tmp/bloomml-mpc-r4-pilot.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --depth 1 --single-branch --branch research/simulator-fidelity-kaggle-20261103 https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ntest \"$(git -C \"$WORK/source\" rev-parse HEAD)\" = \"1feaa6af3d2657faa3a3cbb54ee7cfcc24cc6d2a\"\ncd \"$WORK/source\"\nprintf 'MPC_TEST_SOURCE_SHA|%s\\n' \"$(git rev-parse HEAD)\"\npython3 -m compileall -q tools/ml/mpc\npython3 -m unittest -q tests.test_mpc_devices tests.test_mpc_optimizer_mock tests.test_mpc_physics_integration\necho 'MPC_R4_UNIT_INTEGRATION|TESTS_PASS'\nset +e\npython3 -m tools.ml.mpc.cli --hours 0.05 --step-s 30 --seed 1729 --output-dir \"$WORK/mpc\" > \"$WORK/cli.stdout\" 2>&1\nRC=$?\nset -e\ncat \"$WORK/cli.stdout\"\nprintf 'MPC_PILOT_EXIT_CODE|%s\\n' \"$RC\"\nif test \"$RC\" -ne 0 -a \"$RC\" -ne 2; then echo 'MPC_PILOT_TOOL_ERROR'; exit 73; fi\npython3 - \"$WORK/mpc/manifest.json\" <<'PY'\nimport json,sys\nm=json.load(open(sys.argv[1]))\nassert m[\"source_commit\"]==\"1feaa6af3d2657faa3a3cbb54ee7cfcc24cc6d2a\"\nassert m[\"synthetic_uncalibrated\"] and not m[\"physical_validation_with_real_data\"]\nfor p,r in m[\"baselines\"].items():\n print(\"MPC_PILOT_METRIC|\"+json.dumps({\"policy\":p,**r},separators=(\",\",\":\"),sort_keys=True))\nprint(\"MPC_PILOT_REPRODUCIBLE_MANIFEST|PASS\")\nPY",
+      "current_rss_mb": 24.08,
+      "elapsed_seconds": 5.302,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 850,
+      "memory_limited": false,
+      "output": "MPC_TEST_SOURCE_SHA|1feaa6af3d2657faa3a3cbb54ee7cfcc24cc6d2a\n----------------------------------------------------------------------\nRan 12 tests in 0.201s\n\nOK\nMPC_R4_UNIT_INTEGRATION|TESTS_PASS\n{\"metrics\": {\"hysteresis\": {\"co2_mae_ppm\": 115.68010406205099, \"co2_rmse_ppm\": 133.56238064486254, \"energy_proxy_wh\": 18.18617614269788, \"failures\": [], \"fallback_steps\": 0, \"outside_tolerance_steps\": 5, \"ppfd_mae_umol_m2_s\": 2.842170943040401e-14, \"rh_mae_pp\": 13.70715976747906, \"rh_rmse_pp\": 14.493576526392584, \"safety_violations\": 0, \"status\": \"FAIL\", \"steps\": 6, \"switches\": 15, \"temp_mae_c\": 2.8087259227320556, \"temp_rmse_c\": 3.1009605535726243, \"vpd_mae_kpa\": null, \"water_residual_max_kg\": 1.7763568394002505e-15}, \"mpc\": {\"co2_mae_ppm\": 60.117109079068086, \"co2_rmse_ppm\": 91.98911913700275, \"energy_proxy_wh\": 9.58730741769834, \"failures\": [], \"fallback_steps\": 0, \"outside_tolerance_steps\": 1, \"ppfd_mae_umol_m2_s\": 2.842170943040401e-14, \"rh_mae_pp\": 2.5042411274695127, \"rh_rmse_pp\": 2.789435212139836, \"safety_violations\": 0, \"status\": \"PASS\", \"steps\": 6, \"switches\": 5, \"temp_mae_c\": 0.7997300775680346, \"temp_rmse_c\": 1.0205728455157774, \"vpd_mae_kpa\": null, \"water_residual_max_kg\": 8.881784197001252e-16}, \"threshold\": {\"co2_mae_ppm\": 115.68010406205099, \"co2_rmse_ppm\": 133.56238064486254, \"energy_proxy_wh\": 18.18617614269788, \"failures\": [], \"fallback_steps\": 0, \"outside_tolerance_steps\": 5, \"ppfd_mae_umol_m2_s\": 2.842170943040401e-14, \"rh_mae_pp\": 13.70715976747906, \"rh_rmse_pp\": 14.493576526392584, \"safety_violations\": 0, \"status\": \"FAIL\", \"steps\": 6, \"switches\": 15, \"temp_mae_c\": 2.8087259227320556, \"temp_rmse_c\": 3.1009605535726243, \"vpd_mae_kpa\": null, \"water_residual_max_kg\": 1.7763568394002505e-15}}, \"source_commit\": \"1feaa6af3d2657faa3a3cbb54ee7cfcc24cc6d2a\"}\nMPC_PILOT_EXIT_CODE|2\nMPC_PILOT_METRIC|{\"co2_mae_ppm\":115.68010406205099,\"co2_rmse_ppm\":133.56238064486254,\"energy_proxy_wh\":18.18617614269788,\"failures\":[],\"fallback_steps\":0,\"outside_tolerance_steps\":5,\"policy\":\"hysteresis\",\"ppfd_mae_umol_m2_s\":2.842170943040401e-14,\"rh_mae_pp\":13.70715976747906,\"rh_rmse_pp\":14.493576526392584,\"safety_violations\":0,\"status\":\"FAIL\",\"steps\":6,\"switches\":15,\"temp_mae_c\":2.8087259227320556,\"temp_rmse_c\":3.1009605535726243,\"vpd_mae_kpa\":null,\"water_residual_max_kg\":1.7763568394002505e-15}\nMPC_PILOT_METRIC|{\"co2_mae_ppm\":60.117109079068086,\"co2_rmse_ppm\":91.98911913700275,\"energy_proxy_wh\":9.58730741769834,\"failures\":[],\"fallback_steps\":0,\"outside_tolerance_steps\":1,\"policy\":\"mpc\",\"ppfd_mae_umol_m2_s\":2.842170943040401e-14,\"rh_mae_pp\":2.5042411274695127,\"rh_rmse_pp\":2.789435212139836,\"safety_violations\":0,\"status\":\"PASS\",\"steps\":6,\"switches\":5,\"temp_mae_c\":0.7997300775680346,\"temp_rmse_c\":1.0205728455157774,\"vpd_mae_kpa\":null,\"water_residual_max_kg\":8.881784197001252e-16}\nMPC_PILOT_METRIC|{\"co2_mae_ppm\":115.68010406205099,\"co2_rmse_ppm\":133.56238064486254,\"energy_proxy_wh\":18.18617614269788,\"failures\":[],\"fallback_steps\":0,\"outside_tolerance_steps\":5,\"policy\":\"threshold\",\"ppfd_mae_umol_m2_s\":2.842170943040401e-14,\"rh_mae_pp\":13.70715976747906,\"rh_rmse_pp\":14.493576526392584,\"safety_violations\":0,\"status\":\"FAIL\",\"steps\":6,\"switches\":15,\"temp_mae_c\":2.8087259227320556,\"temp_rmse_c\":3.1009605535726243,\"vpd_mae_kpa\":null,\"water_residual_max_kg\":1.7763568394002505e-15}\nMPC_PILOT_REPRODUCIBLE_MANIFEST|PASS\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 28.33,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-04T01:26:33.870587+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.083,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.153,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-mpc-r4-integration-pilot-20261104-v2",
+  "idle_timeout": 180,
+  "memory_limit_mb": 850,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 5.302,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-04T01:26:26.278409+00:00",
+  "status": "done",
+  "task_digest": "1120554061254a99677cc42870ed6177119e5879fddb3321aac472dde6c730b4",
+  "task_timeout": 480,
+  "verification": [],
+  "work_branch": "main"
+}

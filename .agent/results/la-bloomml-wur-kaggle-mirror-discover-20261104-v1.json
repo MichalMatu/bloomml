@@ -1,0 +1,60 @@
+{
+  "allow_write": false,
+  "attempt_id": "b3403b75c8f4798629c971a5",
+  "command_timeout": 150,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 4078,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin || exit 41\nkaggle --version\necho 'KAGGLE_DATASET_INFO_BEGIN'\nkaggle datasets files piantic/autonomous-greenhouse-challengeagc-2nd-2019 --page-size 100 || true\necho 'KAGGLE_DATASET_INFO_END'\necho 'KAGGLE_SEARCH_BEGIN'\nkaggle datasets list -s 'Autonomous Greenhouse Challenge' --page-size 20 --csv | head -n 20 || true\necho 'KAGGLE_SEARCH_END'\necho 'MIRROR_PREFLIGHT_FINISHED'",
+      "current_rss_mb": 53.86,
+      "elapsed_seconds": 3.401,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 460,
+      "memory_limited": false,
+      "output": "Kaggle CLI 2.2.5\nKAGGLE_DATASET_INFO_BEGIN\nname                                     size  creationDate                \n-----------------------------------  --------  --------------------------  \nAICU/CropParameters.csv                   746  2020-10-30 12:39:26.144000  \nAICU/GreenhouseClimate.csv           13971302  2020-10-30 12:39:27.023000  \nAICU/GrodanSens.csv                   2342700  2020-10-30 12:39:26.807000  \nAICU/LabAnalysis.csv                     2061  2020-10-30 12:39:26.386000  \nAICU/Production.csv                      1073  2020-10-30 12:39:26.353000  \nAICU/Resources.csv                       8103  2020-10-30 12:39:26.509000  \nAICU/TomQuality.csv                       350  2020-10-30 12:39:26.322000  \nAutomatoes/CropParameters.csv             775  2020-10-30 12:39:26.448000  \nAutomatoes/GreenhouseClimate.csv     13906401  2020-10-30 12:39:26.842000  \nAutomatoes/GrodanSens.csv             2342700  2020-10-30 12:39:26.703000  \nAutomatoes/LabAnalysis.csv               2030  2020-10-30 12:39:26.487000  \nAutomatoes/Production.csv                1017  2020-10-30 12:39:26.527000  \nAutomatoes/Resources.csv                 8087  2020-10-30 12:39:26.497000  \nAutomatoes/TomQuality.csv                 348  2020-10-30 12:39:26.350000  \nDigilog/CropParameters.csv                731  2020-10-30 12:39:26.515000  \nDigilog/GreenhouseClimate.csv        13994674  2020-10-30 12:39:26.916000  \nDigilog/GrodanSens.csv                2342700  2020-10-30 12:39:26.507000  \nDigilog/LabAnalysis.csv                  1938  2020-10-30 12:39:26.627000  \nDigilog/Production.csv                   1054  2020-10-30 12:39:26.459000  \nDigilog/Resources.csv                    8895  2020-10-30 12:39:26.503000  \nDigilog/TomQuality.csv                    349  2020-10-30 12:39:26.453000  \nEconomics.pdf                         1180896  2020-10-30 12:39:26.849000  \nIUACAAS/CropParameters.csv                774  2020-10-30 12:39:26.407000  \nIUACAAS/GreenhouseClimate.csv        13961922  2020-10-30 12:39:26.979000  \nIUACAAS/GrodanSens.csv                2342700  2020-10-30 12:39:26.630000  \nIUACAAS/LabAnalysis.csv                  2048  2020-10-30 12:39:26.515000  \nIUACAAS/Production.csv                   1049  2020-10-30 12:39:26.447000  \nIUACAAS/Resources.csv                    8696  2020-10-30 12:39:26.441000  \nIUACAAS/TomQuality.csv                    345  2020-10-30 12:39:26.421000  \nReadMe.pdf                             733072  2020-10-30 12:39:26.688000  \nReference/CropParameters.csv              704  2020-10-30 12:39:26.404000  \nReference/GreenhouseClimate.csv      13977512  2020-10-30 12:39:26.888000  \nReference/GrodanSens.csv              2342700  2020-10-30 12:39:26.691000  \nReference/LabAnalysis.csv                2034  2020-10-30 12:39:26.683000  \nReference/Production.csv                 1086  2020-10-30 12:39:26.691000  \nReference/Resources.csv                  6367  2020-10-30 12:39:26.618000  \nReference/TomQuality.csv                  395  2020-10-30 12:39:26.709000  \nTheAutomators/CropParameters.csv          745  2020-10-30 12:39:26.653000  \nTheAutomators/GreenhouseClimate.csv  13903136  2020-10-30 12:39:27.112000  \nTheAutomators/GrodanSens.csv          2342700  2020-10-30 12:39:26.785000  \nTheAutomators/LabAnalysis.csv            1956  2020-10-30 12:39:26.667000  \nTheAutomators/Production.csv              980  2020-10-30 12:39:26.655000  \nTheAutomators/Resources.csv              5805  2020-10-30 12:39:26.709000  \nTheAutomators/TomQuality.csv              345  2020-10-30 12:39:26.671000  \nWeather/Weather.csv                   3926624  2020-10-30 12:39:27.029000  \nKAGGLE_DATASET_INFO_END\nKAGGLE_SEARCH_BEGIN\nref,title,size,lastUpdated,downloadCount,voteCount,usabilityRating\npiantic/autonomous-greenhouse-challengeagc-2nd-2019,Autonomous Greenhouse Challenge(AGC) - 2nd Edition,12793984,2020-10-30 12:39:17.343000,2946,28,0.7058824\nmrclo2365/seleccion-contexto-llm-telemetria-invernadero,Selección de contexto LLM: telemetría invernadero,0,2026-10-23 22:33:14.420000,30,0,0.64705884\nKAGGLE_SEARCH_END\nMIRROR_PREFLIGHT_FINISHED\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 53.86,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-04T00:35:19.406647+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.076,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.089,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-wur-kaggle-mirror-discover-20261104-v1",
+  "idle_timeout": 100,
+  "memory_limit_mb": 460,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 3.401,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-04T00:35:14.380284+00:00",
+  "status": "done",
+  "task_digest": "738218a0a6ad08e248d844c36ea530036f1cb42a248143c3a3e28e46d6e0da87",
+  "task_timeout": 240,
+  "verification": [],
+  "work_branch": "main"
+}

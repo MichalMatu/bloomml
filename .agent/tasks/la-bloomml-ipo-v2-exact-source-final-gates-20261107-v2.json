@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-ipo-v2-exact-source-final-gates-20261107-v2",
+  "dedupe_key": "la-bloomml-ipo-v2-exact-source-final-gates-20261107-v2",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 900,
+  "idle_timeout": 400,
+  "task_timeout": 1500,
+  "memory_limit_mb": 4096,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-hwq-final2.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"45f352764d819fcdeac939bdd11a9e82a76a0ea3\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"SOURCE_SHA|$EXPECTED\"\nmake test-ipo\necho \"IPO_FULL_NARROW_GATE|PASS\"\ngrep -R -n -m2 'GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED' CMakeLists.txt cmake src scripts config 2>/dev/null | head -14 || true\nif test -e /dev/cu.usbserial-120; then echo \"AUTHORIZED_DEVICE_NODE|PRESENT_UNTOUCHED\"; else echo \"AUTHORIZED_DEVICE_NODE|ABSENT\"; fi\ngit diff --check\ntest -z \"$(git status --porcelain)\"\necho \"SOURCE_CLEAN|PASS\""
+  ]
+}
