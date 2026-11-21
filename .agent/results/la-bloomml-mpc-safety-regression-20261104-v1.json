@@ -1,0 +1,60 @@
+{
+  "allow_write": true,
+  "attempt_id": "f173a3e22b52da333dfaac02",
+  "command_timeout": 2400,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 2244,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nWORK=\"$(mktemp -d /tmp/bloomml-mpc-safety-reg.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --depth 1 --single-branch --branch research/simulator-fidelity-kaggle-20261103 https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\ntest \"$(git rev-parse HEAD)\" = \"9258ae41ca50d82e704b67243233a6388b17552b\"\nprintf 'MPC_SAFETY_SOURCE_SHA|%s\\n' \"$(git rev-parse HEAD)\"\npython3 -m compileall -q tools/ml/mpc\npython3 -m unittest -q tests.test_mpc_devices tests.test_mpc_optimizer_mock tests.test_mpc_baselines tests.test_mpc_device_responses tests.test_mpc_physics_integration tests.test_mpc_lab_observability tests.test_mpc_shadow_contract tests.test_mpc_scenario_catalog\necho 'MPC_SAFETY_REGRESSION_UNIT|PASS'\nset +e\npython3 -m tools.ml.mpc.cli --hours 1 --step-s 60 --seed 1729 --output-dir \"$WORK/hourly\" > \"$WORK/hourly.log\" 2>&1\nH=$?\npython3 -m tools.ml.mpc.scenario_matrix --steps 12 --step-s 60 --seeds 1729 1730 --output-dir \"$WORK/matrix\" > \"$WORK/matrix.log\" 2>&1\nM=$?\nset -e\nif test \"$H\" -ne 0 -a \"$H\" -ne 2; then cat \"$WORK/hourly.log\"; exit 71; fi\nif test \"$M\" -ne 0 -a \"$M\" -ne 2; then cat \"$WORK/matrix.log\"; exit 72; fi\npython3 - \"$WORK/hourly/manifest.json\" \"$WORK/matrix/manifest.json\" <<'PY'\nimport json,sys,collections\nhourly=json.load(open(sys.argv[1]));matrix=json.load(open(sys.argv[2]))\nassert hourly['source_commit']==matrix['source_commit']=='9258ae41ca50d82e704b67243233a6388b17552b'\nassert hourly['synthetic_uncalibrated'] and matrix['synthetic_uncalibrated']\nassert not hourly['physical_validation_with_real_data'] and not matrix['physical_validation_with_real_data']\nassert hourly['config']['steps']==60\nassert len(matrix['results'])==66 and not matrix['failed_executions'],matrix['failed_executions']\nfor name,metrics in hourly['baselines'].items():\n print('MPC_SAFETY_1H|'+json.dumps({'policy':name,'status':metrics['status'],\n  'temp_mae_c':metrics['temp_mae_c'],'rh_mae_pp':metrics['rh_mae_pp'],\n  'co2_mae_ppm':metrics['co2_mae_ppm'],'energy_proxy_wh':metrics['energy_proxy_wh'],\n  'switches':metrics['switches'],'violations':metrics['safety_violations'],\n  'outside_steps':metrics['outside_tolerance_steps']},sort_keys=True,separators=(',',':')))\ncount=collections.Counter((r['policy'],r['quality']['status']) for r in matrix['results'])\nprint('MPC_SAFETY_MATRIX_COUNTS|'+json.dumps({a+'_'+b:v for (a,b),v in count.items()},sort_keys=True))\nfor r in matrix['results']:\n if r['policy']=='mpc' and r['scenario'] in ('hot_wet_start','stale_sensor','insufficient_capacity'):\n  q=r['quality'];print('MPC_SAFETY_FOCUS|'+json.dumps({'scenario':r['scenario'],'seed':r['seed'],\n   'status':q['status'],'temp_mae_c':q['temp_mae_c'],'safety_violations':q['safety_violations'],\n   'fallback_steps':q['fallback_steps'],'outside_tolerance_steps':q['outside_tolerance_steps']},sort_keys=True))\nprint('MPC_SAFETY_REGRESSION_EVIDENCE|PASS_RECORDS_COMPLETE')\nPY\nprintf 'MPC_SAFETY_HOURLY_GATE_EXIT|%s\\n' \"$H\"\nprintf 'MPC_SAFETY_MATRIX_GATE_EXIT|%s\\n' \"$M\"",
+      "current_rss_mb": 21.03,
+      "elapsed_seconds": 51.507,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 1000,
+      "memory_limited": false,
+      "output": "MPC_SAFETY_SOURCE_SHA|9258ae41ca50d82e704b67243233a6388b17552b\n----------------------------------------------------------------------\nRan 37 tests in 0.710s\n\nOK\nMPC_SAFETY_REGRESSION_UNIT|PASS\nMPC_SAFETY_1H|{\"co2_mae_ppm\":137.79073117241052,\"energy_proxy_wh\":379.59018952062456,\"outside_steps\":60,\"policy\":\"hysteresis\",\"rh_mae_pp\":24.18239364590999,\"status\":\"FAIL\",\"switches\":349,\"temp_mae_c\":5.2186843946248045,\"violations\":22}\nMPC_SAFETY_1H|{\"co2_mae_ppm\":11.398652444682474,\"energy_proxy_wh\":223.59889945744175,\"outside_steps\":2,\"policy\":\"mpc\",\"rh_mae_pp\":5.710689887894656,\"status\":\"PASS\",\"switches\":29,\"temp_mae_c\":1.1167956643270487,\"violations\":0}\nMPC_SAFETY_1H|{\"co2_mae_ppm\":140.08134755852276,\"energy_proxy_wh\":380.15685618729134,\"outside_steps\":60,\"policy\":\"threshold\",\"rh_mae_pp\":21.601665762003226,\"status\":\"FAIL\",\"switches\":355,\"temp_mae_c\":6.359958241137521,\"violations\":1}\nMPC_SAFETY_MATRIX_COUNTS|{\"hysteresis_FAIL\": 22, \"mpc_FAIL\": 19, \"mpc_PASS\": 3, \"threshold_FAIL\": 22}\nMPC_SAFETY_FOCUS|{\"fallback_steps\": 0, \"outside_tolerance_steps\": 9, \"safety_violations\": 0, \"scenario\": \"hot_wet_start\", \"seed\": 1729, \"status\": \"FAIL\", \"temp_mae_c\": 2.195411825297603}\nMPC_SAFETY_FOCUS|{\"fallback_steps\": 0, \"outside_tolerance_steps\": 8, \"safety_violations\": 0, \"scenario\": \"hot_wet_start\", \"seed\": 1730, \"status\": \"FAIL\", \"temp_mae_c\": 2.0808964238501586}\nMPC_SAFETY_FOCUS|{\"fallback_steps\": 6, \"outside_tolerance_steps\": 7, \"safety_violations\": 0, \"scenario\": \"stale_sensor\", \"seed\": 1729, \"status\": \"FAIL\", \"temp_mae_c\": 0.9315607814395653}\nMPC_SAFETY_FOCUS|{\"fallback_steps\": 6, \"outside_tolerance_steps\": 6, \"safety_violations\": 0, \"scenario\": \"stale_sensor\", \"seed\": 1730, \"status\": \"FAIL\", \"temp_mae_c\": 0.45406304419297044}\nMPC_SAFETY_FOCUS|{\"fallback_steps\": 0, \"outside_tolerance_steps\": 9, \"safety_violations\": 0, \"scenario\": \"insufficient_capacity\", \"seed\": 1729, \"status\": \"FAIL\", \"temp_mae_c\": 2.93550567141007}\nMPC_SAFETY_FOCUS|{\"fallback_steps\": 0, \"outside_tolerance_steps\": 9, \"safety_violations\": 0, \"scenario\": \"insufficient_capacity\", \"seed\": 1730, \"status\": \"FAIL\", \"temp_mae_c\": 2.9856331403772214}\nMPC_SAFETY_REGRESSION_EVIDENCE|PASS_RECORDS_COMPLETE\nMPC_SAFETY_HOURLY_GATE_EXIT|2\nMPC_SAFETY_MATRIX_GATE_EXIT|2\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 41.17,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-04T01:46:01.974787+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.077,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.101,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-mpc-safety-regression-20261104-v1",
+  "idle_timeout": 650,
+  "memory_limit_mb": 1000,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 51.507,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-04T01:45:08.981236+00:00",
+  "status": "done",
+  "task_digest": "48dd7d1d00febb9f9c36aef9466cdcaad901b7dda2179ee018b945421a2daaf1",
+  "task_timeout": 2600,
+  "verification": [],
+  "work_branch": "main"
+}

@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-wur-kaggle-mirror-raw-schema-20261104-v1",
+  "task_digest": "3ac602bf5d408186dddfdecf2b0be9c625a828eba5c6a7a29732d42fe71f49a7",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-04T00:36:28.638860+00:00",
+  "attempt_id": "f121aa3f91e5164862993848",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 39711,
+  "updated_at": "2026-11-04T00:36:28.927229+00:00",
+  "pid": 39711
+}

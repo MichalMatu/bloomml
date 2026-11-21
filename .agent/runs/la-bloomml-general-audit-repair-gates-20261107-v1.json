@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-general-audit-repair-gates-20261107-v1",
+  "task_digest": "91eac479389c3a4bbea3574ccdb3337e23f69b5ae37b0fdd285589bcda4febd8",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-07T16:55:23.830429+00:00",
+  "attempt_id": "065a967e4101906c0af5cace",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 36153,
+  "updated_at": "2026-11-07T16:55:24.620196+00:00",
+  "pid": 36153
+}

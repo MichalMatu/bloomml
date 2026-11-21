@@ -1,0 +1,60 @@
+{
+  "allow_write": false,
+  "attempt_id": "80c672918e13d197ee57afcb",
+  "command_timeout": 900,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 3376,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-hwq-final2.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"45f352764d819fcdeac939bdd11a9e82a76a0ea3\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"SOURCE_SHA|$EXPECTED\"\nmake test-ipo\necho \"IPO_FULL_NARROW_GATE|PASS\"\ngrep -R -n -m2 'GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED' CMakeLists.txt cmake src scripts config 2>/dev/null | head -14 || true\nif test -e /dev/cu.usbserial-120; then echo \"AUTHORIZED_DEVICE_NODE|PRESENT_UNTOUCHED\"; else echo \"AUTHORIZED_DEVICE_NODE|ABSENT\"; fi\ngit diff --check\ntest -z \"$(git status --porcelain)\"\necho \"SOURCE_CLEAN|PASS\"",
+      "current_rss_mb": 1.84,
+      "elapsed_seconds": 18.443,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 4096,
+      "memory_limited": false,
+      "output": "SOURCE_SHA|45f352764d819fcdeac939bdd11a9e82a76a0ea3\ncmake -S test/host -B build/host-tests\n-- The CXX compiler identification is AppleClang 21.0.0.21000101\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (2.2s)\n-- Generating done (1.1s)\n-- Build files have been written to: /tmp/bloomml-ipo-hwq-final2.95FCcg/source/build/host-tests\ncmake --build build/host-tests --target ipo_profile_tests ipo_activation_tests ipo_nvs_journal_tests --parallel 2\ngmake[1]: Entering directory '/private/tmp/bloomml-ipo-hwq-final2.95FCcg/source/build/host-tests'\n[  0%] Building CXX object CMakeFiles/ipo_profile_tests.dir/tmp/bloomml-ipo-hwq-final2.95FCcg/source/test/test_ipo_profile/test_main.cpp.o\n[100%] Linking CXX executable ipo_profile_tests\n[100%] Built target ipo_profile_tests\n[100%] Building CXX object CMakeFiles/ipo_activation_tests.dir/tmp/bloomml-ipo-hwq-final2.95FCcg/source/test/test_ipo_activation/test_main.cpp.o\n[100%] Linking CXX executable ipo_activation_tests\n[100%] Built target ipo_activation_tests\n[  0%] Building CXX object CMakeFiles/ipo_nvs_journal_tests.dir/tmp/bloomml-ipo-hwq-final2.95FCcg/source/test/test_ipo_nvs_journal/test_main.cpp.o\n[100%] Building CXX object CMakeFiles/ipo_nvs_journal_tests.dir/tmp/bloomml-ipo-hwq-final2.95FCcg/source/src/climate/runtime/profile/IpoProfileNvsJournal.cpp.o\n[100%] Linking CXX executable ipo_nvs_journal_tests\n[100%] Built target ipo_nvs_journal_tests\ngmake[1]: Leaving directory '/private/tmp/bloomml-ipo-hwq-final2.95FCcg/source/build/host-tests'\nctest --test-dir build/host-tests -R '^(ipo_profile_tests|ipo_activation_tests|ipo_nvs_journal_tests)$' --output-on-failure\nTest project /tmp/bloomml-ipo-hwq-final2.95FCcg/source/build/host-tests\n    Start 51: ipo_profile_tests\n1/3 Test #51: ipo_profile_tests ................   Passed    0.81 sec\n    Start 52: ipo_activation_tests\n2/3 Test #52: ipo_activation_tests .............   Passed    0.34 sec\n    Start 53: ipo_nvs_journal_tests\n3/3 Test #53: ipo_nvs_journal_tests ............   Passed    0.38 sec\n\n100% tests passed, 0 tests failed out of 3\n\nTotal Test time (real) =   1.55 sec\nIPO_FULL_NARROW_GATE|PASS\nsrc/climate/runtime/RuntimeBuildConfig.h.in:41:inline constexpr bool kRealOutputsEnabled = @GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED@ != 0;\nscripts/quality_gate_push.sh:66:    GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED=0 \\\nscripts/check_runtime_config_ssot.py:49:    \"GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED\",\nscripts/stage27c_crowpanel.sh:43:for name in   GROWBOX_BLE_TP357_MAC   GROWBOX_BLE_XIAOMI_MAC   GROWBOX_STAGE27_SD_ENABLED   GROWBOX_STAGE27_FLASH_FALLBACK_ENABLED   GROWBOX_SD_CMD0_PRECONDITION   GROWBOX_RF433_LOOPBACK_ENABLED   GROWBOX_RF433_REMOTE_CAPTURE_ENABLED   GROWBOX_RF433_TX_GPIO   GROWBOX_RF433_RX_GPIO   GROWBOX_EINK_DISPLAY_ENABLED   GROWBOX_STAGE28_SERVICE_CONSOLE_ENABLED   GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED   GROWBOX_STAGE28_THERMAL_TEST_SEQUENCE_ENABLED   GROWBOX_STAGE28E_BREADCRUMB_RESTART_SELFTEST; do\nconfig/runtime/GrowboxRuntimeConfig.cmake:87:growbox_cache_default(GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED STRING \"0\"\nconfig/runtime/GrowboxRuntimeConfig.cmake:123:    GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED\nAUTHORIZED_DEVICE_NODE|ABSENT\nSOURCE_CLEAN|PASS\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 140.73,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-07T12:39:52.799744+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.093,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.21,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-ipo-v2-exact-source-final-gates-20261107-v2",
+  "idle_timeout": 400,
+  "memory_limit_mb": 4096,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 18.443,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-07T12:39:31.855774+00:00",
+  "status": "done",
+  "task_digest": "ea3aeb4212b89ebe6985a5659a63ee19d6a2eada3a93c693c41af9aa717e7937",
+  "task_timeout": 1500,
+  "verification": [],
+  "work_branch": "main"
+}

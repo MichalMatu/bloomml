@@ -1,0 +1,61 @@
+{
+  "allow_write": true,
+  "attempt_id": "2e2d7d629205dba728636d1f",
+  "command_timeout": 1200,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 199,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-branch-clean.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED_MAIN=\"8ed884a56c91fcd8650796cdb3db7ea4cbf37312\"\nEXPECTED_RESEARCH=\"73de11be282d40d03767275cc6a0891e58ed23f8\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED_MAIN\"\ngit fetch --quiet origin \"+refs/heads/research/simulator-fidelity-kaggle-20261103:refs/remotes/origin/research/simulator-fidelity-kaggle-20261103\"\ntest \"$(git rev-parse refs/remotes/origin/research/simulator-fidelity-kaggle-20261103)\" = \"$EXPECTED_RESEARCH\"\ngit merge-base --is-ancestor \"$EXPECTED_RESEARCH\" \"$EXPECTED_MAIN\"\ngit merge-base --is-ancestor \"5e4db5af736e9c18d69d451496694fa6aff11743\" \"$EXPECTED_MAIN\"\npython3 - <<'PY'\nimport subprocess\ndef git(*args):\n    return subprocess.check_output(['git',*args], text=True).strip()\ndef entries(ref):\n    return dict(line.split(' ',2)[-1].split('\\t',1)[::-1] for line in git('ls-tree','-r',ref).splitlines())\n# git ls-tree values are \"<mode> <type> <sha>\\t<path>\"; map path -> \"<mode> <type> <sha>\".\nmain=entries('HEAD')\nresearch=entries('73de11be282d40d03767275cc6a0891e58ed23f8')\ncommon=entries('51c90cd3290efde230f0c929e93aaf620e0de106')\nconflicts={'docs/CURRENT_STATUS.md','docs/PROJECT_ROADMAP.md','docs/README.md'}\nchanged=[p for p in research if research.get(p)!=common.get(p)]\nlost=[p for p in changed if p not in conflicts and main.get(p)!=research.get(p)]\nassert len(changed)==75, len(changed)\nassert not lost, lost\nassert all(main[p] for p in conflicts)\nfor p in ('notebooks/BloomML_Kaggle_R4_Stress.ipynb','tools/ml/mpc/optimizer.py','tools/ml/physics/growbox_dynamics.py','tests/test_mpc_devices.py'):\n    assert main[p]==research[p], p\nprint('RESEARCH_ANCESTRY_AND_BLOBS|PASS|'+str(len(changed))+'|'+str(len(changed)-len(conflicts)))\nPY\ngit diff --quiet 5e4db5af736e9c18d69d451496694fa6aff11743 HEAD -- src/ lib/ components/ config/ tools/panel/ web/ schemas/\necho 'PRODUCTION_CODE_UNCHANGED|PASS'\npython3 -m compileall -q tools/ml/mpc tools/ml/physics tools/ml/kaggle_gpu_r2_runner.py tools/ml/kaggle_r4_stress_runner.py\necho 'RESEARCH_COMPILEALL|PASS'\nPYTHONPATH=. python3 -m unittest -q tests.test_mpc_devices tests.test_mpc_optimizer_mock tests.test_mpc_baselines tests.test_mpc_device_responses tests.test_mpc_physics_integration tests.test_mpc_lab_observability tests.test_mpc_shadow_contract tests.test_mpc_scenario_catalog\necho 'MPC_UNITTEST|PASS'\nPYTHONPATH=. python3 -m unittest -q tests.test_external_greenhouse_benchmark tests.test_wur_external_benchmark\necho 'DATASET_UNITTEST|PASS'\ngit status --short | grep . && { echo 'WORKTREE_NOT_CLEAN'; exit 83; } || true\necho 'CHECKOUT_CLEAN|PASS'\nREMOTE=\"$(git ls-remote --heads origin 'refs/heads/research/simulator-fidelity-kaggle-20261103' | awk '{print $1}')\"\ntest \"$REMOTE\" = \"$EXPECTED_RESEARCH\"\necho 'RESEARCH_TIP_VERIFIED_BEFORE_DELETE|PASS'\nif git push --quiet origin --delete research/simulator-fidelity-kaggle-20261103; then\n  echo 'DELETE_TRANSPORT|git_push'\nelif command -v gh >/dev/null 2>&1; then\n  gh api -X DELETE repos/MichalMatu/bloomml/git/refs/heads/research/simulator-fidelity-kaggle-20261103 >/dev/null\n  echo 'DELETE_TRANSPORT|gh_api'\nelse\n  echo 'DELETE_TRANSPORT|NO_WRITE_AUTH'\n  exit 84\nfi\ntest -z \"$(git ls-remote --heads origin 'refs/heads/research/simulator-fidelity-kaggle-20261103')\"\necho 'RESEARCH_BRANCH_DELETED|PASS'\nprintf 'PRESERVED_MAIN_SHA|%s\\n' \"$EXPECTED_MAIN\"\n",
+      "current_rss_mb": 18.75,
+      "elapsed_seconds": 2.786,
+      "exit_code": 1,
+      "idle_timed_out": false,
+      "memory_limit_mb": 2048,
+      "memory_limited": false,
+      "output": "Traceback (most recent call last):\n  File \"<stdin>\", line 14, in <module>\nAssertionError: ['docs/simulator/KAGGLE_EXECUTION.md', 'docs/simulator/MPC_ROADMAP.md', 'docs/simulator/RESEARCH_STATUS.md']\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 18.75,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-07T07:50:46.863826+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.068,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.089,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-main-consolidation-20261107-v1",
+  "idle_timeout": 350,
+  "memory_limit_mb": 2048,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 2.786,
+      "outcome": "failed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-07T07:50:42.023233+00:00",
+  "status": "failed",
+  "task_digest": "44644ab43788dcfca4d0c2f918db137b98545015074ecb73a51f44c23aa77ae1",
+  "task_timeout": 1500,
+  "verification": [],
+  "work_branch": "main"
+}

@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-ipo-v2-final-checkpoint-20261107-v1",
+  "dedupe_key": "la-bloomml-ipo-v2-final-checkpoint-20261107-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 300,
+  "idle_timeout": 180,
+  "task_timeout": 420,
+  "memory_limit_mb": 1024,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-final.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"1a1b3de8dada926a00f37be158ef99cd1393b860\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\ngit diff --check 472face97b21aa4e3f838a424d8245b3dee45b17 HEAD\necho \"SPRINT_DIFF_CHECK|PASS\"\ntest -f docs/checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md\ntest -f src/climate/runtime/profile/IpoProfileActivationTransaction.h\ngrep -q 'ClosedIpoActivationGate ipo_activation_gate' src/climate/ClimateV6RealInputRuntime.cpp\ngrep -q 'docs/checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md' docs/NEXT_CHAT.md\necho \"CHECKPOINT_AND_CLOSED_GATE|PASS\"\ntest -z \"$(git status --porcelain)\"\necho \"WORKTREE|CLEAN\"\ngit log -1 --format='FINAL_SHA|%H'"
+  ]
+}

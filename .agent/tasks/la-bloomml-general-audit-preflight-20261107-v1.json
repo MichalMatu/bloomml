@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-general-audit-preflight-20261107-v1",
+  "dedupe_key": "la-bloomml-general-audit-preflight-20261107-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 1800,
+  "idle_timeout": 600,
+  "task_timeout": 2400,
+  "memory_limit_mb": 8192,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = \"Darwin\"\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-general-audit.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/repo\"\ncd \"$WORK/repo\"\necho \"AUDIT_SHA|$(git rev-parse HEAD)\"\necho \"BRANCH|$(git branch --show-current)\"\necho \"CLEAN|$(test -z \"$(git status --porcelain)\" && echo yes || echo no)\"\necho \"SERIAL_120_PRESENT|$(test -e /dev/cu.usbserial-120 && echo yes || echo no)\"\nfor days in 7 30 90; do echo \"COMMITS_${days}D|$(git log --since=\"${days} days ago\" --format=%H | wc -l | tr -d ' ')\"; done\necho \"LAST_SEVEN_DAYS_FILES\"\ngit log --since=\"7 days ago\" --name-only --format= | sort -u | grep -v '^$' | sed -n '1,60p'\necho \"TOOL_VERSIONS\"\nfor name in python3 cmake clang-format clang-tidy pnpm node idf.py; do if command -v \"$name\" >/dev/null 2>&1; then printf \"%s|%s\\n\" \"$name\" \"$(command -v \"$name\")\"; else echo \"$name|MISSING\"; fi; done\necho \"PACKAGE_PYTHON_STATUS\"\nif test -x .venv/bin/python; then echo \"PYTHON_VENV|present\"; else echo \"PYTHON_VENV|absent in clean clone\"; fi\necho \"READ_ONLY_GATES\"\nset +e\nmake test-ipo > \"$WORK/test-ipo.log\" 2>&1\nresult=$?\necho \"TEST_IPO_EXIT|$result\"\ntail -35 \"$WORK/test-ipo.log\"\npython3 -m compileall -q tools scripts > \"$WORK/compile.log\" 2>&1\nresult=$?\necho \"PYTHON_COMPILE_EXIT|$result\"\ntail -12 \"$WORK/compile.log\"\nif command -v pnpm >/dev/null 2>&1; then (cd web && pnpm install --offline --frozen-lockfile && pnpm gate) > \"$WORK/web.log\" 2>&1; result=$?; echo \"WEB_GATE_EXIT|$result\"; tail -35 \"$WORK/web.log\"; else echo \"WEB_GATE|SKIP missing pnpm\"; fi\necho \"END_AUDIT_READ_ONLY\""
+  ]
+}

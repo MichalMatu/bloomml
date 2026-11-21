@@ -1,0 +1,61 @@
+{
+  "allow_write": false,
+  "attempt_id": "8154f2175acb1c58148a5cd5",
+  "command_timeout": 1200,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 1502,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-transaction.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"317bc068abb78b42cc5e10b4568f71ef6a7b30b3\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"SOURCE_SHA|$EXPECTED\"\nmake test-ipo\necho \"IPO_CPP_TARGETED|PASS\"\nif command -v pnpm >/dev/null 2>&1; then\n  if ! test -x web/node_modules/.bin/vitest; then\n    echo 'IPO_VITEST|INSTALLING_LOCKED_DEPENDENCIES'\n    if ! pnpm --dir web install --frozen-lockfile --prefer-offline --ignore-scripts; then\n      echo 'IPO_VITEST|BLOCKED_DEPENDENCY_INSTALL'\n    fi\n  fi\n  if test -x web/node_modules/.bin/vitest; then\n    pnpm --dir web exec vitest run src/domain/ipo-board-readiness.test.ts\n    echo \"IPO_VITEST_B5|PASS\"\n  else\n    echo \"IPO_VITEST_B5|BLOCKED_MISSING_DEPENDENCIES\"\n  fi\nelse\n  echo \"IPO_VITEST_B5|BLOCKED_NO_PNPM\"\nfi\ngit diff --check\necho \"TARGETED_CHECK|PASS\"",
+      "current_rss_mb": 2.95,
+      "elapsed_seconds": 9.743,
+      "exit_code": 2,
+      "idle_timed_out": false,
+      "memory_limit_mb": 4096,
+      "memory_limited": false,
+      "output": "SOURCE_SHA|317bc068abb78b42cc5e10b4568f71ef6a7b30b3\ncmake -S test/host -B build/host-tests\n-- The CXX compiler identification is AppleClang 21.0.0.21000101\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (1.9s)\n-- Generating done (0.5s)\n-- Build files have been written to: /tmp/bloomml-ipo-transaction.Xjq1BF/source/build/host-tests\ncmake --build build/host-tests --target ipo_profile_tests ipo_activation_tests --parallel 2\ngmake[1]: Entering directory '/private/tmp/bloomml-ipo-transaction.Xjq1BF/source/build/host-tests'\n[100%] Building CXX object CMakeFiles/ipo_profile_tests.dir/tmp/bloomml-ipo-transaction.Xjq1BF/source/test/test_ipo_profile/test_main.cpp.o\n[100%] Linking CXX executable ipo_profile_tests\n[100%] Built target ipo_profile_tests\nBuilding CXX object CMakeFiles/ipo_activation_tests.dir/tmp/bloomml-ipo-transaction.Xjq1BF/source/test/test_ipo_activation/test_main.cpp.o\nLinking CXX executable ipo_activation_tests\nBuilt target ipo_activation_tests\ngmake[1]: Leaving directory '/private/tmp/bloomml-ipo-transaction.Xjq1BF/source/build/host-tests'\nctest --test-dir build/host-tests -R '^(ipo_profile_tests|ipo_activation_tests) --output-on-failure\n/bin/sh: -c: line 0: unexpected EOF while looking for matching `''\n/bin/sh: -c: line 1: syntax error: unexpected end of file\nmake: *** [test-ipo] Error 2\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 83.69,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-07T11:32:09.357372+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.382,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.218,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-ipo-v2-transaction-tests-20261107-v1",
+  "idle_timeout": 400,
+  "memory_limit_mb": 4096,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 9.743,
+      "outcome": "failed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-07T11:31:56.771091+00:00",
+  "status": "failed",
+  "task_digest": "43c0484430fb5c31358c3cfa1a005ba5fa812498d18792d8ae68882d6ed2d6e3",
+  "task_timeout": 1500,
+  "verification": [],
+  "work_branch": "main"
+}

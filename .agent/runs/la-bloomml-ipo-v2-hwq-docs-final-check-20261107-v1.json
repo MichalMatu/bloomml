@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-ipo-v2-hwq-docs-final-check-20261107-v1",
+  "task_digest": "8e4e88a060e753d858b2b4d14bfd4d30d6e960f4724d2578fcecfe306dccd163",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-07T12:47:17.726745+00:00",
+  "attempt_id": "59f504ba819c3e5ffa4ee69f",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 51549,
+  "updated_at": "2026-11-07T12:47:18.020889+00:00",
+  "pid": 51549
+}

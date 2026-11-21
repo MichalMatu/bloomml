@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-ipo-v2-b5-prequal-20261107-v1",
+  "dedupe_key": "la-bloomml-ipo-v2-b5-prequal-20261107-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 900,
+  "idle_timeout": 300,
+  "task_timeout": 1200,
+  "memory_limit_mb": 2048,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-prequal.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"472face97b21aa4e3f838a424d8245b3dee45b17\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"MAIN_SHA|$(git rev-parse HEAD)\"\nmake test-ipo\necho \"IPO_CPP_B5|PASS\"\nif command -v pnpm >/dev/null 2>&1 && test -x web/node_modules/.bin/vitest; then\n  pnpm --dir web exec vitest run src/domain/ipo-board-readiness.test.ts\n  echo \"IPO_VITEST_B5|PASS\"\nelse\n  echo \"IPO_VITEST_B5|BLOCKED_MISSING_LOCAL_DEPENDENCIES\"\nfi\ngit diff --quiet && test -z \"$(git status --porcelain)\"\necho \"WORKTREE_CLEAN|PASS\""
+  ]
+}

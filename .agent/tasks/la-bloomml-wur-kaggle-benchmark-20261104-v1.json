@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-wur-kaggle-benchmark-20261104-v1",
+  "dedupe_key": "la-bloomml-wur-kaggle-benchmark-20261104-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 500,
+  "idle_timeout": 260,
+  "task_timeout": 680,
+  "memory_limit_mb": 980,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin || exit 41\nWORK=\"$(mktemp -d /tmp/bloomml-wur-repro.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\nexport WORK\ngit clone --quiet --depth 1 --single-branch --branch research/simulator-fidelity-kaggle-20261103 https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\nsha=\"$(git -C \"$WORK/source\" rev-parse HEAD)\"\ntest \"$sha\" = 685c68e62723e2dd2a7bb701e78a7ed05e62e3c7 || { echo 'SOURCE_SHA_MISMATCH'; exit 42; }\nprintf 'RESEARCH_CODE_SHA|%s\\n' \"$sha\"\ncd \"$WORK/source\"\npython3 -m compileall -q tools/ml/wur_external_benchmark.py tests/test_wur_external_benchmark.py\necho 'WUR_COMPILE|PASS'\npython3 -m unittest -v tests.test_wur_external_benchmark\necho 'WUR_UNITTEST|PASS'\nkaggle datasets download -d piantic/autonomous-greenhouse-challengeagc-2nd-2019 -p \"$WORK\" >/dev/null\nARCHIVE=\"$(find \"$WORK\" -maxdepth 1 -name '*.zip' -print -quit)\"\ntest -n \"$ARCHIVE\"\npython3 -m tools.ml.wur_external_benchmark --zip \"$ARCHIVE\" --output \"$WORK/wur-benchmark.json\"\npython3 - <<'PY'\nfrom pathlib import Path\nimport os,json\nj=json.loads((Path(os.environ['WORK'])/'wur-benchmark.json').read_text())\nassert j['total_climate_rows']==286854\nassert j['original_archive_byte_equivalence']=='NOT_VERIFIED'\nassert len(j['sites'])==6\nassert j['training_approval']=='EXPLORATORY_ONLY_ORIGINAL_VERIFICATION_PENDING'\nassert j['clock_basis']=='excel_serial_naive_5min_timezone_unverified'\nprint('WUR_MIRROR_AUDIT|PASS')\nprint('WUR_MIRROR_SHA256|'+j['mirror_sha256'])\nprint('WUR_WEATHER|'+json.dumps({k:j['weather'].get(k) for k in ('rows','coverage','source_tick_deltas_5min','warnings')},ensure_ascii=False,separators=(',',':')))\nfor house in j['sites']:\n baseline=house['baseline']\n metrics={target:baseline[f'{target}@{h}min']\n          for target in ('temperature_c','relative_humidity_pct','co2_ppm','reported_par_umol_m2_s')\n          for h in (5,15,60)}\n print('WUR_REAL_SITE|'+json.dumps({'site':house['site'],'rows':house['rows'],'first':house['first_date_unverified_timezone'],\n 'last':house['last_date_unverified_timezone'],'coverage':house['coverage'],'ranges':house['observed_ranges'],\n 'holdout_cutoff':house['holdout_cutoff_naive_day'],'holdout_rows':house['holdout_rows'],\n 'timestamp_gaps':house['source_tick_deltas_5min'],\n 'weather_matching':house['weather_matching_exact_timestamps'],\n 'warnings':house['warnings'],'baseline':metrics},ensure_ascii=False,separators=(',',':')))\nprint('WUR_SOURCE_ORIGINAL_EQUIVALENCE|NOT_VERIFIED')\nprint('WUR_REPRO_DONE|PASS_EXPLORATORY_ONLY')\nPY"
+  ]
+}

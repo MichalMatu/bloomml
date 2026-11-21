@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-wur-qc-extremes-20261104-v1",
+  "task_digest": "acde2b65603233ff4b970c021788ca43dcb8f20706844e67cad3c8ee88972dc0",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-04T00:46:47.209964+00:00",
+  "attempt_id": "591b4f51cc49018ab6d0766b",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 56118,
+  "updated_at": "2026-11-04T00:46:47.448950+00:00",
+  "pid": 56118
+}

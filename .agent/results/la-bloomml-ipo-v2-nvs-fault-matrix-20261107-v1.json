@@ -1,0 +1,60 @@
+{
+  "allow_write": false,
+  "attempt_id": "6add83113b2b25f54e987d04",
+  "command_timeout": 1600,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 5155,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-nvs-matrix.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"347bcca2901cd4e5d4b52bf27301cad27411ce2a\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"SOURCE_SHA|$EXPECTED\"\ncmake -S test/host -B build/ipo-hwq -DCMAKE_BUILD_TYPE=Debug\ncmake --build build/ipo-hwq --target ipo_nvs_journal_tests --parallel 2\nctest --test-dir build/ipo-hwq -R '^ipo_nvs_journal_tests$' --output-on-failure\necho \"PRODUCTION_NVS_ADAPTER_FAULT_MATRIX|PASS\"\ncmake --build build/ipo-hwq --target stage28d_lamp_safety_tests stage27_fault_freshness_tests output_runtime_lifecycle_control_tests --parallel 2\nctest --test-dir build/ipo-hwq -R '^(stage28d_lamp_safety_tests|stage27_fault_freshness_tests|output_runtime_lifecycle_control_tests)$' --output-on-failure\necho \"SAFETY_RELEVANT_NARROW_REGRESSIONS|PASS\"\ngit diff --check\necho \"DIFF_CHECK|PASS\"",
+      "current_rss_mb": 79.86,
+      "elapsed_seconds": 8.481,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 8192,
+      "memory_limited": false,
+      "output": "SOURCE_SHA|347bcca2901cd4e5d4b52bf27301cad27411ce2a\n-- The CXX compiler identification is AppleClang 21.0.0.21000101\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (0.5s)\n-- Generating done (0.2s)\n-- Build files have been written to: /tmp/bloomml-ipo-nvs-matrix.ymtB74/source/build/ipo-hwq\n[100%] Building CXX object CMakeFiles/ipo_nvs_journal_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/test/test_ipo_nvs_journal/test_main.cpp.o\n[100%] Building CXX object CMakeFiles/ipo_nvs_journal_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/runtime/profile/IpoProfileNvsJournal.cpp.o\n[100%] Linking CXX executable ipo_nvs_journal_tests\n[100%] Built target ipo_nvs_journal_tests\nTest project /tmp/bloomml-ipo-nvs-matrix.ymtB74/source/build/ipo-hwq\n    Start 53: ipo_nvs_journal_tests\n1/1 Test #53: ipo_nvs_journal_tests ............   Passed    0.30 sec\n\n100% tests passed, 0 tests failed out of 1\n\nTotal Test time (real) =   0.30 sec\nPRODUCTION_NVS_ADAPTER_FAULT_MATRIX|PASS\n[  0%] Building CXX object CMakeFiles/stage28d_lamp_safety_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/output/LampSafety.cpp.o\n[  0%] Building CXX object CMakeFiles/stage28d_lamp_safety_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/test/test_stage28d_lamp_safety/test_main.cpp.o\n[100%] Linking CXX executable stage28d_lamp_safety_tests\n[100%] Built target stage28d_lamp_safety_tests\n[ 25%] Building CXX object CMakeFiles/stage27_fault_freshness_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/test/test_stage27_fault_freshness/test_main.cpp.o\n[ 25%] Building CXX object CMakeFiles/stage27_fault_freshness_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/input/ble/BleClimateState.cpp.o\n[ 25%] Building CXX object CMakeFiles/stage27_fault_freshness_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/input/ble/BthomeV2Decoder.cpp.o\n[ 50%] Building CXX object CMakeFiles/stage27_fault_freshness_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/input/ble/Tp357Decoder.cpp.o\n[ 50%] Building CXX object CMakeFiles/stage27_fault_freshness_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/lib/environment_control/src/climate/ClimateFeatureEncoder.cpp.o\n[ 50%] Building CXX object CMakeFiles/stage27_fault_freshness_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/lib/environment_control/src/climate/ClimatePolicy.cpp.o\n[ 75%] Building CXX object CMakeFiles/stage27_fault_freshness_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/lib/environment_control/src/climate/ClimateRuntimeController.cpp.o\n[ 75%] Building CXX object CMakeFiles/stage27_fault_freshness_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/lib/environment_control/src/climate/ClimateTrendEstimator.cpp.o\n[100%] Linking CXX executable stage27_fault_freshness_tests\n[100%] Built target stage27_fault_freshness_tests\n[  0%] Building CXX object CMakeFiles/output_runtime_lifecycle_control_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/test/test_output_runtime_lifecycle_control/test_main.cpp.o\n[  0%] Building CXX object CMakeFiles/output_runtime_lifecycle_control_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/output/lifecycle/OutputRuntimeLifecycleControl.cpp.o\n[ 33%] Building CXX object CMakeFiles/output_runtime_lifecycle_control_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/output/lifecycle/OutputLifecycleExecutor.cpp.o\n[ 33%] Building CXX object CMakeFiles/output_runtime_lifecycle_control_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/output/lifecycle/OutputSupervisorLifecycle.cpp.o\n[ 33%] Building CXX object CMakeFiles/output_runtime_lifecycle_control_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/output/supervisor/OutputSupervisorResolver.cpp.o\n[ 66%] Building CXX object CMakeFiles/output_runtime_lifecycle_control_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/output/policy/OutputPolicyConfig.cpp.o\n[ 66%] Building CXX object CMakeFiles/output_runtime_lifecycle_control_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/output/OutputStateStore.cpp.o\n[100%] Building CXX object CMakeFiles/output_runtime_lifecycle_control_tests.dir/tmp/bloomml-ipo-nvs-matrix.ymtB74/source/src/climate/output/policy/BinaryActuatorPolicy.cpp.o\n[100%] Linking CXX executable output_runtime_lifecycle_control_tests\n[100%] Built target output_runtime_lifecycle_control_tests\nTest project /tmp/bloomml-ipo-nvs-matrix.ymtB74/source/build/ipo-hwq\n    Start 26: output_runtime_lifecycle_control_tests\n1/3 Test #26: output_runtime_lifecycle_control_tests ...   Passed    0.29 sec\n    Start 33: stage28d_lamp_safety_tests\n2/3 Test #33: stage28d_lamp_safety_tests ...............   Passed    0.28 sec\n    Start 42: stage27_fault_freshness_tests\n3/3 Test #42: stage27_fault_freshness_tests ............   Passed    0.32 sec\n\n100% tests passed, 0 tests failed out of 3\n\nTotal Test time (real) =   0.89 sec\nSAFETY_RELEVANT_NARROW_REGRESSIONS|PASS\nDIFF_CHECK|PASS\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 79.86,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-07T12:34:55.098254+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.071,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.09,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-ipo-v2-nvs-fault-matrix-20261107-v1",
+  "idle_timeout": 500,
+  "memory_limit_mb": 8192,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 8.481,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-07T12:34:44.539319+00:00",
+  "status": "done",
+  "task_digest": "ad4d9b427f26545cdf7e3af31e46ba7353770a31a297a6435a97d9f6f32e1c0f",
+  "task_timeout": 2400,
+  "verification": [],
+  "work_branch": "main"
+}

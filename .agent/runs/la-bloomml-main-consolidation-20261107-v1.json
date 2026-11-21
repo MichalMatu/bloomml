@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-main-consolidation-20261107-v1",
+  "task_digest": "44644ab43788dcfca4d0c2f918db137b98545015074ecb73a51f44c23aa77ae1",
+  "status": "failed",
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-07T07:50:46.863826+00:00",
+  "attempt_id": "2e2d7d629205dba728636d1f",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 21529,
+  "updated_at": "2026-11-07T07:50:47.125922+00:00",
+  "pid": 21529
+}

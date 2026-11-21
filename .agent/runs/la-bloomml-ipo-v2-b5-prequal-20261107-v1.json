@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-ipo-v2-b5-prequal-20261107-v1",
+  "task_digest": "1e3cec4c64dcfb8fc49ccbc55aaa24a8b5ef16b06600eca0fd15c7fa89f65f58",
+  "status": "failed",
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-07T11:21:15.682274+00:00",
+  "attempt_id": "197c4ad02d9ed6284c9e6f8d",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 35240,
+  "updated_at": "2026-11-07T11:21:15.915918+00:00",
+  "pid": 35240
+}

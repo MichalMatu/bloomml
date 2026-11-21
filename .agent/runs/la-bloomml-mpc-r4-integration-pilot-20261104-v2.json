@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-mpc-r4-integration-pilot-20261104-v2",
+  "task_digest": "1120554061254a99677cc42870ed6177119e5879fddb3321aac472dde6c730b4",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-04T01:26:33.870587+00:00",
+  "attempt_id": "9392f822994a013c8f5b590a",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 10525,
+  "updated_at": "2026-11-04T01:26:34.178721+00:00",
+  "pid": 10525
+}

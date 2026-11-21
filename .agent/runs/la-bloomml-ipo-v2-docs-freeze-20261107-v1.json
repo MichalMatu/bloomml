@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-ipo-v2-docs-freeze-20261107-v1",
+  "task_digest": "fd8156328826d6bee42f6c81b978482c6d5c18d32a2a4efcd61b5972ef5ca1a8",
+  "status": "failed",
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-07T13:00:42.539209+00:00",
+  "attempt_id": "41ab311b8bf350013bb1dcc7",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 65191,
+  "updated_at": "2026-11-07T13:00:42.774996+00:00",
+  "pid": 65191
+}

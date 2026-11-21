@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-wur-kaggle-benchmark-20261104-v2",
+  "task_digest": "8e6ee6364f1edb5840424df4970fdf087e8c2f1e61ff6971272ffd3bf2b3cfba",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-04T00:40:45.175906+00:00",
+  "attempt_id": "6e369e2653de18feb798fefd",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 46758,
+  "updated_at": "2026-11-04T00:40:45.454214+00:00",
+  "pid": 46758
+}

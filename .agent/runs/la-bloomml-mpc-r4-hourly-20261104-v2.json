@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-mpc-r4-hourly-20261104-v2",
+  "task_digest": "319c9da15aa7d29d5859df7baf5154cb99af619e777c6f9d05b1cf84084e4a03",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-04T01:36:28.889852+00:00",
+  "attempt_id": "f424e353ce7bd94f08cbe394",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 23969,
+  "updated_at": "2026-11-04T01:36:29.336749+00:00",
+  "pid": 23969
+}

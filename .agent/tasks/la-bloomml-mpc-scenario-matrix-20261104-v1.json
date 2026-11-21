@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-mpc-scenario-matrix-20261104-v1",
+  "dedupe_key": "la-bloomml-mpc-scenario-matrix-20261104-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 1700,
+  "idle_timeout": 550,
+  "task_timeout": 2100,
+  "memory_limit_mb": 1000,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nWORK=\"$(mktemp -d /tmp/bloomml-mpc-matrix.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --depth 1 --single-branch --branch research/simulator-fidelity-kaggle-20261103 https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\ntest \"$(git rev-parse HEAD)\" = \"2ad2177943c4e3a50a4ad094bf939600f1ce14bf\"\nprintf 'MPC_MATRIX_SOURCE_SHA|%s\\n' \"$(git rev-parse HEAD)\"\npython3 -m compileall -q tools/ml/mpc\npython3 -m unittest -q tests.test_mpc_devices tests.test_mpc_optimizer_mock tests.test_mpc_baselines tests.test_mpc_device_responses tests.test_mpc_physics_integration tests.test_mpc_lab_observability tests.test_mpc_shadow_contract tests.test_mpc_scenario_catalog\necho 'MPC_MATRIX_UNIT_AND_R4|PASS'\nset +e\npython3 -m tools.ml.mpc.scenario_matrix --steps 12 --step-s 60 --seeds 1729 1730 --output-dir \"$WORK/results\" > \"$WORK/matrix.log\" 2>&1\nRC=$?\nset -e\nif test \"$RC\" -ne 0 -a \"$RC\" -ne 2; then cat \"$WORK/matrix.log\"; printf 'MPC_MATRIX_TOOL_ERROR|%s\\n' \"$RC\"; exit 73; fi\npython3 - \"$WORK/results/manifest.json\" <<'PY'\nimport json,sys,collections\nm=json.load(open(sys.argv[1]))\nassert m['source_commit']=='2ad2177943c4e3a50a4ad094bf939600f1ce14bf'\nassert m['synthetic_uncalibrated'] and not m['physical_validation_with_real_data']\nassert len(m['results'])==66, (len(m['results']),m['failed_executions'])\nassert not m['failed_executions'],m['failed_executions']\ncounts=collections.Counter((r['policy'],r['quality']['status']) for r in m['results'])\nprint('MPC_MATRIX_STATUS_COUNTS|'+json.dumps({p+'_'+s:n for (p,s),n in counts.items()},sort_keys=True))\nby={(r['scenario'],r['seed'],r['policy']):r['quality'] for r in m['results']}\nfor scenario in [v['name'] for v in m['scenarios']]:\n for seed in m['config']['seeds']:\n  a=by[scenario,seed,'mpc'];b=by[scenario,seed,'threshold'];h=by[scenario,seed,'hysteresis']\n  print('MPC_MATRIX_CASE|'+json.dumps({'scenario':scenario,'seed':seed,\n   'mpc_status':a['status'],'threshold_status':b['status'],'hysteresis_status':h['status'],\n   'mpc_temperature_mae_c':a['temp_mae_c'],\n   'threshold_temperature_mae_c':b['temp_mae_c'],\n   'mpc_rh_mae_pp':a['rh_mae_pp'],\n   'mpc_co2_mae_ppm':a['co2_mae_ppm'],\n   'mpc_fallback_steps':a['fallback_steps'],\n   'mpc_safety_violations':a['safety_violations']},sort_keys=True,separators=(',',':')))\nprint('MPC_MATRIX_DIAGNOSTIC_GATE|'+m['quality_gate'])\nPY\nprintf 'MPC_MATRIX_CLI_GATE_EXIT|%s\\n' \"$RC\""
+  ]
+}

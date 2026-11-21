@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-ipo-v2-nvs-fault-matrix-20261107-v1",
+  "task_digest": "ad4d9b427f26545cdf7e3af31e46ba7353770a31a297a6435a97d9f6f32e1c0f",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-07T12:34:55.098254+00:00",
+  "attempt_id": "6add83113b2b25f54e987d04",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 35665,
+  "updated_at": "2026-11-07T12:34:55.450660+00:00",
+  "pid": 35665
+}

@@ -1,0 +1,60 @@
+{
+  "allow_write": true,
+  "attempt_id": "591b4f51cc49018ab6d0766b",
+  "command_timeout": 420,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 1216,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nWORK=\"$(mktemp -d /tmp/bloomml-wur-qc.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\nexport WORK\ngit clone --quiet --depth 1 --single-branch --branch research/simulator-fidelity-kaggle-20261103 https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ntest \"$(git -C \"$WORK/source\" rev-parse HEAD)\" = 06b901f2b54d3e967756fb45c2a3cec7a6be3b5b\ncd \"$WORK/source\"\npython3 -m unittest -q tests.test_wur_external_benchmark tests.test_wur_forecast_probe\necho \"WUR_EXACT_SOURCE_TESTS|PASS_16_OF_16\"\nkaggle datasets download -d piantic/autonomous-greenhouse-challengeagc-2nd-2019 -p \"$WORK\" >/dev/null\nARCHIVE=\"$(find \"$WORK\" -maxdepth 1 -name '*.zip' -print -quit)\"\npython3 -m tools.ml.wur_external_benchmark --zip \"$ARCHIVE\" --output \"$WORK/qa.json\"\npython3 - <<'PY'\nfrom pathlib import Path\nimport os,json\nj=json.loads((Path(os.environ['WORK'])/'qa.json').read_text())\nassert j['total_climate_rows']==286854\nprint('WUR_DATASET_QC_SHA|'+j['mirror_sha256'])\nfor row in j['sites']:\n print('WUR_QC_SITE|'+json.dumps({'name':row['site'],'extreme':row['extreme_physical_review_counts'],'invalid':row['invalid_numeric_values'],'warnings':row['warnings']},ensure_ascii=False,separators=(',',':')))\nprint('WUR_QC_REAL_DATA|PASS_WITH_WARNINGS')\nPY",
+      "current_rss_mb": 87.88,
+      "elapsed_seconds": 12.493,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 850,
+      "memory_limited": false,
+      "output": "----------------------------------------------------------------------\nRan 16 tests in 0.593s\n\nOK\nWUR_EXACT_SOURCE_TESTS|PASS_16_OF_16\n\n  0%|          | 0.00/12.2M [00:00<?, ?B/s]\n  8%|▊         | 1.00M/12.2M [00:00<00:06, 1.69MB/s]\n 16%|█▋        | 2.00M/12.2M [00:00<00:03, 3.22MB/s]\n 33%|███▎      | 4.00M/12.2M [00:00<00:01, 6.74MB/s]\n 66%|██████▌   | 8.00M/12.2M [00:00<00:00, 14.0MB/s]\n 98%|█████████▊| 12.0M/12.2M [00:01<00:00, 19.8MB/s]\n100%|██████████| 12.2M/12.2M [00:01<00:00, 11.7MB/s]\nWUR_DATASET_QC_SHA|c19d385e7f4731a77e59ebfd763fd49e35e7ac4128d0aaf41b5717709cd75a68\nWUR_QC_SITE|{\"name\":\"AICU\",\"extreme\":{},\"invalid\":{},\"warnings\":[]}\nWUR_QC_SITE|{\"name\":\"Automatoes\",\"extreme\":{},\"invalid\":{},\"warnings\":[]}\nWUR_QC_SITE|{\"name\":\"Digilog\",\"extreme\":{},\"invalid\":{},\"warnings\":[]}\nWUR_QC_SITE|{\"name\":\"IUACAAS\",\"extreme\":{},\"invalid\":{},\"warnings\":[]}\nWUR_QC_SITE|{\"name\":\"Reference\",\"extreme\":{\"Rhair\":1,\"Tair\":2},\"invalid\":{\"CO2air\":2,\"Rhair\":3},\"warnings\":[\"invalid numeric values skipped, never imputed\",\"extreme plausible but suspicious greenhouse values; review source provenance\"]}\nWUR_QC_SITE|{\"name\":\"TheAutomators\",\"extreme\":{},\"invalid\":{},\"warnings\":[]}\nWUR_QC_REAL_DATA|PASS_WITH_WARNINGS\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 88.52,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-04T00:46:47.209964+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.066,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.092,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-wur-qc-extremes-20261104-v1",
+  "idle_timeout": 230,
+  "memory_limit_mb": 850,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 12.493,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-04T00:46:33.065889+00:00",
+  "status": "done",
+  "task_digest": "acde2b65603233ff4b970c021788ca43dcb8f20706844e67cad3c8ee88972dc0",
+  "task_timeout": 600,
+  "verification": [],
+  "work_branch": "main"
+}

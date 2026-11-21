@@ -1,0 +1,60 @@
+{
+  "allow_write": false,
+  "attempt_id": "113d18cdc9d4f43c81ace94b",
+  "command_timeout": 1200,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 3649,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-tests2.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=\"977c48d221cd310be70f39653a33d8eb4abd5ebd\"\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\necho \"SOURCE_SHA|$EXPECTED\"\nmake test-ipo\necho \"IPO_CPP_B5_AND_ACTIVATION|PASS\"\nif command -v pnpm >/dev/null 2>&1; then\n if ! test -x web/node_modules/.bin/vitest; then\n   pnpm --dir web install --frozen-lockfile --prefer-offline --ignore-scripts || echo \"IPO_VITEST_INSTALL|BLOCKED\"\n fi\n if test -x web/node_modules/.bin/vitest; then\n   pnpm --dir web exec vitest run src/domain/ipo-board-readiness.test.ts\n   echo \"IPO_VITEST_B5|PASS\"\n else\n   echo \"IPO_VITEST_B5|BLOCKED_MISSING_DEPENDENCIES\"\n fi\nelse\n echo \"IPO_VITEST_B5|BLOCKED_NO_PNPM\"\nfi\ngit diff --check\necho \"DIFF_CHECK|PASS\"",
+      "current_rss_mb": 3.84,
+      "elapsed_seconds": 17.996,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 4096,
+      "memory_limited": false,
+      "output": "SOURCE_SHA|977c48d221cd310be70f39653a33d8eb4abd5ebd\ncmake -S test/host -B build/host-tests\n-- The CXX compiler identification is AppleClang 21.0.0.21000101\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (0.7s)\n-- Generating done (0.3s)\n-- Build files have been written to: /tmp/bloomml-ipo-tests2.ZmJQbg/source/build/host-tests\ncmake --build build/host-tests --target ipo_profile_tests ipo_activation_tests --parallel 2\ngmake[1]: Entering directory '/private/tmp/bloomml-ipo-tests2.ZmJQbg/source/build/host-tests'\n[100%] Building CXX object CMakeFiles/ipo_profile_tests.dir/tmp/bloomml-ipo-tests2.ZmJQbg/source/test/test_ipo_profile/test_main.cpp.o\n[100%] Linking CXX executable ipo_profile_tests\n[100%] Built target ipo_profile_tests\nBuilding CXX object CMakeFiles/ipo_activation_tests.dir/tmp/bloomml-ipo-tests2.ZmJQbg/source/test/test_ipo_activation/test_main.cpp.o\nLinking CXX executable ipo_activation_tests\nBuilt target ipo_activation_tests\ngmake[1]: Leaving directory '/private/tmp/bloomml-ipo-tests2.ZmJQbg/source/build/host-tests'\nctest --test-dir build/host-tests -R '^(ipo_profile_tests|ipo_activation_tests)$' --output-on-failure\nTest project /tmp/bloomml-ipo-tests2.ZmJQbg/source/build/host-tests\n    Start 51: ipo_profile_tests\n1/2 Test #51: ipo_profile_tests ................   Passed    0.29 sec\n    Start 52: ipo_activation_tests\n2/2 Test #52: ipo_activation_tests .............   Passed    0.27 sec\n\n100% tests passed, 0 tests failed out of 2\n\nTotal Test time (real) =   0.56 sec\nIPO_CPP_B5_AND_ACTIVATION|PASS\n? Verifying lockfile against supply-chain policies (608 entries)...\nLockfile is up to date, resolution step is skipped\nProgress: resolved 1, reused 0, downloaded 0, added 0\nPackages: +568\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\nProgress: resolved 568, reused 568, downloaded 0, added 0\nProgress: resolved 568, reused 568, downloaded 0, added 180\n✓ Lockfile passes supply-chain policies (608 entries in 3.1s)\nProgress: resolved 568, reused 568, downloaded 0, added 347\nProgress: resolved 568, reused 568, downloaded 0, added 567\nProgress: resolved 568, reused 568, downloaded 0, added 568, done\n\ndependencies:\n+ @fontsource-variable/geist 5.2.9\n+ @react-three/drei 10.7.7\n+ @react-three/fiber 9.6.1\n+ @tailwindcss/vite 4.3.3\n+ class-variance-authority 0.7.1\n+ clsx 2.1.1\n+ lucide-react 1.24.0\n+ radix-ui 1.6.2\n+ react 19.2.7\n+ react-dom 19.2.7\n+ shadcn 4.13.0\n+ tailwind-merge 3.6.0\n+ tailwindcss 4.3.3\n+ three 0.165.0\n+ tw-animate-css 1.4.0\n\ndevDependencies:\n+ @eslint/js 10.0.1\n+ @types/node 24.13.3\n+ @types/react 19.2.17\n+ @types/react-dom 19.2.3\n+ @types/three 0.165.0\n+ @vitejs/plugin-react 6.0.3\n+ eslint 10.7.0\n+ eslint-plugin-react-hooks 7.1.1\n+ eslint-plugin-react-refresh 0.5.3\n+ globals 17.7.0\n+ prettier 3.9.5\n+ prettier-plugin-tailwindcss 0.8.1\n+ typescript 6.0.3\n+ typescript-eslint 8.64.0\n+ vite 8.1.5\n+ vitest 4.1.10\n\nDone in 4.9s using pnpm v11.10.0\n\n\u001b[1m\u001b[30m\u001b[46m RUN \u001b[49m\u001b[39m\u001b[22m \u001b[36mv4.1.10 \u001b[39m\u001b[90m/private/tmp/bloomml-ipo-tests2.ZmJQbg/source/web\u001b[39m\n\n \u001b[32m✓\u001b[39m src/domain/ipo-board-readiness.test.ts \u001b[2m(\u001b[22m\u001b[2m9 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 7\u001b[2mms\u001b[22m\u001b[39m\n\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m1 passed\u001b[39m\u001b[22m\u001b[90m (1)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m9 passed\u001b[39m\u001b[22m\u001b[90m (9)\u001b[39m\n\u001b[2m   Start at \u001b[22m 12:33:21\n\u001b[2m   Duration \u001b[22m 264ms\u001b[2m (transform 72ms, setup 0ms, import 88ms, tests 7ms, environment 0ms)\u001b[22m\n\nIPO_VITEST_B5|PASS\nDIFF_CHECK|PASS\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 726.92,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-07T11:33:27.746808+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.071,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.124,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-ipo-v2-transaction-tests-20261107-v2",
+  "idle_timeout": 400,
+  "memory_limit_mb": 4096,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 17.996,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-07T11:33:07.980167+00:00",
+  "status": "done",
+  "task_digest": "6ee3c527cabf67dda3ec399c17c5723f7ae46e4fa8c0b8e622a4713637c5cb3c",
+  "task_timeout": 1500,
+  "verification": [],
+  "work_branch": "main"
+}

@@ -1,0 +1,60 @@
+{
+  "allow_write": false,
+  "attempt_id": "fb64ff2da14c211f52ae5516",
+  "command_timeout": 1800,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 6378,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = \"Darwin\"\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-general-audit.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/repo\"\ncd \"$WORK/repo\"\necho \"AUDIT_SHA|$(git rev-parse HEAD)\"\necho \"BRANCH|$(git branch --show-current)\"\necho \"CLEAN|$(test -z \"$(git status --porcelain)\" && echo yes || echo no)\"\necho \"SERIAL_120_PRESENT|$(test -e /dev/cu.usbserial-120 && echo yes || echo no)\"\nfor days in 7 30 90; do echo \"COMMITS_${days}D|$(git log --since=\"${days} days ago\" --format=%H | wc -l | tr -d ' ')\"; done\necho \"LAST_SEVEN_DAYS_FILES\"\ngit log --since=\"7 days ago\" --name-only --format= | sort -u | grep -v '^$' | sed -n '1,60p'\necho \"TOOL_VERSIONS\"\nfor name in python3 cmake clang-format clang-tidy pnpm node idf.py; do if command -v \"$name\" >/dev/null 2>&1; then printf \"%s|%s\\n\" \"$name\" \"$(command -v \"$name\")\"; else echo \"$name|MISSING\"; fi; done\necho \"PACKAGE_PYTHON_STATUS\"\nif test -x .venv/bin/python; then echo \"PYTHON_VENV|present\"; else echo \"PYTHON_VENV|absent in clean clone\"; fi\necho \"READ_ONLY_GATES\"\nset +e\nmake test-ipo > \"$WORK/test-ipo.log\" 2>&1\nresult=$?\necho \"TEST_IPO_EXIT|$result\"\ntail -35 \"$WORK/test-ipo.log\"\npython3 -m compileall -q tools scripts > \"$WORK/compile.log\" 2>&1\nresult=$?\necho \"PYTHON_COMPILE_EXIT|$result\"\ntail -12 \"$WORK/compile.log\"\nif command -v pnpm >/dev/null 2>&1; then (cd web && pnpm install --offline --frozen-lockfile && pnpm gate) > \"$WORK/web.log\" 2>&1; result=$?; echo \"WEB_GATE_EXIT|$result\"; tail -35 \"$WORK/web.log\"; else echo \"WEB_GATE|SKIP missing pnpm\"; fi\necho \"END_AUDIT_READ_ONLY\"",
+      "current_rss_mb": 1.91,
+      "elapsed_seconds": 115.927,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 8192,
+      "memory_limited": false,
+      "output": "AUDIT_SHA|54c486dae121517161efd6d3d3498e5b4623e1fc\nBRANCH|main\nCLEAN|yes\nSERIAL_120_PRESENT|no\nCOMMITS_7D|148\nCOMMITS_30D|148\nCOMMITS_90D|968\nLAST_SEVEN_DAYS_FILES\n.github/workflows/ci.yml\n.github/workflows/sandbox-pack.yml\nAGENTS.md\nMakefile\nREADME.md\ndocs/ARCHITECTURE.md\ndocs/AUDIT_STATUS.md\ndocs/CHANGELOG.md\ndocs/CONFIGURATION_FLOW.md\ndocs/CURRENT_STATUS.md\ndocs/HISTORY.md\ndocs/IO_MAP.md\ndocs/NEXT_CHAT.md\ndocs/PRODUCT_DIRECTION.md\ndocs/PROJECT_LAYOUT.md\ndocs/PROJECT_ROADMAP.md\ndocs/README.md\ndocs/checkpoints/2026-11-03-kaggle-bloomml-compute-handoff.md\ndocs/checkpoints/2026-11-03-r2-torch-parity-sprint.md\ndocs/checkpoints/2026-11-03-thermodynamics-convection-fidelity.md\ndocs/checkpoints/2026-11-04-bloomml-ml-control-readiness-complete-checkpoint.md\ndocs/checkpoints/2026-11-04-bloomml-mpc-observability-and-extended-lab.md\ndocs/checkpoints/2026-11-04-bloomml-mpc-resume-complete.md\ndocs/checkpoints/2026-11-04-bloomml-mpc-sprint-a-b-initial.md\ndocs/checkpoints/2026-11-04-bloomml-mpc-sprint-a-e-research-gate.md\ndocs/checkpoints/2026-11-04-bloomml-research-clean-handoff.md\ndocs/checkpoints/2026-11-04-public-datasets-sprint.md\ndocs/checkpoints/2026-11-04-r4-dual-t4-stress.md\ndocs/checkpoints/2026-11-04-wur-2019-dataset-benchmark.md\ndocs/checkpoints/2026-11-07-bloomml-branch-consolidation.md\ndocs/checkpoints/2026-11-07-bloomml-configuration-integration.md\ndocs/checkpoints/2026-11-07-bloomml-convergence-audit.md\ndocs/checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md\ndocs/checkpoints/2026-11-07-bloomml-ipo-foundation-v2.md\ndocs/checkpoints/2026-11-07-bloomml-ipo-quality-gate-b5.md\ndocs/checkpoints/2026-11-07-bloomml-ipo-runtime-bridge.md\ndocs/checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md\ndocs/checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md\ndocs/simulator/KAGGLE_EXECUTION.md\ndocs/simulator/MPC_RESEARCH.md\ndocs/simulator/MPC_ROADMAP.md\ndocs/simulator/PUBLIC_DATASETS.md\ndocs/simulator/QUALITY_AND_OBSERVABILITY.md\ndocs/simulator/README.md\ndocs/simulator/RESEARCH_STATUS.md\ndocs/simulator/SD_IMPORT.md\ndocs/simulator/THERMODYNAMIC_CORE.md\ndocs/simulator/WUR_DATASET_EVALUATION.md\nlib/ipo_profile/src/IpoBoardAdmission.h\nlib/ipo_profile/src/IpoGraph.h\nlib/ipo_profile/src/IpoSignalSelector.h\nnotebooks/BloomML_Kaggle_GPU_R2.ipynb\nnotebooks/BloomML_Kaggle_R4_Stress.ipynb\nnotebooks/BloomML_Kaggle_T4x2.ipynb\nprofiles/crowpanel-ipo.v2.json\nprofiles/crowpanel-mint.v1.json\nschemas/device-profile.v1.schema.json\nschemas/device-profile.v2.schema.json\nsrc/CMakeLists.txt\nsrc/climate/ClimateV6RealInputRuntime.cpp\nTOOL_VERSIONS\npython3|/Users/michal/.platformio/penv/bin/python3\ncmake|/opt/homebrew/bin/cmake\nclang-format|MISSING\nclang-tidy|MISSING\npnpm|/opt/homebrew/bin/pnpm\nnode|/opt/homebrew/bin/node\nidf.py|MISSING\nPACKAGE_PYTHON_STATUS\nPYTHON_VENV|absent in clean clone\nREAD_ONLY_GATES\nTEST_IPO_EXIT|0\ncmake -S test/host -B build/host-tests\n-- The CXX compiler identification is AppleClang 21.0.0.21000101\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (6.8s)\n-- Generating done (0.9s)\n-- Build files have been written to: /tmp/bloomml-general-audit.P1gFon/repo/build/host-tests\ncmake --build build/host-tests --target ipo_profile_tests ipo_activation_tests ipo_nvs_journal_tests --parallel 2\ngmake[1]: Entering directory '/private/tmp/bloomml-general-audit.P1gFon/repo/build/host-tests'\n[  0%] Building CXX object CMakeFiles/ipo_profile_tests.dir/tmp/bloomml-general-audit.P1gFon/repo/test/test_ipo_profile/test_main.cpp.o\n[100%] Linking CXX executable ipo_profile_tests\n[100%] Built target ipo_profile_tests\n[100%] Building CXX object CMakeFiles/ipo_activation_tests.dir/tmp/bloomml-general-audit.P1gFon/repo/test/test_ipo_activation/test_main.cpp.o\n[100%] Linking CXX executable ipo_activation_tests\n[100%] Built target ipo_activation_tests\n[  0%] Building CXX object CMakeFiles/ipo_nvs_journal_tests.dir/tmp/bloomml-general-audit.P1gFon/repo/test/test_ipo_nvs_journal/test_main.cpp.o\n[100%] Building CXX object CMakeFiles/ipo_nvs_journal_tests.dir/tmp/bloomml-general-audit.P1gFon/repo/src/climate/runtime/profile/IpoProfileNvsJournal.cpp.o\n[100%] Linking CXX executable ipo_nvs_journal_tests\n[100%] Built target ipo_nvs_journal_tests\ngmake[1]: Leaving directory '/private/tmp/bloomml-general-audit.P1gFon/repo/build/host-tests'\nctest --test-dir build/host-tests -R '^(ipo_profile_tests|ipo_activation_tests|ipo_nvs_journal_tests)$' --output-on-failure\nTest project /tmp/bloomml-general-audit.P1gFon/repo/build/host-tests\n    Start 51: ipo_profile_tests\n1/3 Test #51: ipo_profile_tests ................   Passed    0.85 sec\n    Start 52: ipo_activation_tests\n2/3 Test #52: ipo_activation_tests .............   Passed    0.58 sec\n    Start 53: ipo_nvs_journal_tests\n3/3 Test #53: ipo_nvs_journal_tests ............   Passed    0.57 sec\n\n100% tests passed, 0 tests failed out of 3\n\nTotal Test time (real) =   2.02 sec\nPYTHON_COMPILE_EXIT|0\nWEB_GATE_EXIT|2\n+ react 19.2.7\n+ react-dom 19.2.7\n+ shadcn 4.13.0\n+ tailwind-merge 3.6.0\n+ tailwindcss 4.3.3\n+ three 0.165.0\n+ tw-animate-css 1.4.0\n\ndevDependencies:\n+ @eslint/js 10.0.1\n+ @types/node 24.13.3\n+ @types/react 19.2.17\n+ @types/react-dom 19.2.3\n+ @types/three 0.165.0\n+ @vitejs/plugin-react 6.0.3\n+ eslint 10.7.0\n+ eslint-plugin-react-hooks 7.1.1\n+ eslint-plugin-react-refresh 0.5.3\n+ globals 17.7.0\n+ prettier 3.9.5\n+ prettier-plugin-tailwindcss 0.8.1\n+ typescript 6.0.3\n+ typescript-eslint 8.64.0\n+ vite 8.1.5\n+ vitest 4.1.10\n\nDone in 13s using pnpm v11.10.0\n$ pnpm typecheck && pnpm lint && pnpm test && pnpm build\n$ tsc --noEmit\nsrc/pages/ipo-setup-page.tsx(288,61): error TS2322: Type '\"sm\"' is not assignable to type '\"default\" | \"icon\" | null | undefined'.\nsrc/pages/ipo-setup-page.tsx(375,57): error TS2322: Type '\"sm\"' is not assignable to type '\"default\" | \"icon\" | null | undefined'.\nsrc/pages/ipo-setup-page.tsx(440,61): error TS2322: Type '\"sm\"' is not assignable to type '\"default\" | \"icon\" | null | undefined'.\nsrc/pages/ipo-setup-page.tsx(467,55): error TS2322: Type '\"sm\"' is not assignable to type '\"default\" | \"icon\" | null | undefined'.\n[ELIFECYCLE] Command failed with exit code 2.\n[ELIFECYCLE] Command failed with exit code 2.\nEND_AUDIT_READ_ONLY\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 295.5,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-07T16:50:16.069451+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.08,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.132,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-general-audit-preflight-20261107-v1",
+  "idle_timeout": 600,
+  "memory_limit_mb": 8192,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 115.927,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-07T16:48:18.435748+00:00",
+  "status": "done",
+  "task_digest": "53ecfd05d278b936c84487ef3bca8c87e85d37fe4b3ef12c6f7d4cb8176dc859",
+  "task_timeout": 2400,
+  "verification": [],
+  "work_branch": "main"
+}

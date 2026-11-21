@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-wur-unseen-household-forecast-20261104-v2",
+  "task_digest": "1ec7b18b68230e5f1cf072a773974e5d74a85af6da8b4508ee2d20788b4ca7b8",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-04T00:44:34.308990+00:00",
+  "attempt_id": "2356182d314756c1c86624d0",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 52194,
+  "updated_at": "2026-11-04T00:44:34.589072+00:00",
+  "pid": 52194
+}

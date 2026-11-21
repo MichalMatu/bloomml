@@ -1,0 +1,60 @@
+{
+  "allow_write": false,
+  "attempt_id": "281c45378d85164cebe03a6c",
+  "command_timeout": 900,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 1364,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-ipo-prequal2.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\ntest \"$(git rev-parse HEAD)\" = \"472face97b21aa4e3f838a424d8245b3dee45b17\"\npython3 - <<'PY'\nfrom pathlib import Path\np=Path('Makefile')\ns=p.read_text()\nold=\"ctest --test-dir $(HOST_BUILD_DIR) -R '^ipo_profile_tests$' --output-on-failure\"\nassert old in s\np.write_text(s.replace(old,\"ctest --test-dir $(HOST_BUILD_DIR) -R '^ipo_profile_tests$$' --output-on-failure\"))\nPY\nmake test-ipo\necho \"IPO_CPP_B5|PASS\"\nif command -v pnpm >/dev/null 2>&1 && test -x web/node_modules/.bin/vitest; then\n  pnpm --dir web exec vitest run src/domain/ipo-board-readiness.test.ts\n  echo \"IPO_VITEST_B5|PASS\"\nelse\n  echo \"IPO_VITEST_B5|BLOCKED_MISSING_LOCAL_DEPENDENCIES\"\nfi\ngit diff --check\necho \"PATCH_MAKEFILE|VALID\"",
+      "current_rss_mb": 5.45,
+      "elapsed_seconds": 10.005,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 2048,
+      "memory_limited": false,
+      "output": "cmake -S test/host -B build/host-tests\n-- The CXX compiler identification is AppleClang 21.0.0.21000101\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (1.4s)\n-- Generating done (0.8s)\n-- Build files have been written to: /tmp/bloomml-ipo-prequal2.B7j6rm/source/build/host-tests\ncmake --build build/host-tests --target ipo_profile_tests --parallel 2\ngmake[1]: Entering directory '/private/tmp/bloomml-ipo-prequal2.B7j6rm/source/build/host-tests'\n[  0%] Building CXX object CMakeFiles/ipo_profile_tests.dir/tmp/bloomml-ipo-prequal2.B7j6rm/source/test/test_ipo_profile/test_main.cpp.o\n[100%] Linking CXX executable ipo_profile_tests\n[100%] Built target ipo_profile_tests\ngmake[1]: Leaving directory '/private/tmp/bloomml-ipo-prequal2.B7j6rm/source/build/host-tests'\nctest --test-dir build/host-tests -R '^ipo_profile_tests$' --output-on-failure\nTest project /tmp/bloomml-ipo-prequal2.B7j6rm/source/build/host-tests\n    Start 51: ipo_profile_tests\n1/1 Test #51: ipo_profile_tests ................   Passed    0.51 sec\n\n100% tests passed, 0 tests failed out of 1\n\nTotal Test time (real) =   0.52 sec\nIPO_CPP_B5|PASS\nIPO_VITEST_B5|BLOCKED_MISSING_LOCAL_DEPENDENCIES\nPATCH_MAKEFILE|VALID\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 100.08,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-07T11:22:42.314264+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.086,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.178,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-ipo-v2-b5-prequal-20261107-v2",
+  "idle_timeout": 300,
+  "memory_limit_mb": 2048,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 10.005,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-07T11:22:29.596103+00:00",
+  "status": "done",
+  "task_digest": "407156a8bc2d548a1139eb5d740de77ea6fb85194cbb285b013c47225a93eda5",
+  "task_timeout": 1200,
+  "verification": [],
+  "work_branch": "main"
+}

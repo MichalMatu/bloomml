@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-ipo-v2-exact-source-final-gates-20261107-v1",
+  "task_digest": "c6241185697794f16c03f9f190b084be452eb089a72b5455d709a1e4b3a906b7",
+  "status": "failed",
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-07T12:37:52.991431+00:00",
+  "attempt_id": "cc2db2adff0020eb8c7af0cd",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 39569,
+  "updated_at": "2026-11-07T12:37:53.422954+00:00",
+  "pid": 39569
+}

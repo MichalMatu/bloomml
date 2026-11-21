@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-mpc-r4-integration-pilot-20261104-v2",
+  "dedupe_key": "la-bloomml-mpc-r4-integration-pilot-20261104-v2",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 330,
+  "idle_timeout": 180,
+  "task_timeout": 480,
+  "memory_limit_mb": 850,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nWORK=\"$(mktemp -d /tmp/bloomml-mpc-r4-pilot.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --depth 1 --single-branch --branch research/simulator-fidelity-kaggle-20261103 https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ntest \"$(git -C \"$WORK/source\" rev-parse HEAD)\" = \"1feaa6af3d2657faa3a3cbb54ee7cfcc24cc6d2a\"\ncd \"$WORK/source\"\nprintf 'MPC_TEST_SOURCE_SHA|%s\\n' \"$(git rev-parse HEAD)\"\npython3 -m compileall -q tools/ml/mpc\npython3 -m unittest -q tests.test_mpc_devices tests.test_mpc_optimizer_mock tests.test_mpc_physics_integration\necho 'MPC_R4_UNIT_INTEGRATION|TESTS_PASS'\nset +e\npython3 -m tools.ml.mpc.cli --hours 0.05 --step-s 30 --seed 1729 --output-dir \"$WORK/mpc\" > \"$WORK/cli.stdout\" 2>&1\nRC=$?\nset -e\ncat \"$WORK/cli.stdout\"\nprintf 'MPC_PILOT_EXIT_CODE|%s\\n' \"$RC\"\nif test \"$RC\" -ne 0 -a \"$RC\" -ne 2; then echo 'MPC_PILOT_TOOL_ERROR'; exit 73; fi\npython3 - \"$WORK/mpc/manifest.json\" <<'PY'\nimport json,sys\nm=json.load(open(sys.argv[1]))\nassert m[\"source_commit\"]==\"1feaa6af3d2657faa3a3cbb54ee7cfcc24cc6d2a\"\nassert m[\"synthetic_uncalibrated\"] and not m[\"physical_validation_with_real_data\"]\nfor p,r in m[\"baselines\"].items():\n print(\"MPC_PILOT_METRIC|\"+json.dumps({\"policy\":p,**r},separators=(\",\",\":\"),sort_keys=True))\nprint(\"MPC_PILOT_REPRODUCIBLE_MANIFEST|PASS\")\nPY"
+  ]
+}

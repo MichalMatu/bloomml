@@ -1,0 +1,61 @@
+{
+  "allow_write": true,
+  "attempt_id": "6898e9c1d6eb1e5763ab7818",
+  "command_timeout": 1200,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 804,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nWORK=\"$(mktemp -d /tmp/bloomml-mpc-hourly.XXXXXX)\"\ntrap 'rm -rf \"$WORK\"' EXIT\ngit clone --quiet --depth 1 --single-branch --branch research/simulator-fidelity-kaggle-20261103 https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\ntest \"$(git rev-parse HEAD)\" = \"227c7be00265f3a360b493497a1231fdc72a73a4\"\nprintf 'MPC_EXTENDED_SOURCE_SHA|%s\\n' \"$(git rev-parse HEAD)\"\npython3 -m compileall -q tools/ml/mpc tests/test_mpc_device_responses.py tests/test_mpc_lab_observability.py\npython3 -m unittest -q tests.test_mpc_devices tests.test_mpc_optimizer_mock tests.test_mpc_baselines tests.test_mpc_device_responses tests.test_mpc_physics_integration tests.test_mpc_lab_observability\necho 'MPC_EXTENDED_TESTS|PASS'\nset +e\npython3 -m tools.ml.mpc.cli --hours 1 --step-s 60 --seed 1729 --output-dir \"$WORK/pilot\" > \"$WORK/cli.log\" 2>&1\nRC=$?\nset -e\nif test \"$RC\" -ne 0 -a \"$RC\" -ne 2; then cat \"$WORK/cli.log\"; printf 'MPC_1H_TOOL_FAILURE|%s\\n' \"$RC\"; exit 73; fi\npython3 - \"$WORK/pilot\" <<'PY'\nfrom pathlib import Path\nimport json,math,sys\nbase=Path(sys.argv[1]); manifest=json.loads((base/'manifest.json').read_text())\nassert manifest['source_commit']=='227c7be00265f3a360b493497a1231fdc72a73a4'\nassert manifest['config']['steps']==60\nassert manifest['synthetic_uncalibrated'] is True and manifest['physical_validation_with_real_data'] is False\nfor policy in ('mpc','threshold','hysteresis'):\n data=[json.loads(s) for s in (base/(policy+'.ndjson')).read_text().splitlines()]\n assert len(data)==60\n assert all(r['source_commit']=='227c7be00265f3a360b493497a1231fdc72a73a4' for r in data)\n assert all(math.isfinite(r['water_residual_kg']) and abs(r['water_residual_kg'])<1e-7 for r in data)\n assert all(r['virtual_execution_status']=='simulated_applied' for r in data)\n assert all(r['status'] in ('PASS','FAIL','BLOCKED','UNKNOWN') for r in data)\n report=manifest['baselines'][policy]\n assert report['steps']==60\n print('MPC_1H_METRIC|'+json.dumps({'policy':policy,**report},sort_keys=True,separators=(',',':')))\n if policy=='mpc':\n  assert all(r['prediction_uncertainty']=='synthetic_uncalibrated' for r in data)\n  assert all(r['one_step_prediction_error'] is not None for r in data if r['predictions'])\n  print('MPC_1H_MAX_FORECAST_RESIDUAL_C|'+str(max(abs(r['one_step_prediction_error']['temperature_c']) for r in data if r['one_step_prediction_error'])))\nprint('MPC_1H_EVIDENCE_MANIFEST|PASS')\nPY\nprintf 'MPC_1H_CLI_GATE_EXIT|%s\\n' \"$RC\"",
+      "current_rss_mb": 40.84,
+      "elapsed_seconds": 3.344,
+      "exit_code": 1,
+      "idle_timed_out": false,
+      "memory_limit_mb": 1100,
+      "memory_limited": false,
+      "output": "MPC_EXTENDED_SOURCE_SHA|227c7be00265f3a360b493497a1231fdc72a73a4\n======================================================================\nFAIL: test_without_source_sha_gate_is_unknown_not_pass (tests.test_mpc_lab_observability.ObservabilityTest.test_without_source_sha_gate_is_unknown_not_pass)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/private/tmp/bloomml-mpc-hourly.AISZY4/source/tests/test_mpc_lab_observability.py\", line 44, in test_without_source_sha_gate_is_unknown_not_pass\n    self.assertEqual(m.status,'UNKNOWN')\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'FAIL' != 'UNKNOWN'\n- FAIL\n+ UNKNOWN\n\n\n----------------------------------------------------------------------\nRan 23 tests in 0.654s\n\nFAILED (failures=1)\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 40.84,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-04T01:33:28.285946+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.073,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.089,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-mpc-r4-hourly-20261104-v1",
+  "idle_timeout": 400,
+  "memory_limit_mb": 1100,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 3.344,
+      "outcome": "failed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-04T01:33:23.342680+00:00",
+  "status": "failed",
+  "task_digest": "0a13c8c1ffef9ae6c99eab5be0d800bc99642d900540532199e639e615c03ea9",
+  "task_timeout": 1500,
+  "verification": [],
+  "work_branch": "main"
+}
