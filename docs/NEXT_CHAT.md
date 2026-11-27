@@ -2,7 +2,7 @@
 
 ## Aktualny punkt wznowienia
 
-H0 PASS, H1 PARTIAL. [Checkpoint](checkpoints/2026-11-27-bloomml-hardware-progress.md). ESP32-S3 na `/dev/cu.usbserial-130`, izolacja potwierdzona, ostatni sprzętowy test `2199a75` fake-locked PASS. Native NVS kwalifikacja pominięta (blokada narzędzia), pozostawiona operatorowi do lokalnego wykonania. Kontynuuj niezależne prace software, nie ponawiaj zablokowanego zadania, nie otwieraj H2/H3 ani bramki IPO.
+H0 PASS, H1 PARTIAL. [Checkpoint](checkpoints/2026-11-27-bloomml-hardware-progress.md). ESP32-S3 na `/dev/cu.usbserial-130`, izolacja potwierdzona, ostatni sprzętowy test `2199a75` fake-locked PASS. Native NVS kwalifikacja pominięta (blokada narzędzia), pozostawiona operatorowi do lokalnego wykonania. Sprint software zamknięty w zakresie wykonanych prac (regresja telemetrii `a813a25`, 3/3 PASS). Operator potwierdził brak karty SD. Test SD i pozostałe otwarte testy sprzętowe są odroczone do osobnego etapu; nie ponawiaj zablokowanego zadania ani zakończonych prób, nie otwieraj H2/H3 ani bramki IPO.
 
 ## Software audit / repair — ZAMKNIĘTY
 
@@ -25,7 +25,9 @@ Nie powtarzać bez regresji: commity `cf1c434` / `196c305` / `4aadf5f` zamknęł
 
 Dowody: [checkpoint kwalifikacji](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md) i [checkpoint transakcji](checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md).
 
-## Pozostałe bramki — bez omijania H1
+## Pozostałe bramki — odroczone, bez omijania H1
+
+Wznowić po przygotowaniu sprzętu i decyzji operatora; test SD po włożeniu karty.
 
 1. Po lokalnym rozstrzygnięciu pominiętej kwalifikacji NVS oraz z autoryzacją operatora i izolowanymi wyjściami domknij brakujący `ESP-IDF` hardware gate na exact SHA z `GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED=0`: NVS flash/reboot/slot recovery, TP357/SCD41 brak/stale/invalid, niezależny LampSafety, Rule, heap/PSRAM/stack/watchdog. Nie wykonuj ryzykownych odłączeń zasilania bez świadomej zgody i izolacji.
 2. Po PASS zaprojektuj supervisor-owned `quiesce / emergency-lock`, bez osobnych zapisów RF/GPIO, z zatrzaśniętym quarantine przy niepewnym rollbacku. Zachowaj wyłączną własność OutputSupervisor i niezależne safety.

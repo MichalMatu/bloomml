@@ -6,7 +6,7 @@
 
 CrowPanel: autoryzowany port `/dev/cu.usbserial-130`, fizyczna izolacja odbiorników potwierdzona przez operatora. Firmware `2199a75` fake-locked: sprzętowy PASS w zakresie zasobów, normalnych odczytów i zapisu awaryjnego. Native NVS fault/recovery: **SKIPPED — TOOL BLOCK; operator-owned local follow-up**. Nie jest to PASS. H1 pozostaje otwarty; H2/H3 nie są dopuszczone. [Dowody](checkpoints/2026-11-27-bloomml-hardware-progress.md).
 
-Aktualne zadanie: bezpieczne, niezależne porządkowanie kodu i testów hostowych; bez powtarzania zablokowanego testu.
+Aktualny sprint software: **CLOSED — scoped**. Regresja współdzielonego bufora telemetrii na `a813a25`: 3/3 host suites PASS. Pozostała kwalifikacja sprzętowa odroczona na decyzję operatora; nie ponawiać zakończonych ani zablokowanych prób.
 
 ## Najnowszy sprint software — bez aktywacji IPO
 
@@ -42,10 +42,10 @@ Naprawy `cf1c434` (web typecheck, HTTP diagnostics POST), `196c305` (96 narusze�
 
 *Ważne:* NVS fault injection używa podmienionego API, **nie fizycznego flash**. Kompilacja ESP-IDF nie dowodzi zachowania czujników ani poprawnego działania na podłączonej płytce. SHA testów i builda są różne. Późniejsze zmiany produkcyjne RF, telemetrii i budżetu stosu mają osobne dowody w checkpoincie sprzętowym z 2026-11-27.
 
-## Otwarte bramki
+## Otwarte bramki — odroczone, niezaliczone
 
 1. H1: native NVS/recovery — pominięty w tym trybie, oczekuje na lokalną kwalifikację operatora. Nie uznawać za zaliczony.
-2. H1: brak/stale/invalid wejść, fizyczne LampSafety trip/recovery, dłuższa stabilność oraz potwierdzenie odbiorników. SD: timeout, flash fallback działa.
+2. H1: brak/stale/invalid wejść, fizyczne LampSafety trip/recovery, dłuższa stabilność oraz potwierdzenie odbiorników. SD: **DEFERRED — brak karty (informacja operatora)**; poprzedni timeout pozostaje obserwacją bez włożonej karty, flash fallback działa. Test SD po włożeniu karty.
 3. H2: supervisor-owned quiesce/emergency-lock dopiero po H1.
 4. H3: uwierzytelniony kanał preview/activate/status/rollback dopiero po H2.
 
