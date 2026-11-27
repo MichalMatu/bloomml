@@ -1,20 +1,18 @@
-# BloomML — handoff do następnego czatu (2026-11-07)
+# BloomML — handoff do następnego czatu (2026-11-27)
 
-## JEDEN NASTĘPNY KROK — ZACZNIJ OD TEGO
+## Aktualny punkt wznowienia
 
-**Podłączyć autoryzowany CrowPanel do Maca i potwierdzić fizyczną izolację wszystkich wyjść.**
-
-Ostatni Mac Local Agent zgłosił **`/dev/cu.usbserial-120` ABSENT**. Dopóki port i faktyczna izolacja trzech RF433 wyjść nie będą potwierdzone, **nie flashuj, nie resetuj, nie wykonuj testu power-cut, nie zmieniaj firmware i nie odblokowuj IPO v2**. Gdy płytka nadal jest nieobecna, zgłoś `BLOCKED / HARDWARE_ABSENT`, nie zastępuj tego ponawianiem już zaliczonych testów ani budowaniem przedwczesnego API.
+H0 PASS, H1 PARTIAL. [Checkpoint](checkpoints/2026-11-27-bloomml-hardware-progress.md). ESP32-S3 na `/dev/cu.usbserial-130`, izolacja potwierdzona, ostatni sprzętowy test `2199a75` fake-locked PASS. Native NVS kwalifikacja pominięta (blokada narzędzia), pozostawiona operatorowi do lokalnego wykonania. Kontynuuj niezależne prace software, nie ponawiaj zablokowanego zadania, nie otwieraj H2/H3 ani bramki IPO.
 
 ## Software audit / repair — ZAMKNIĘTY
 
-Nie powtarzać bez regresji: commity `cf1c434` / `196c305` / `4aadf5f` zamknęły cztery TypeScript błędy, 96 naruszeń lint oraz obsługę niebezpiecznego/nieświeżego odświeżania diagnostyki. Dowody: web **114/114 Vitest** + typecheck/lint/build PASS, panel **135/135 pytest** PASS, host C++/display PASS, bazowy IPO **3/3** PASS. [Checkpoint naprawczy](checkpoints/2026-11-07-bloomml-general-repository-repair.md). Nie wykazano fizycznej izolacji ani nowego ESP-IDF builda na aktualnym HEAD; kolejnym krokiem pozostaje H0.
+Nie powtarzać bez regresji: commity `cf1c434` / `196c305` / `4aadf5f` zamknęły cztery TypeScript błędy, 96 naruszeń lint oraz obsługę niebezpiecznego/nieświeżego odświeżania diagnostyki. Dowody: web **114/114 Vitest** + typecheck/lint/build PASS, panel **135/135 pytest** PASS, host C++/display PASS, bazowy IPO **3/3** PASS. [Checkpoint naprawczy](checkpoints/2026-11-07-bloomml-general-repository-repair.md). H0 został później zaliczony; aktualne dowody sprzętowe są w nowym checkpoincie.
 
 ## Preflight nowej sesji
 
 1. Repo **`MichalMatu/bloomml`**: odczytaj **aktualny** HEAD `main` i `agent-control:.agent/status/daemon.json`; nie zakładaj SHA handoff jako bieżącego. Mac Local Agent binding: `815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5`, `work_branch=main`, `resources=[]`.
 2. Przeczytaj `AGENTS.md`, `docs/README.md`, `docs/CURRENT_STATUS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md` i [checkpoint fizyczny](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md) i [nowy checkpoint naprawczy](checkpoints/2026-11-07-bloomml-general-repository-repair.md).
-3. Sprawdź **tylko autoryzowany port** `/dev/cu.usbserial-120`. **Nigdy** `/dev/cu.usbserial-10`; `/dev/cu.usbserial-1120` wymaga odrębnej zgody. Najpierw potwierdź fizyczną izolację wyjść, nie wyciągaj wniosku o izolacji z samego flag/config builda.
+3. Sprawdź **tylko autoryzowany port** `/dev/cu.usbserial-130`. Stary port 120 nie jest bieżącym celem. **Nigdy** `/dev/cu.usbserial-10`; `/dev/cu.usbserial-1120` wymaga odrębnej zgody. Najpierw potwierdź fizyczną izolację wyjść, nie wyciągaj wniosku o izolacji z samego flag/config builda.
 
 ## Co jest zakończone — NIE POWTARZAJ
 
@@ -27,9 +25,9 @@ Nie powtarzać bez regresji: commity `cf1c434` / `196c305` / `4aadf5f` zamknęł
 
 Dowody: [checkpoint kwalifikacji](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md) i [checkpoint transakcji](checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md).
 
-## Dopiero po H0 — fizyczna obecność + izolacja
+## Pozostałe bramki — bez omijania H1
 
-1. Z autoryzacją operatora i izolowanymi wyjściami wykonaj rzeczywisty `ESP-IDF` hardware gate na exact SHA z `GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED=0`: NVS flash/reboot/slot recovery, TP357/SCD41 brak/stale/invalid, niezależny LampSafety, Rule, heap/PSRAM/stack/watchdog. Nie wykonuj ryzykownych odłączeń zasilania bez świadomej zgody i izolacji.
+1. Po lokalnym rozstrzygnięciu pominiętej kwalifikacji NVS oraz z autoryzacją operatora i izolowanymi wyjściami domknij brakujący `ESP-IDF` hardware gate na exact SHA z `GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED=0`: NVS flash/reboot/slot recovery, TP357/SCD41 brak/stale/invalid, niezależny LampSafety, Rule, heap/PSRAM/stack/watchdog. Nie wykonuj ryzykownych odłączeń zasilania bez świadomej zgody i izolacji.
 2. Po PASS zaprojektuj supervisor-owned `quiesce / emergency-lock`, bez osobnych zapisów RF/GPIO, z zatrzaśniętym quarantine przy niepewnym rollbacku. Zachowaj wyłączną własność OutputSupervisor i niezależne safety.
 3. Dopiero potem dodaj **uwierzytelniony** lokalny preview/activate/status/rollback do istniejącego konfiguratora. `tools/panel` jest historycznym serwisem demo i nie stanowi automatycznie produkcyjnego API. Każdy status musi odróżniać `stored`, `active` i fizyczną obserwację.
 4. Zapisz nowy checkpoint exact-SHA, test matrix, blokery i handoff.

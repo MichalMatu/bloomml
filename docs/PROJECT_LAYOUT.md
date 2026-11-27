@@ -21,7 +21,7 @@ Use `docs/README.md` for documentation navigation and `CURRENT_STATUS.md` for ac
 │   └── litegraph_epd_port/     # read-only Clay/EPD donor snapshot; not built
 ├── web/                        # browser configurator/chamber UI
 ├── lib/
-│   ├── ipo_profile/            # bounded C++17 graph and symbolic arbiter; unlinked
+│   ├── ipo_profile/            # bounded C++17 graph and symbolic arbiter; graph linked into real-input
 │   ├── environment_control/    # portable climate-v6 controller core
 │   ├── growbox_display_model/  # neutral C++17 semantic display page DTO
 │   └── growbox_clay_ui/        # isolated C++20 Clay layout/raster component

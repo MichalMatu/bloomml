@@ -8,7 +8,7 @@ namespace growbox::app::climate_io::runtime::profile {
 
 // Separate namespace from OutputSupervisor output-state persistence.
 // No global NVS init or erase here: RuntimeNvsOwner remains sole owner.
-// This adapter is staged and NOT wired to boot/apply in this sprint.
+// Production boot reads this journal for diagnostics; physical apply remains gated.
 enum class IpoJournalStatus : std::uint8_t {
   Ok, NotFound, RecoveredFromBackup, StorageUnavailable,
   Corrupt, InvalidCandidate, GenerationConflict, WriteFailed, ReadbackFailed

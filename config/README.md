@@ -8,7 +8,7 @@
 | `idf/sdkconfig.defaults.n32r16v` | 32 MB flash + 16 MB octal PSRAM module |
 | `idf/sdkconfig.defaults.stage27` | Real-input Stage27 overlay: NimBLE observer/central host + logging/FAT settings |
 | `idf/sdkconfig.defaults.stage27c` | CrowPanel Stage27C storage/partition/diagnostic overlay |
-| `idf/sdkconfig.defaults.stage28rf` | Optional RF-enabled main-stack overlay |
+| `idf/sdkconfig.defaults.stage28rf` | Compatibility overlay; main-stack budget owned by Stage27C |
 | `../schemas/` | ML / wire data contract (not board Kconfig) |
 
 PSRAM-enabled profiles use `CONFIG_SPIRAM_USE_CAPS_ALLOC`: ordinary `malloc()` stays internal by default and allocations that intentionally belong in PSRAM use the ESP-IDF capability allocator (`heap_caps_malloc(..., MALLOC_CAP_SPIRAM)`). Do not enable both `CONFIG_SPIRAM_USE_MALLOC` and `CONFIG_SPIRAM_USE_CAPS_ALLOC`; they are mutually exclusive `CONFIG_SPIRAM_USE` choices.

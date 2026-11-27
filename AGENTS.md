@@ -30,7 +30,7 @@ Then fetch fresh `main` and `agent-control:.agent/status/daemon.json` before any
 
 Historical Stage27/Stage28 handoffs, temporary prompts and superseded audits are not live documentation. Use `docs/HISTORY.md`, `docs/CHANGELOG.md` and Git history when historical evidence is needed.
 
-IPO v2 browser configuration remains **draft-only**. Portable graph and fixed-board selectors are compiled into CrowPanel real-input; boot inspects NVS for diagnostics only. A single activation transaction owner is host-qualified but production instantiates `ClosedIpoActivationGate`; there is no live apply endpoint or physical v2 authority. CrowPanel exact-source ESP-IDF build PASS (2026-11-07), while physical power-loss/ESP-IDF NVS and real hardware tests remain OPEN: authorized `/dev/cu.usbserial-120` was absent. This never replaces Rule, LampSafety or OutputSupervisor. See `docs/CONFIGURATION_FLOW.md` and the current hardware qualification checkpoint.
+IPO v2 browser configuration remains **draft-only**. Portable graph and fixed-board selectors are compiled into CrowPanel real-input; boot inspects NVS for diagnostics only. A single activation transaction owner is host-qualified but production instantiates `ClosedIpoActivationGate`; there is no live apply endpoint or physical v2 authority. CrowPanel exact-source ESP-IDF build PASS (2026-11-07), H0 passed on 2026-11-27; H1 remains partial. Native NVS qualification was skipped due to a tool block and is reserved for operator-owned local follow-up. See docs/CURRENT_STATUS.md. This never replaces Rule, LampSafety or OutputSupervisor. See `docs/CONFIGURATION_FLOW.md` and the current hardware qualification checkpoint.
 
 Research documents such as `DATA_CONTRACT.md`, `CONFIG_MATRIX.*` and `docs/simulator/*` may describe the older v4 128-feature/15-output toolchain. Do not treat them as the production climate-v6 runtime contract unless the task explicitly targets that research toolchain.
 
@@ -190,7 +190,7 @@ If the change introduces an architectural problem, fix that problem before decla
 
 ## Hardware boundaries
 
-Authorized growbox serial device: `/dev/cu.usbserial-120`.
+Authorized growbox serial device: `/dev/cu.usbserial-130` (operator update 2026-11-27). No automatic substitution of another port.
 
 Never open, probe, monitor, reset or flash `/dev/cu.usbserial-10`.
 Do not use `/dev/cu.usbserial-1120` without explicit authorization.

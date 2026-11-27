@@ -1,10 +1,12 @@
 # BloomML — aktualny stan
 
-**2026-11-07 · źródło: `MichalMatu/bloomml` / `main`**
+**2026-11-27 · źródło: `MichalMatu/bloomml` / `main`**
 
-**STATUS: IPO v2 HOST PASS / CROWPANEL BUILD PASS / DEVICE NOT QUALIFIED / ACTIVATION CLOSED.**
+**STATUS: H0 PASS / H1 PARTIAL / IPO ACTIVATION CLOSED.**
 
-**JEDYNY NASTĘPNY KROK:** podłączyć autoryzowany CrowPanel do Maca i potwierdzić **fizyczną izolację wszystkich wyjść**. Ostatni odczyt Mac Local Agent: `/dev/cu.usbserial-120` **ABSENT**. Nie otwierano portów, nie flashowano ani nie uruchamiano RF. Dopóki obecność i izolacja nie zostaną zweryfikowane, nie rozpoczynać testów sprzętowych ani nie udostępniać API aktywacji. [Instrukcja wznowienia](NEXT_CHAT.md).
+CrowPanel: autoryzowany port `/dev/cu.usbserial-130`, fizyczna izolacja odbiorników potwierdzona przez operatora. Firmware `2199a75` fake-locked: sprzętowy PASS w zakresie zasobów, normalnych odczytów i zapisu awaryjnego. Native NVS fault/recovery: **SKIPPED — TOOL BLOCK; operator-owned local follow-up**. Nie jest to PASS. H1 pozostaje otwarty; H2/H3 nie są dopuszczone. [Dowody](checkpoints/2026-11-27-bloomml-hardware-progress.md).
+
+Aktualne zadanie: bezpieczne, niezależne porządkowanie kodu i testów hostowych; bez powtarzania zablokowanego testu.
 
 ## Najnowszy sprint software — bez aktywacji IPO
 
@@ -40,12 +42,12 @@ Naprawy `cf1c434` (web typecheck, HTTP diagnostics POST), `196c305` (96 narusze�
 
 *Ważne:* NVS fault injection używa podmienionego API, **nie fizycznego flash**. Kompilacja ESP-IDF nie dowodzi zachowania czujników ani poprawnego działania na podłączonej płytce. SHA testów i builda są różne; późniejsze zmiany dotyczyły testów i dokumentacji, nie produkcyjnej ścieżki firmware.
 
-## Otwarte, zależne od obecności sprzętu
+## Otwarte bramki
 
-1. Potwierdzić port `/dev/cu.usbserial-120`, tożsamość CrowPanel i faktyczną izolację RF/wyjść. Nie dotykać `/dev/cu.usbserial-10`; `/dev/cu.usbserial-1120` wyłącznie za osobną zgodą.
-2. **Dopiero wtedy** wykonać zatwierdzone, izolowane testy realnego ESP-IDF NVS, odczytów TP357/SCD41 (brak/invalid/stale), termiki Rule/LampSafety, reset/recovery i pomiarów heap/PSRAM/stack/watchdog. Wyjścia mają pozostać fake-locked.
-3. Po pozytywnym hardware gate: zaprojektować i zweryfikować jedną bramkę quiesce/emergency-lock należącą do OutputSupervisor, z synchronizacją cyklu i autoryzacją operatora.
-4. Dopiero po tych zabezpieczeniach: uwierzytelniony kanał preview/activate/status/rollback i połączenie z **istniejącym** panelem IPO. Brak automatycznego apply po restarcie oraz brak pozornego potwierdzenia RF.
+1. H1: native NVS/recovery — pominięty w tym trybie, oczekuje na lokalną kwalifikację operatora. Nie uznawać za zaliczony.
+2. H1: brak/stale/invalid wejść, fizyczne LampSafety trip/recovery, dłuższa stabilność oraz potwierdzenie odbiorników. SD: timeout, flash fallback działa.
+3. H2: supervisor-owned quiesce/emergency-lock dopiero po H1.
+4. H3: uwierzytelniony kanał preview/activate/status/rollback dopiero po H2.
 
 **Poza tym sprintem:** badawczy MPC ma historycznie **19/22** niezaliczonych trudnych scenariuszy; nie otrzymuje uprawnień do wyjść. Tematy Clay, ML/TimesFM, optymalizacji Maca i rozbudowy driverów nie są aktualnym punktem wznowienia. Historia: [HISTORY.md](HISTORY.md), [CHANGELOG.md](CHANGELOG.md), [research status](simulator/RESEARCH_STATUS.md).
 
