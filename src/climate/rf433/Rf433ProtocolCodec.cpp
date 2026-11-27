@@ -236,7 +236,8 @@ CodecStatus encodeFrame(const FrameConfig& config, EncodedFrame& output) noexcep
 
 DecodeResult decodeFrame(const PulseSymbol* symbols, std::size_t symbol_count,
                          DecodeWorkspace& workspace) noexcept {
-  workspace = {};
+  // Every new candidate is initialized by addCandidate; old slots are unreachable.
+  workspace.candidate_count = 0U;
   if (symbols == nullptr || symbol_count == 0U || symbol_count > kRxCaptureSymbolCapacity) {
     return {DecodeStatus::InvalidCapture};
   }

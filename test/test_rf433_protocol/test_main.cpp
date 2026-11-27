@@ -15,6 +15,7 @@ using namespace growbox::app::climate_io::rf433;
 namespace {
 
 void testEncodeDecodeAllProtocols() {
+  DecodeWorkspace workspace{};
   for (std::uint8_t protocol = 1U; protocol <= kProtocolCount; ++protocol) {
     FrameConfig config{{0xA55AU, 16U, protocol}, 3U, 0U};
     EncodedFrame encoded{};
@@ -23,7 +24,6 @@ void testEncodeDecodeAllProtocols() {
     assert(encoded.frame_ticks > 0U);
     assert(encoded.total_ticks == encoded.frame_ticks * 3U);
 
-    DecodeWorkspace workspace{};
     const DecodeResult decoded =
         decodeFrame(encoded.symbols.data(), encoded.symbol_count, workspace);
     assert(decoded.status == DecodeStatus::Decoded);
@@ -36,6 +36,8 @@ void testEncodeDecodeAllProtocols() {
     const auto expected_quantized_pulse_us =
         static_cast<std::uint16_t>(((nominal_pulse_us + 5U) / 10U) * 10U);
     assert(decoded.estimated_pulse_us == expected_quantized_pulse_us);
+    assert(decodeFrame(nullptr, 0U, workspace).status == DecodeStatus::InvalidCapture);
+    assert(workspace.candidate_count == 0U);
   }
 }
 

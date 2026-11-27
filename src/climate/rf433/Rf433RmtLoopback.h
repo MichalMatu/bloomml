@@ -92,6 +92,8 @@ private:
 
   std::array<rmt_symbol_word_t, kEncodedFrameSymbolCount> tx_symbols_{};
   std::array<rmt_symbol_word_t, kRxCaptureSymbolCapacity> rx_symbols_{};
+  // Single synchronous radio owner; ISR never accesses decode scratch.
+  DecodeWorkspace decode_workspace_{};
   volatile std::size_t rx_symbol_count_{0U};
   volatile bool rx_overflow_{false};
 

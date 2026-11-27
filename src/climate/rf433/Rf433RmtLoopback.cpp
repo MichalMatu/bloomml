@@ -197,8 +197,7 @@ bool Rf433RmtLoopback::collectReceive(std::uint32_t timeout_ms,
     return true;
   }
 
-  DecodeWorkspace workspace{};
-  evidence.decoded = decodeFrame(evidence.symbols.data(), received, workspace);
+  evidence.decoded = decodeFrame(evidence.symbols.data(), received, decode_workspace_);
   if (evidence.decoded.status == DecodeStatus::Ambiguous) {
     ++diagnostics_.rx_ambiguous;
   } else if (evidence.decoded.status != DecodeStatus::Decoded) {
