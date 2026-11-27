@@ -12,8 +12,6 @@ namespace growbox::app::climate_io::storage {
 namespace {
 
 constexpr char kTag[] = "stage27_store";
-constexpr std::size_t kRecordBufferBytes = 1024U;
-constexpr std::size_t kSessionBufferBytes = 512U;
 
 } // namespace
 
@@ -269,14 +267,13 @@ Stage27TelemetryLogger::PersistResult Stage27TelemetryLogger::ensureActiveSessio
   session.rtc_trusted = snapshot.rtc_trusted;
   session.start_unix_time_s = snapshot.unix_time_s;
 
-  char header[kSessionBufferBytes]{};
   const std::size_t header_length =
-      telemetry::formatStage27SessionNdjson(header, sizeof(header), session);
+      telemetry::formatStage27SessionNdjson(format_buffer_, kSessionBufferBytes, session);
   if (header_length == 0U) {
     ESP_LOGE(kTag, "Session header serialization overflow");
     return PersistResult::FormatError;
   }
-  if (!active_backend_->beginSession(header, session_id_)) {
+  if (!active_backend_->beginSession(format_buffer_, session_id_)) {
     return PersistResult::BackendError;
   }
 
@@ -297,14 +294,13 @@ Stage27TelemetryLogger::PersistResult Stage27TelemetryLogger::persistSnapshot(
   const bool sample_due = next_sample_due_ms_ == 0U || snapshot.uptime_ms >= next_sample_due_ms_;
   const bool health_due = next_health_due_ms_ == 0U || snapshot.uptime_ms >= next_health_due_ms_;
 
-  char line[kRecordBufferBytes]{};
   if (sample_due) {
-    const std::size_t length = telemetry::formatStage27SampleNdjson(line, sizeof(line), snapshot);
+    const std::size_t length = telemetry::formatStage27SampleNdjson(format_buffer_, sizeof(format_buffer_), snapshot);
     if (length == 0U) {
       ESP_LOGE(kTag, "Sample serialization overflow");
       return PersistResult::FormatError;
     }
-    const PersistResult result = appendFormatted(line, length, snapshot.uptime_ms);
+    const PersistResult result = appendFormatted(format_buffer_, length, snapshot.uptime_ms);
     if (result != PersistResult::Ok) {
       return result;
     }
@@ -314,12 +310,12 @@ Stage27TelemetryLogger::PersistResult Stage27TelemetryLogger::persistSnapshot(
   if (health_due) {
     const Stage27StorageStatus storage_status = status();
     const std::size_t length =
-        telemetry::formatStage27HealthNdjson(line, sizeof(line), snapshot, storage_status);
+        telemetry::formatStage27HealthNdjson(format_buffer_, sizeof(format_buffer_), snapshot, storage_status);
     if (length == 0U) {
       ESP_LOGE(kTag, "Health serialization overflow");
       return PersistResult::FormatError;
     }
-    const PersistResult result = appendFormatted(line, length, snapshot.uptime_ms);
+    const PersistResult result = appendFormatted(format_buffer_, length, snapshot.uptime_ms);
     if (result != PersistResult::Ok) {
       return result;
     }

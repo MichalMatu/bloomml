@@ -10,6 +10,7 @@
 #include <freertos/task.h>
 
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 
 namespace growbox::app::climate_io::storage {
@@ -73,6 +74,11 @@ private:
   std::uint64_t next_health_due_ms_ = 0U;
   std::uint32_t session_id_ = 0U;
   char firmware_sha_[48]{};
+
+  // Worker-owned scratch; both storage backends consume it synchronously.
+  static constexpr std::size_t kRecordBufferBytes = 1024U;
+  static constexpr std::size_t kSessionBufferBytes = 512U;
+  char format_buffer_[kRecordBufferBytes]{};
 
   StaticQueue_t queue_control_{};
   std::uint8_t* queue_storage_ = nullptr;
