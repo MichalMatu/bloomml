@@ -143,6 +143,23 @@ int main() {
   assert(std::strstr(health_buffer, "\"out\":{\"v\":2") != nullptr);
   assert(std::strstr(health_buffer, "\"st\":[\"flash\",0,1,2") != nullptr);
 
+  // The storage worker reuses one scratch buffer for all three record types.
+  // A shorter subsequent record must not expose bytes from the previous one.
+  char scratch[1024];
+  std::memset(scratch, 'X', sizeof(scratch));
+  assert(formatStage27SessionNdjson(scratch, sizeof(session_buffer), session) == session_length);
+  assert(std::strlen(scratch) == session_length);
+  assert(std::strcmp(scratch, session_buffer) == 0);
+  assert(formatStage27SampleNdjson(scratch, sizeof(scratch), snapshot) == sample_length);
+  assert(std::strlen(scratch) == sample_length);
+  assert(std::strcmp(scratch, sample_buffer) == 0);
+  assert(formatStage27HealthNdjson(scratch, sizeof(scratch), snapshot, storage) == health_length);
+  assert(std::strlen(scratch) == health_length);
+  assert(std::strcmp(scratch, health_buffer) == 0);
+  assert(formatStage27SessionNdjson(scratch, sizeof(session_buffer), session) == session_length);
+  assert(std::strlen(scratch) == session_length);
+  assert(std::strcmp(scratch, session_buffer) == 0);
+
   char too_small[32]{};
   assert(formatStage27SessionNdjson(too_small, sizeof(too_small), session) == 0U);
   assert(formatStage27SampleNdjson(too_small, sizeof(too_small), snapshot) == 0U);
