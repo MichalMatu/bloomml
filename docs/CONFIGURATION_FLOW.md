@@ -82,6 +82,6 @@ W przypadku nieudanego rollbacku transakcja zwraca `Quarantined` i wymaga zatrza
 
 ## Kwalifikacja i kolejność dalszych zmian
 
-**Zaliczone:** host C++ IPO **3/3**, B5 Vitest **9/9**, host NVS fault matrix (prawdziwy plik adaptera z mock API), safety/lifecycle **3/3**, real-input CrowPanel ESP-IDF **BUILD PASS** na `1a1b3de8`. **Nie zaliczone:** test na fizycznym ESP32-S3, prawdziwy flash/NVS power cut, TP357/SCD41 urządzeniowe, output lock i API.
+**Zaliczone:** host C++ IPO **3/3**, B5 Vitest **9/9**, host NVS fault matrix (prawdziwy plik adaptera z mock API), safety/lifecycle **3/3**, real-input CrowPanel ESP-IDF **BUILD PASS** na `1a1b3de8`. **H0 PASS, H1 PARTIAL:** odnotowano ograniczone próby sprzętowe na CrowPanel z fake-locked outputs; fizyczny NVS/recovery pominięto. Pozostałe testy urządzeniowe (stale/invalid, termika, stabilność, potwierdzenie odbiorników, SD po włożeniu karty) są odroczone. Output lock i API pozostają niedopuszczone.
 
-**Następny krok:** podłączyć `/dev/cu.usbserial-120` i fizycznie potwierdzić izolację wszystkich wyjść. Dopiero po tym wykonujemy zatwierdzone testy sprzętowe z wyjściami fake-locked; potem owner quiesce/lock OutputSupervisor, następnie bezpieczny uwierzytelniony endpoint istniejącego panelu. Szczegółowy plan: [NEXT_CHAT.md](NEXT_CHAT.md).
+**Następny krok po decyzji operatora:** sprawdzić aktualny autoryzowany port `/dev/cu.usbserial-130` i ponownie potwierdzić izolację przed pozostałą kwalifikacją H1; H2/H3 dopiero po jej zaliczeniu. Nie powtarzać zablokowanego zadania NVS w tym trybie. Szczegółowy plan: [NEXT_CHAT.md](NEXT_CHAT.md).

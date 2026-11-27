@@ -1,6 +1,6 @@
 # BloomML — documentation map
 
-**Resume point (2026-11-27): H0 PASS, H1 PARTIAL, IPO activation CLOSED.** Native NVS qualification was skipped and remains an operator-owned local follow-up. Continue independent software work without reopening hardware gates. Start with [NEXT_CHAT.md](NEXT_CHAT.md) and the [hardware progress checkpoint](checkpoints/2026-11-27-bloomml-hardware-progress.md).
+**Resume point (2026-11-27): H0 PASS, H1 PARTIAL, IPO activation CLOSED.** Native NVS qualification was skipped and remains an operator-owned local follow-up. Current software sprint is closed within its verified scope; remaining H1 hardware tests are deferred until the operator is ready. Start with [NEXT_CHAT.md](NEXT_CHAT.md) and the [hardware progress checkpoint](checkpoints/2026-11-27-bloomml-hardware-progress.md).
 
 Current product docs are authoritative; dated checkpoints preserve implementation evidence. The latest [repository repair checkpoint](checkpoints/2026-11-07-bloomml-general-repository-repair.md) records exact-source web/panel gates and the physical gate still blocked. Historical plans do not reopen closed work.
 
@@ -27,7 +27,7 @@ For normal product work read, in order:
 | `PRODUCT_DIRECTION.md` | canonical product UX/contract direction and ML qualification gates |
 | `AUDIT_STATUS.md` | scoped audit results, evidence limits and open full-audit gates |
 | `checkpoints/2026-11-07-bloomml-general-repository-repair.md` | new source audit, repairs, test evidence and next-chat boundary |
-| `NEXT_CHAT.md` | exact resume procedure: H1 partial and independent software work |
+| `NEXT_CHAT.md` | exact resume procedure: deferred H1 and verified software checkpoint |
 | `checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md` | final consolidated checkpoint and restart dependency |
 | `checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md` | new CrowPanel build and NVS adapter fault-matrix evidence; authorized device absent |
 | `checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md` | qualified host-only transaction owner, explicit closed hardware gate and remaining device gates |

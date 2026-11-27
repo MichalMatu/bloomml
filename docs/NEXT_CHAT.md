@@ -2,6 +2,8 @@
 
 ## Aktualny punkt wznowienia
 
+Handoff 2026-11-27: [dowody i zakres checkpointu](checkpoints/2026-11-27-bloomml-hardware-progress.md). Baseline przed synchronizacją dokumentacji: `ffa15bbd131be0355e6249ffc3645f8c442e844d`; ostatnia zmiana testów `a813a25f7826e37c186b7341a89a7c4ccf031c89`. Wszystkie 33 zadania w zdalnym rejestrze miały odpowiadający plik wyniku, daemon idle; bieżący fizyczny checkout Maca nie był ponownie sprawdzany. Nie rozpoczynać nowych zadań bez decyzji operatora.
+
 H0 PASS, H1 PARTIAL. [Checkpoint](checkpoints/2026-11-27-bloomml-hardware-progress.md). ESP32-S3 na `/dev/cu.usbserial-130`, izolacja potwierdzona, ostatni sprzętowy test `2199a75` fake-locked PASS. Native NVS kwalifikacja pominięta (blokada narzędzia), pozostawiona operatorowi do lokalnego wykonania. Sprint software zamknięty w zakresie wykonanych prac (regresja telemetrii `a813a25`, 3/3 PASS). Operator potwierdził brak karty SD. Test SD i pozostałe otwarte testy sprzętowe są odroczone do osobnego etapu; nie ponawiaj zablokowanego zadania ani zakończonych prób, nie otwieraj H2/H3 ani bramki IPO.
 
 ## Software audit / repair — ZAMKNIĘTY

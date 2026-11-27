@@ -24,7 +24,7 @@ Cel produktu: autonomiczny ESP32-S3 (native ESP-IDF), rzeczywiste czujniki, dete
 
 1. H0 zakończone; aktualny autoryzowany port 130, fizyczna izolacja potwierdzona.
 2. Nie powtarzać pozytywnych prób bez regresji. [Aktualne dowody](checkpoints/2026-11-27-bloomml-hardware-progress.md).
-3. Native NVS/recovery pominięty w ChatGPT na decyzję operatora; lokalny follow-up pozostaje OPEN. Niezależne porządkowanie software może trwać.
+3. Native NVS/recovery pominięty w ChatGPT na decyzję operatora; lokalny follow-up pozostaje OPEN. Bieżący sprint software zamknięty w zweryfikowanym zakresie; dalsze niezależne prace tylko na nowe zlecenie.
 4. Pozostała kwalifikacja H1 odroczona na decyzję operatora: stale/invalid, termika, dłuższa stabilność, potwierdzenie odbiorników i test SD po włożeniu karty (obecnie brak). H1 pozostaje PARTIAL, H2/H3 niedopuszczone.
 5. Bieżący sprint software CLOSED — scoped: regresja bufora telemetrii `a813a25`, 3/3 host suites PASS; nie powtarzać bez regresji.
 
