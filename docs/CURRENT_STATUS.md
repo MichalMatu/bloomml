@@ -40,7 +40,7 @@ Naprawy `cf1c434` (web typecheck, HTTP diagnostics POST), `196c305` (96 narusze�
 | IPO board readiness Vitest | wcześniejszy kod `977c48d` | **9/9 PASS** |
 | Końcowy przegląd dokumentów i closed gate poprzedniego etapu | kod `c4bf62cf` | **PASS**, czyste repo |
 
-*Ważne:* NVS fault injection używa podmienionego API, **nie fizycznego flash**. Kompilacja ESP-IDF nie dowodzi zachowania czujników ani poprawnego działania na podłączonej płytce. SHA testów i builda są różne; późniejsze zmiany dotyczyły testów i dokumentacji, nie produkcyjnej ścieżki firmware.
+*Ważne:* NVS fault injection używa podmienionego API, **nie fizycznego flash**. Kompilacja ESP-IDF nie dowodzi zachowania czujników ani poprawnego działania na podłączonej płytce. SHA testów i builda są różne. Późniejsze zmiany produkcyjne RF, telemetrii i budżetu stosu mają osobne dowody w checkpoincie sprzętowym z 2026-11-27.
 
 ## Otwarte bramki
 
