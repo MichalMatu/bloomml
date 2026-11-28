@@ -427,6 +427,7 @@ export function createIpoDevice(id: string, driver: DriverId): Device {
     "adc.soil": "adc:0", "rf433.binary_socket": "socket:4",
     "gpio.relay": "gpio:4", "pwm.channel": "pwm:0", "modbus.relay": "modbus:1:1",
     "shelly.meter": "shelly:" + id,
+    "shelly.switch_meter": "shelly:" + id,
   }
   return { id, label: definitions.label, driver, locator: preset[driver], enabled: true }
 }

@@ -242,6 +242,27 @@ void testEnvelopePreservesRecoveryMetadata() {
   }
 }
 
+void testOptionalEquipmentEnvelope() {
+  LampSafetyController controller;
+  const auto sample = input(1.0F, 29.0F, true, 0U, 1U);
+  const auto decision = controller.evaluate(sample);
+  LampSafetyEnvelopeSnapshot snapshot{};
+  assert(buildLampSafetyEnvelope(sample, decision, 1U, output::kInvalidOutputEndpoint,
+                                 72U, snapshot));
+  assert(snapshot.envelope.endpoints[0].endpoint == 72U);
+  assert(snapshot.envelope.endpoints[0].constraint == output::SafetyConstraint::ForceOn);
+  assert(!output::safetyConstraintActive(snapshot.envelope.endpoints[1]));
+  assert(buildLampSafetyEnvelope(sample, decision, 2U, 71U,
+                                 output::kInvalidOutputEndpoint, snapshot));
+  assert(snapshot.envelope.endpoints[0].endpoint == 71U);
+  assert(snapshot.envelope.endpoints[0].constraint == output::SafetyConstraint::ForceOff);
+  assert(!output::safetyConstraintActive(snapshot.envelope.endpoints[1]));
+  assert(buildLampSafetyEnvelope(sample, decision, 3U, output::kInvalidOutputEndpoint,
+                                 output::kInvalidOutputEndpoint, snapshot));
+  for (const auto& ep : snapshot.envelope.endpoints) assert(!output::safetyConstraintActive(ep));
+  assert(!buildLampSafetyEnvelope(sample, decision, 4U, 71U, 71U, snapshot));
+}
+
 void testEnvelopeDoesNotInventUnavailableFan() {
   LampSafetyController controller;
   const auto sample = input(1.0F, 28.5F, true, 0U, 1U, false);
@@ -269,6 +290,7 @@ int main() {
   testEnvelopeLeavesScheduleAuthorityUnconstrainedWhenThermallySafe();
   testEnvelopeMapsThermalLatchToLampOffAndFanOn();
   testEnvelopePreservesRecoveryMetadata();
+  testOptionalEquipmentEnvelope();
   testEnvelopeDoesNotInventUnavailableFan();
   return 0;
 }

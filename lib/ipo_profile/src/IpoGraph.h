@@ -21,7 +21,7 @@ inline constexpr std::size_t kMaxLinks = 48U;
 
 enum class Driver : std::uint8_t {
   Tp357, Xiaomi, Scd41, Ds3231, Bme280, Bh1750, SoilAdc,
-  Rf433BinarySocket, GpioRelay, PwmChannel, ModbusRelay, ShellyMeter
+  Rf433BinarySocket, GpioRelay, PwmChannel, ModbusRelay, ShellyMeter, ShellySwitchMeter
 };
 enum class Channel : std::uint8_t {
   Temperature, Humidity, Co2, UnixTime, Illuminance, SoilMoisture, Switch, Duty,
@@ -105,6 +105,8 @@ constexpr bool driverProvides(Driver driver, Channel channel) noexcept {
     case Driver::ModbusRelay: return channel == Channel::Switch;
     case Driver::PwmChannel: return channel == Channel::Duty;
     case Driver::ShellyMeter: return channel == Channel::ActivePower || channel == Channel::Energy;
+    case Driver::ShellySwitchMeter:
+      return channel == Channel::Switch || channel == Channel::ActivePower || channel == Channel::Energy;
   }
   return false;
 }
@@ -178,7 +180,12 @@ inline GraphStatus validateGraph(const Graph& graph) noexcept {
     if (d.id == 0U) return GraphStatus::DuplicateId;
     for (std::size_t j = 0; j < i; ++j) {
       if (graph.devices[j].id == d.id) return GraphStatus::DuplicateId;
-      if (d.enabled && graph.devices[j].enabled && graph.devices[j].driver == d.driver &&
+      const auto isShelly = [](Driver driver) {
+        return driver == Driver::ShellyMeter || driver == Driver::ShellySwitchMeter;
+      };
+      const bool same_driver_family = graph.devices[j].driver == d.driver ||
+          (isShelly(graph.devices[j].driver) && isShelly(d.driver));
+      if (d.enabled && graph.devices[j].enabled && same_driver_family &&
           graph.devices[j].physical_locator == d.physical_locator)
         return GraphStatus::DuplicatePhysicalEndpoint;
     }

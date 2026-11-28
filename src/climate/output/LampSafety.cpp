@@ -94,7 +94,16 @@ LampSafetyDecision LampSafetyController::evaluate(const LampSafetyInput& input) 
 
 bool buildLampSafetyEnvelope(const LampSafetyInput& input, const LampSafetyDecision& decision,
                              std::uint64_t sequence, LampSafetyEnvelopeSnapshot& output) noexcept {
+  return buildLampSafetyEnvelope(input, decision, sequence, kScheduledLightEndpoint,
+                                 kExhaustFanEndpoint, output);
+}
+
+bool buildLampSafetyEnvelope(const LampSafetyInput& input, const LampSafetyDecision& decision,
+                             std::uint64_t sequence, output::OutputEndpointId lamp,
+                             output::OutputEndpointId exhaust,
+                             LampSafetyEnvelopeSnapshot& output) noexcept {
   output = {};
+  if (lamp != ::growbox::app::output::kInvalidOutputEndpoint && lamp == exhaust) return false;
   output.reason = decision.reason;
   output.thermal_latched = decision.thermal_latched;
   output.recovery_running = decision.recovery_running;
@@ -110,16 +119,19 @@ bool buildLampSafetyEnvelope(const LampSafetyInput& input, const LampSafetyDecis
   }
 
   output.envelope.metadata.reason = ::growbox::app::output::OutputReason::ThermalSafety;
-  if (!::growbox::app::output::setSafetyConstraint(
-          output.envelope.endpoints[0], kScheduledLightEndpoint,
+  std::size_t count = 0U;
+  if (::growbox::app::output::isValidOutputEndpoint(lamp) &&
+      !::growbox::app::output::setSafetyConstraint(
+          output.envelope.endpoints[count++], lamp,
           ::growbox::app::output::SafetyConstraint::ForceOff,
           ::growbox::app::output::OutputReason::ThermalSafety)) {
     output = {};
     return false;
   }
 
-  if (decision.force_exhaust_on && !::growbox::app::output::setSafetyConstraint(
-                                       output.envelope.endpoints[1], kExhaustFanEndpoint,
+  if (decision.force_exhaust_on && ::growbox::app::output::isValidOutputEndpoint(exhaust) &&
+      !::growbox::app::output::setSafetyConstraint(
+                                       output.envelope.endpoints[count], exhaust,
                                        ::growbox::app::output::SafetyConstraint::ForceOn,
                                        ::growbox::app::output::OutputReason::ThermalSafety)) {
     output = {};

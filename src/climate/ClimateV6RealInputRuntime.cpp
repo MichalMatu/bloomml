@@ -256,6 +256,10 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
                             execution_status.output_ready ? "real-bounded" : "fake-locked");
 
   runtime::Tp357LampSafetySource lamp_temperature(ble);
+  const auto endpointFor = [&](output::OutputEndpointRole role) noexcept {
+    const auto* item = output::findOutputPolicyRole(equipment.policy(), role);
+    return equipment.valid() && item ? item->endpoint : output::kInvalidOutputEndpoint;
+  };
   runtime::RealInputRuntimeServices services{
       {lamp_temperature, configured_clock, profile_owner},
       application,
@@ -263,7 +267,9 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
        output_owner.lifecycle(), output_owner.lifecycleExecutor(), output_owner.runtimeLifecycle(),
        output_owner.automationControl(), output_owner.manualControl(),
        output_owner.maintenanceControl(), output_owner.supervisorSink(),
-       persistence_owner.persistence(), persistence_owner.stateStore(), output_bindings_valid},
+       persistence_owner.persistence(), persistence_owner.stateStore(), output_bindings_valid,
+       endpointFor(output::OutputEndpointRole::ScheduledLight),
+       endpointFor(output::OutputEndpointRole::ExhaustFan)},
       {service_console, rf_diagnostics, telemetry_reporter, runtime_timing},
   };
   runtime::RealInputRuntimeCoordinator coordinator(services);

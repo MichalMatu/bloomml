@@ -1,6 +1,7 @@
 #pragma once
 
 #include "climate/runtime/core/RuntimeCycleState.h"
+#include "climate/output/OutputTypes.h"
 
 #include <cstdint>
 
@@ -55,6 +56,8 @@ struct RealInputRuntimeOutputServices final {
   output::OutputPersistenceCoordinator& persistence;
   output::OutputStateStore& state_store;
   bool bindings_valid{false};
+  output::OutputEndpointId lamp_endpoint{output::kInvalidOutputEndpoint};
+  output::OutputEndpointId exhaust_endpoint{output::kInvalidOutputEndpoint};
 };
 
 struct RealInputRuntimeSupportServices final {

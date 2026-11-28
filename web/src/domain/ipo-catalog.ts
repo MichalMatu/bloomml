@@ -17,7 +17,7 @@ export type SignalRole = keyof typeof SIGNAL_ROLES
 export type DriverId =
   | "ble.tp357" | "ble.xiaomi" | "i2c.scd41" | "i2c.ds3231"
   | "i2c.bme280" | "i2c.bh1750" | "adc.soil"
-  | "rf433.binary_socket" | "gpio.relay" | "pwm.channel" | "modbus.relay" | "shelly.meter"
+  | "rf433.binary_socket" | "gpio.relay" | "pwm.channel" | "modbus.relay" | "shelly.meter" | "shelly.switch_meter"
 export type Channel = { id: string; unit: string; direction: "input" | "output"; control?: "binary" | "continuous" }
 export type DriverDefinition = {
   label: string
@@ -44,6 +44,7 @@ export const DRIVER_CATALOG: Record<DriverId, DriverDefinition> = {
   "pwm.channel": { label: "Wyjście PWM", transport: "pwm", status: "proposed", channels: [output("duty", "continuous")] },
   "modbus.relay": { label: "Przekaźnik Modbus", transport: "modbus", status: "proposed", channels: [output("switch", "binary")] },
   "shelly.meter": { label: "Shelly — pomiary", transport: "shelly", status: "proposed", channels: [input("active_power_w", "W"), input("energy_wh", "Wh")] },
+  "shelly.switch_meter": { label: "Shelly — przekaźnik i pomiary", transport: "shelly", status: "proposed", channels: [output("switch", "binary"), input("active_power_w", "W"), input("energy_wh", "Wh")] },
 }
 
 export type OutputRole =

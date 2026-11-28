@@ -17,4 +17,8 @@ bool buildScheduleIntent(std::uint64_t monotonic_ms, const ClimateWallClockSnaps
                          std::uint64_t sequence, const RuntimeScheduleProfile& profile,
                          ::growbox::app::output::ScheduleIntent& output) noexcept;
 
+bool buildScheduleIntent(std::uint64_t monotonic_ms, const ClimateWallClockSnapshot& clock,
+                         std::uint64_t sequence, const RuntimeScheduleProfile& profile,
+                         output::OutputEndpointId lamp, output::ScheduleIntent& intent) noexcept;
+
 } // namespace growbox::app::climate_io::runtime

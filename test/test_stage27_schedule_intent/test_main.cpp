@@ -37,6 +37,16 @@ void assertSingleLampIntent(const output::ScheduleIntent& intent, float expected
   assert(!output::endpointIntentActive(intent.endpoints[2]));
 }
 
+void testOptionalLampAndRemapping() {
+  const auto profile = growbox::app::climate_io::runtime::makeMintRuntimeScheduleProfile();
+  output::ScheduleIntent intent{};
+  assert(buildScheduleIntent(1U, clockAt(1768453200ULL), 2U, profile,
+                             output::kInvalidOutputEndpoint, intent));
+  for (const auto& ep : intent.endpoints) assert(!output::endpointIntentActive(ep));
+  assert(buildScheduleIntent(1U, clockAt(1768453200ULL), 2U, profile, 71U, intent));
+  assert(intent.endpoints[0].endpoint == 71U && intent.endpoints[0].level == 1.0F);
+}
+
 void testMetadataAndSingleEndpoint() {
   const auto intent = intentAt(1768453200ULL, 91U, 4567U); // Warsaw 06:00 winter
   assertSingleLampIntent(intent, 1.0F);
@@ -84,6 +94,7 @@ void testInvalidClockFailsClosedAndClearsIntent() {
 } // namespace
 
 int main() {
+  testOptionalLampAndRemapping();
   testMetadataAndSingleEndpoint();
   testWarsawLightingBoundariesMatchExistingProfile();
   testInvalidClockFailsClosedAndClearsIntent();

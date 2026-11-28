@@ -65,27 +65,32 @@ void RealInputRuntimeCoordinator::tick(std::uint64_t loop_started_us) noexcept {
   const std::uint64_t schedule_sequence = cycle_state_.nextOutputIntentSequence();
   const bool schedule_intent_ready =
       rtc_sampled && buildScheduleIntent(now_ms, rtc_snapshot, schedule_sequence,
-                                        services_.inputs.profile.active(), schedule_intent);
+                                        services_.inputs.profile.active(),
+                                        services_.outputs.lamp_endpoint, schedule_intent);
   if (!schedule_intent_ready) {
     schedule_intent = {};
     schedule_intent.metadata.sequence = schedule_sequence;
     schedule_intent.metadata.monotonic_ms = now_ms;
     schedule_intent.metadata.source = output::OutputSource::Schedule;
     schedule_intent.metadata.reason = output::OutputReason::ScheduleRequest;
-    (void)output::setEndpointIntent(schedule_intent.endpoints[0], stage28d::kScheduledLightEndpoint,
-                                    0.0F);
+    if (output::isValidOutputEndpoint(services_.outputs.lamp_endpoint))
+      (void)output::setEndpointIntent(schedule_intent.endpoints[0], services_.outputs.lamp_endpoint,
+                                      0.0F);
   }
 
   const float scheduled_light = output::endpointIntentActive(schedule_intent.endpoints[0])
                                     ? schedule_intent.endpoints[0].level
                                     : 0.0F;
   const stage28d::LampSafetyInput lamp_safety_input{scheduled_light, safety_temperature,
-                                                    services_.outputs.bindings_valid, now_ms};
+                                                    services_.outputs.bindings_valid &&
+                                                        output::isValidOutputEndpoint(services_.outputs.exhaust_endpoint),
+                                                    now_ms};
   lamp_decision = services_.outputs.lamp_safety.evaluate(lamp_safety_input);
 
   stage28d::LampSafetyEnvelopeSnapshot safety_snapshot{};
   const bool safety_envelope_ready = stage28d::buildLampSafetyEnvelope(
-      lamp_safety_input, lamp_decision, cycle_state_.nextOutputIntentSequence(), safety_snapshot);
+      lamp_safety_input, lamp_decision, cycle_state_.nextOutputIntentSequence(),
+      services_.outputs.lamp_endpoint, services_.outputs.exhaust_endpoint, safety_snapshot);
   if (!safety_envelope_ready && services_.outputs.execution_status.transport_available &&
       services_.outputs.lifecycle.mode() != output::SupervisorMode::FaultLocked) {
     ESP_LOGE(kTag, "Lamp safety envelope build failed; requesting supervisor fault containment");

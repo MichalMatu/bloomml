@@ -108,6 +108,26 @@ output::OutputSupervisorResolverConfig resolverConfig() {
   return config;
 }
 
+void testStoredRoleRemapFailsBeforeAnyRestore() {
+  FakeBackend backend;
+  auto policy = safePolicy();
+  const auto first = policy.endpoints[0].role;
+  policy.endpoints[0].role = policy.endpoints[2].role;
+  policy.endpoints[2].role = first;
+  output::OutputPersistenceSnapshot snapshot{};
+  assert(output::makeSafeOutputPersistenceSnapshot(policy, snapshot));
+  snapshot.commands[0].has_last_successful_command = true;
+  snapshot.commands[0].state = output::BinaryOutputState::On;
+  output::OutputPersistenceStore store(backend, safePolicy());
+  assert(store.save(snapshot) == output::OutputPersistenceStoreStatus::Ok);
+  auto state = configuredStateStore();
+  output::OutputPersistenceCoordinator coordinator(store);
+  const auto result = coordinator.initialize(state);
+  assert(result.status == output::OutputPersistenceCoordinatorStatus::InvalidPolicy);
+  assert(!coordinator.valid() && !result.restored_command_truth);
+  assert(!state.find(snapshot.commands[0].endpoint)->has_successful_command);
+}
+
 void testSuccessfulCommandWritesOnceAndRestoresWithoutAttempt() {
   FakeBackend backend;
   output::OutputPersistenceStore persistence_store(backend, safePolicy());
@@ -380,6 +400,7 @@ void testRestoreLastCommandHonorsRetransmitPolicyAcrossReboot() {
 } // namespace
 
 int main() {
+  testStoredRoleRemapFailsBeforeAnyRestore();
   testSuccessfulCommandWritesOnceAndRestoresWithoutAttempt();
   testMissingBlobIsPersistedOnFirstSync();
   testCorruptBlobIsRepairedOnFirstSync();

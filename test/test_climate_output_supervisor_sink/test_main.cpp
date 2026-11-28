@@ -219,6 +219,45 @@ void testConfiguredEquipmentAndTransportSubstitution() {
   }
 }
 
+void testConfiguredDualDeviceHasIndependentPorts() {
+  namespace ipo = growbox::ipo;
+  ipo::Graph graph{};
+  graph.processes[graph.process_count++] = {1U, ipo::ProcessKind::Co2Safety, true};
+  graph.devices[graph.device_count++] = {42U, ipo::Driver::ShellySwitchMeter, 42U, true};
+  graph.signals[graph.signal_count++] = {ipo::SignalRole::ActivePower, 42U, ipo::Channel::ActivePower, 0U};
+  graph.signals[graph.signal_count++] = {ipo::SignalRole::Energy, 42U, ipo::Channel::Energy, 0U};
+  graph.actuators[graph.actuator_count++] = {101U, 42U, ipo::Channel::Switch, ipo::OutputRole::Heater, true, 100U, 100U};
+  assert(ipo::validateGraph(graph) == ipo::GraphStatus::Ok);
+  DualPortFakeDevice device;
+  output::ConfiguredOutputEquipment::Bindings bindings{};
+  bindings[0] = {ipo::Driver::ShellySwitchMeter, 42U, 11U, 7U, &device};
+  output::ConfiguredOutputEquipment equipment(graph, bindings, 1U);
+  assert(equipment.valid() && equipment.capabilities().heater);
+  output::ConfiguredOutputPolicies policies(equipment);
+  output::OutputStateStore store;
+  std::array<output::OutputEndpointId, output::kOutputEndpointCapacity> endpoints{11U};
+  assert(store.configure(endpoints, 1U));
+  output::ConfiguredOutputTransport transport(equipment);
+  output::OutputSupervisorResolver resolver(policies.config());
+  output::OutputSupervisorExecutor executor(transport, store, policies.config());
+  climate_io::ClimateOutputSupervisorSink sink(equipment.semantic(), resolver, executor, store);
+  climate_io::DeviceElectricalSnapshot sample{};
+  climate_io::DeviceElectricalSource& input = device;
+  assert(input.sampleElectrical(0U, sample));
+  assert(sample.device_id == 42U && device.reads == 1U && device.writes == 0U);
+  climate::ClimatePolicyRequest demand{};
+  demand.heater = 1.0F;
+  climate::ClimateExecutionProjection execution{};
+  assert(sink.applyAndReportExecution(demand, 1000U, execution));
+  assert(device.last_endpoint == 7U && device.writes == 1U && device.reads == 1U);
+  assertPhysicalUnknown(store, 11U);
+  assert(input.sampleElectrical(1010U, sample));
+  assert(device.writes == 1U && device.reads == 2U);
+  assertPhysicalUnknown(store, 11U);
+  graph.devices[graph.device_count++] = {43U, ipo::Driver::ShellyMeter, 42U, true};
+  assert(ipo::validateGraph(graph) == ipo::GraphStatus::DuplicatePhysicalEndpoint);
+}
+
 void testDualDeviceInputIsIndependentOfSupervisorOutput() {
   auto fan = makePolicy();
   auto humidifier = makePolicy();
@@ -538,6 +577,7 @@ void testHardSafetyOverridesSupervisorFailSafeOff() {
 int main() {
   testConfiguredSupervisorAllRoles();
   testConfiguredEquipmentAndTransportSubstitution();
+  testConfiguredDualDeviceHasIndependentPorts();
   testDualDeviceInputIsIndependentOfSupervisorOutput();
   testCompleteClimateRequestUsesOneSupervisorCycleAndProjectsCommandTruth();
   testExecutionFeedbackIsCompleteCommandTruthAndNotPhysicalAck();

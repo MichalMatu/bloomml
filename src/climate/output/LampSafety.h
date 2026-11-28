@@ -54,6 +54,12 @@ struct LampSafetyEnvelopeSnapshot {
 bool buildLampSafetyEnvelope(const LampSafetyInput& input, const LampSafetyDecision& decision,
                              std::uint64_t sequence, LampSafetyEnvelopeSnapshot& output) noexcept;
 
+// Invalid endpoint means the role is absent, never a synthetic device.
+bool buildLampSafetyEnvelope(const LampSafetyInput& input, const LampSafetyDecision& decision,
+                             std::uint64_t sequence, output::OutputEndpointId lamp,
+                             output::OutputEndpointId exhaust,
+                             LampSafetyEnvelopeSnapshot& snapshot) noexcept;
+
 bool validateLampSafetyConfig(const LampSafetyConfig& config) noexcept;
 
 class LampSafetyController {
