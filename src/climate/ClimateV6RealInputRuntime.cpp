@@ -148,10 +148,9 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
   static runtime::profile::ClosedIpoActivationGate ipo_activation_gate;
   static runtime::profile::IpoProfileActivationTransaction ipo_activation(
       ipo_journal, profile_owner, ipo_boot_store, ipo_activation_gate);
-  runtime::RuntimeInsideSource inside(
-      ble, scd41, &ipo_reference, &profile_owner);
-  runtime::RuntimeNearbySource outside(
-      ble, &ipo_reference, &profile_owner);
+  static runtime::RuntimeInputRegistry input_registry(ipo_reference, ble, scd41);
+  runtime::RuntimeInsideSource inside(input_registry, profile_owner);
+  runtime::RuntimeNearbySource outside(input_registry, profile_owner);
   const bool schedule_profile_valid = profile_owner.valid();
   runtime::ConfiguredScheduleConfigSource schedule_config(profile_owner);
   CompositeClimateSnapshotProvider composite(inside, outside, clock, schedule_config);

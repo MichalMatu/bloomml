@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IpoSignalSelector.h"
+#include "climate/input/RuntimeInputRegistry.h"
 #include "climate/ClimateRuntimeController.h"
 #include "climate/application/ClimateInputContracts.h"
 #include "climate/application/ClimateRoleContract.h"
@@ -30,38 +31,31 @@ private:
 
 class RuntimeInsideSource final : public InsideEnvironmentSource {
 public:
-  RuntimeInsideSource(native::BleClimateScanner& ble, native::Scd41InsideSource& scd41,
-                      const ::growbox::ipo::Graph* graph = nullptr,
-                      const RuntimeScheduleProfileOwner* profile = nullptr) noexcept;
-
+  RuntimeInsideSource(RuntimeInputRegistry& inputs,
+                      const RuntimeScheduleProfileOwner& profile) noexcept
+      : inputs_(inputs), profile_(profile) {}
   bool sample(std::uint64_t monotonic_ms, InsideEnvironmentSnapshot& output) noexcept override;
   const std::array<::growbox::ipo::SignalSelection, 3U>& lastSelections() const noexcept {
     return last_selections_;
   }
-
 private:
-  native::BleClimateScanner& ble_;
-  native::Scd41InsideSource& scd41_;
-  const ::growbox::ipo::Graph* graph_{nullptr};
-  const RuntimeScheduleProfileOwner* profile_{nullptr};
+  RuntimeInputRegistry& inputs_;
+  const RuntimeScheduleProfileOwner& profile_;
   std::array<::growbox::ipo::SignalSelection, 3U> last_selections_{};
 };
 
 class RuntimeNearbySource final : public OutsideEnvironmentSource {
 public:
-  explicit RuntimeNearbySource(native::BleClimateScanner& ble,
-                               const ::growbox::ipo::Graph* graph = nullptr,
-                               const RuntimeScheduleProfileOwner* profile = nullptr) noexcept;
-
+  RuntimeNearbySource(RuntimeInputRegistry& inputs,
+                      const RuntimeScheduleProfileOwner& profile) noexcept
+      : inputs_(inputs), profile_(profile) {}
   bool sample(std::uint64_t monotonic_ms, OutsideEnvironmentSnapshot& output) noexcept override;
   const std::array<::growbox::ipo::SignalSelection, 2U>& lastSelections() const noexcept {
     return last_selections_;
   }
-
 private:
-  native::BleClimateScanner& ble_;
-  const ::growbox::ipo::Graph* graph_{nullptr};
-  const RuntimeScheduleProfileOwner* profile_{nullptr};
+  RuntimeInputRegistry& inputs_;
+  const RuntimeScheduleProfileOwner& profile_;
   std::array<::growbox::ipo::SignalSelection, 2U> last_selections_{};
 };
 

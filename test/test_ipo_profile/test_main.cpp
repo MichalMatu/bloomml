@@ -188,6 +188,25 @@ void testInputRegistryConfigurations() {
   assert(!ipo::assessCrowPanelReference(graph).apply_authorized);
 }
 
+void testPhysicalLocatorIndependentOfConfiguredId() {
+  auto graph = ipo::makeCrowPanelMintReferenceGraph();
+  graph.devices[0].id = 41U;
+  graph.signals[0].device_id = 41U;
+  graph.signals[1].device_id = 41U;
+  ipo::InputReadingRegistry frame(graph);
+  assert(frame.hasDevice(ipo::Driver::Tp357, 1U));
+  assert(!frame.hasDevice(ipo::Driver::Tp357, 2U));
+  assert(frame.recordFor(ipo::Driver::Tp357, 1U, ipo::Channel::Temperature, 26.0, 2U, true));
+  const auto t = frame.select(ipo::SignalRole::InsideTemperature, 30U);
+  assert(t.usable() && t.device_id == 41U && t.value == 26.0);
+  assert(!frame.recordFor(ipo::Driver::Tp357, 2U, ipo::Channel::Temperature, 1.0, 0U, true));
+  assert(frame.select(ipo::SignalRole::InsideTemperature, 30U).usable());
+  frame.clear();
+  graph.devices[0].enabled = false;
+  assert(!frame.hasDevice(ipo::Driver::Tp357, 1U));
+  assert(!frame.select(ipo::SignalRole::InsideTemperature, 30U).usable());
+}
+
 void testSymbolicOnlyArbitration() {
   const auto graph = ipo::makeCrowPanelMintReferenceGraph();
   const ipo::Proposal proposals[]{
@@ -308,6 +327,7 @@ int main() {
   testDwellAndPhysicalChannelClaimsFailClosed();
   testInvalidSensorAndPriorityFallback();
   testInputRegistryConfigurations();
+  testPhysicalLocatorIndependentOfConfiguredId();
   testSymbolicOnlyArbitration();
   testScheduleBoundariesAndOwner();
   testFullTypedWireRoundtripAndCorruption();

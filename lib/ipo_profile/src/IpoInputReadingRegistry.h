@@ -16,6 +16,28 @@ public:
     error_ = SignalSelectionStatus::Ok;
   }
 
+  // Resolve the configured instance by physical driver identity, not by Mint ID.
+  const Device* installedDevice(Driver driver, std::uint32_t locator) const noexcept {
+    if (graph_.device_count > kMaxDevices) return nullptr;
+    for (std::size_t i = 0; i < graph_.device_count; ++i) {
+      const auto& device = graph_.devices[i];
+      if (device.enabled && device.driver == driver && device.physical_locator == locator)
+        return &device;
+    }
+    return nullptr;
+  }
+
+  bool hasDevice(Driver driver, std::uint32_t locator) const noexcept {
+    return installedDevice(driver, locator) != nullptr;
+  }
+
+  bool recordFor(Driver driver, std::uint32_t locator, Channel channel, double value,
+                 std::uint64_t age_ms, bool valid) noexcept {
+    const auto* device = installedDevice(driver, locator);
+    if (device == nullptr) return false;
+    return record({device->id, channel, value, age_ms, valid});
+  }
+
   bool record(const SignalReading& reading) noexcept {
     if (error_ != SignalSelectionStatus::Ok) return false;
     const auto* device = findDevice(graph_, reading.device_id);
