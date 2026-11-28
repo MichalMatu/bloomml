@@ -1,3 +1,4 @@
+#include "climate/application/ClimateIoAdapters.h"
 #include "climate/application/ClimateSemanticOutput.h"
 #include "climate/output/OutputBindings.h"
 #include "climate/rf433/ClimateRf433EndpointRegistry.h"

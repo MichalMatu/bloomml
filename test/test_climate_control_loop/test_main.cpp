@@ -1,4 +1,5 @@
 #include "ClimateContract.h"
+#include "ClimateRuntimeController.h"
 #include "ClimateControlLoop.h"
 
 #include <cassert>

@@ -2,7 +2,8 @@
 
 #include "IpoSignalSelector.h"
 #include "climate/ClimateRuntimeController.h"
-#include "climate/application/ClimateCompositeInput.h"
+#include "climate/application/ClimateInputContracts.h"
+#include "climate/application/ClimateRoleContract.h"
 #include "climate/input/ble/BleClimateScanner.h"
 #include "climate/input/sensors/Scd41InsideSource.h"
 #include "climate/runtime/schedule/RuntimeScheduleProfile.h"
@@ -15,6 +16,16 @@ namespace growbox::app::climate_io::runtime {
 class LockedFakeRoleDriver final : public ClimateRoleDriver {
 public:
   bool apply(ClimateActuatorRole role, float level, std::uint64_t monotonic_ms) noexcept override;
+};
+
+class Tp357LampSafetySource final : public LampSafetyTemperatureSource {
+public:
+  explicit Tp357LampSafetySource(native::BleClimateScanner& ble) noexcept : ble_(ble) {}
+  bool sample(std::uint64_t monotonic_ms,
+              ::growbox::climate::MeasuredValue& temperature_c) noexcept override;
+
+private:
+  native::BleClimateScanner& ble_;
 };
 
 class RuntimeInsideSource final : public InsideEnvironmentSource {

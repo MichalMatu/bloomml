@@ -1,5 +1,6 @@
 #include "ClimateControlLoop.h"
 
+#include "ClimateRuntimeController.h"
 #include <cassert>
 #include <cmath>
 #include <cstddef>

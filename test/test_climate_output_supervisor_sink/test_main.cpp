@@ -1,4 +1,5 @@
 #include "climate/output/supervisor/ClimateOutputSupervisorSink.h"
+#include "climate/application/ClimateInputContracts.h"
 
 #include <array>
 #include <cassert>
@@ -33,6 +34,23 @@ public:
     }
     return {output::TransportStatus::Completed, output::TransportError::None};
   }
+};
+
+class DualPortFakeDevice final : public output::OutputTransport,
+                                 public climate_io::DeviceElectricalSource {
+public:
+  output::TxResult send(const output::OutputCommand& command) noexcept override {
+    last_endpoint = command.endpoint;
+    ++writes;
+    return {output::TransportStatus::Completed, output::TransportError::None};
+  }
+  bool sampleElectrical(std::uint64_t, climate_io::DeviceElectricalSnapshot& value) noexcept override {
+    value = {42U, {12.0F, true, 0U}, {150.0F, true, 0U}};
+    ++reads;
+    return true;
+  }
+  output::OutputEndpointId last_endpoint{};
+  unsigned writes{0U}, reads{0U};
 };
 
 output::BinaryActuatorPolicy makePolicy(std::uint64_t min_on_ms = 0U,
@@ -99,6 +117,32 @@ void assertPhysicalUnknown(const output::OutputStateStore& store,
   assert(state != nullptr);
   assert(state->physical.state == output::PhysicalOutputState::Unknown);
   assert(!state->physical.has_independent_feedback);
+}
+
+void testDualDeviceInputIsIndependentOfSupervisorOutput() {
+  auto fan = makePolicy();
+  auto humidifier = makePolicy();
+  auto store = makeStore();
+  const auto config = makeSupervisorConfig(fan, humidifier);
+  output::OutputSupervisorResolver resolver(config);
+  DualPortFakeDevice device;
+  climate_io::DeviceElectricalSource& input = device;
+  output::OutputTransport& transport = device;
+  output::OutputSupervisorExecutor executor(transport, store, config);
+  climate_io::ClimateOutputSupervisorSink sink(makeClimateConfig(), resolver, executor, store);
+  sink.setCycleContext(scheduleContext(true));
+  climate_io::DeviceElectricalSnapshot electrical{};
+  assert(input.sampleElectrical(1'000U, electrical));
+  assert(electrical.device_id == 42U);
+  assert(electrical.active_power_w.value == 12.0F);
+  assert(electrical.energy_wh.value == 150.0F);
+  assert(device.reads == 1U && device.writes == 0U);
+  climate::ClimateExecutionProjection execution{};
+  assert(sink.applyAndReportExecution(request(1.0F, 1.0F), 1'000U, execution));
+  assert(device.writes == 3U && device.reads == 1U);
+  assertPhysicalUnknown(store, kFan);
+  assertPhysicalUnknown(store, kLamp);
+  assertPhysicalUnknown(store, kHumidifier);
 }
 
 void testCompleteClimateRequestUsesOneSupervisorCycleAndProjectsCommandTruth() {
@@ -392,6 +436,7 @@ void testHardSafetyOverridesSupervisorFailSafeOff() {
 } // namespace
 
 int main() {
+  testDualDeviceInputIsIndependentOfSupervisorOutput();
   testCompleteClimateRequestUsesOneSupervisorCycleAndProjectsCommandTruth();
   testExecutionFeedbackIsCompleteCommandTruthAndNotPhysicalAck();
   testArmingReportsPartialCommandTruthWithoutInventingUnknownState();

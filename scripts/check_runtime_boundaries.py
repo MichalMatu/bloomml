@@ -104,6 +104,25 @@ for token in (
     if token not in runtime_adapters:
         errors.append(f"production-rule-authority-fence-missing:{token}")
 
+for relative, forbidden in {
+    "lib/environment_control/src/climate/ClimateControlLoop.h": (
+        "ClimateRuntimeController",),
+    "lib/environment_control/src/climate/ClimateIoPorts.h": (
+        "ClimateRuntimeController", "ClimateControlLoop"),
+    "lib/environment_control/src/climate/ClimateProcess.h": (
+        "ClimateRuntimeController", "ClimateIoPorts"),
+    "src/climate/application/ClimateInputContracts.h": (
+        "ClimateIoAdapters", "ClimateRuntimeController", "OutputTransport"),
+    "src/climate/application/ClimateSemanticOutput.h": (
+        "ClimateIoAdapters", "ClimateCompositeInput", "ClimateRuntimeController"),
+    "src/climate/runtime/core/RealInputRuntimeCoordinator.cpp": (
+        "BleClimateScanner.h", "Ds3231ClockSource.h", "sampleTp357"),
+}.items():
+    content = (root / relative).read_text(encoding="utf-8")
+    for token in forbidden:
+        if token in content:
+            errors.append(f"ipo-implementation-coupling:{relative}:{token}")
+
 if errors:
     print("RUNTIME_BOUNDARY_FAIL " + ",".join(errors), file=sys.stderr)
     raise SystemExit(1)

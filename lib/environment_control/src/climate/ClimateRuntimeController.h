@@ -4,20 +4,11 @@
 #include "ClimateFeatureEncoder.h"
 #include "ClimatePolicy.h"
 #include "ClimateTrendEstimator.h"
-#include "ClimateTypes.h"
+#include "ClimateProcess.h"
 
 #include <cstdint>
 
 namespace growbox::climate {
-
-enum class ClimatePolicyMode : std::uint8_t { Rule = 0U, MlShadow = 1U, MlActive = 2U };
-
-enum class ClimateRuntimeStatus : std::uint8_t {
-  Ok = 0U,
-  MlProviderMissing,
-  MlInferenceFailed,
-  MlActiveNotAllowed,
-};
 
 struct ClimateRuntimeConfig {
   ClimatePolicyMode mode = ClimatePolicyMode::Rule;
@@ -34,43 +25,27 @@ public:
                      ClimatePolicyRequest& output) noexcept = 0;
 };
 
-struct ClimateRuntimeDecision {
-  ClimateRuntimeStatus status = ClimateRuntimeStatus::Ok;
-  ClimatePolicyMode mode = ClimatePolicyMode::Rule;
-  bool authoritative_ml = false;
-  bool ml_evaluated = false;
-  ClimatePolicyEvaluation rule{};
-  ClimatePolicyEvaluation ml{};
-  ClimateFeatureVector ml_features{};
-  ClimateEncoderReport encoder_report{};
-  ClimateTrends trends{};
-  EstimatedEffectiveClimateActions effective_before{};
-  ClimatePolicyRequest applied{};
-  ClimateExecutionProjection execution{};
-  EstimatedEffectiveClimateActions effective_after{};
-};
-
-class ClimateRuntimeController {
+class ClimateRuntimeController final : public ClimateProcess {
 public:
   explicit ClimateRuntimeController(ClimateInferenceProvider* ml_provider = nullptr,
                                     ClimateRuntimeConfig config = {}) noexcept;
 
   ClimateRuntimeStatus step(const ClimateControllerInput& input, std::uint64_t monotonic_ms,
-                            ClimateRuntimeDecision& decision) noexcept;
+                            ClimateRuntimeDecision& decision) noexcept override;
 
   // Reconcile estimator state from execution truth. Known roles use the
   // executed command projection; unknown roles hold effective_before rather
   // than being fabricated as OFF. No physical acknowledgement is implied.
   void reconcileExecution(const ClimateExecutionProjection& execution,
                           const ClimateCapabilities& capabilities,
-                          ClimateRuntimeDecision& decision) noexcept;
+                          ClimateRuntimeDecision& decision) noexcept override;
 
   // Short migration wrapper for sinks/tests that still report a complete request.
   void reconcileApplied(const ClimatePolicyRequest& confirmed_applied,
                         const ClimateCapabilities& capabilities,
                         ClimateRuntimeDecision& decision) noexcept;
 
-  void reset() noexcept;
+  void reset() noexcept override;
 
 private:
   ClimateInferenceProvider* ml_provider_ = nullptr;

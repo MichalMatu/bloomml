@@ -17,7 +17,7 @@ float boundedPreviousLevel(float value) noexcept {
 
 } // namespace
 
-ClimateControlLoop::ClimateControlLoop(ClimateRuntimeController& runtime,
+ClimateControlLoop::ClimateControlLoop(ClimateProcess& runtime,
                                        ClimateInputSource& input_source,
                                        ClimateActuatorSink& actuator_sink) noexcept
     : runtime_(runtime), input_source_(input_source), actuator_sink_(actuator_sink) {}

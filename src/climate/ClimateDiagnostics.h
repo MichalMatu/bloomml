@@ -1,6 +1,7 @@
 #pragma once
 
-#include "climate/application/ClimateIoAdapters.h"
+#include "climate/ClimateControlLoop.h"
+#include "climate/application/ClimateSnapshotContract.h"
 
 #include <cstdint>
 

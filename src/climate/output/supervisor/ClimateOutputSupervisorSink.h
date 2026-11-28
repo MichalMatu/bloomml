@@ -1,5 +1,6 @@
 #pragma once
 
+#include "climate/ClimateIoPorts.h"
 #include "climate/application/ClimateSemanticOutput.h"
 #include "climate/output/supervisor/OutputSupervisorExecutor.h"
 

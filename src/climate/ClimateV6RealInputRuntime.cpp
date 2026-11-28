@@ -250,8 +250,9 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
                             static_cast<unsigned long long>(boot_identity.started_monotonic_us),
                             execution_status.output_ready ? "real-bounded" : "fake-locked");
 
+  runtime::Tp357LampSafetySource lamp_temperature(ble);
   runtime::RealInputRuntimeServices services{
-      {ble, clock, profile_owner},
+      {lamp_temperature, clock, profile_owner},
       application,
       {control_owner.lampSafety(), execution_status, output_owner.transport(),
        output_owner.lifecycle(), output_owner.lifecycleExecutor(), output_owner.runtimeLifecycle(),

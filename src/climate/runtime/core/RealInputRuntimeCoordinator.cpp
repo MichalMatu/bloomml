@@ -1,8 +1,7 @@
 #include "climate/runtime/core/RealInputRuntimeCoordinator.h"
 
 #include "climate/application/ClimateApplication.h"
-#include "climate/input/ble/BleClimateScanner.h"
-#include "climate/input/rtc/Ds3231ClockSource.h"
+#include "climate/application/ClimateInputContracts.h"
 #include "climate/output/LampSafety.h"
 #include "climate/output/OutputBindings.h"
 #include "climate/output/OutputExecutionTelemetry.h"
@@ -55,10 +54,12 @@ void RealInputRuntimeCoordinator::tick(std::uint64_t loop_started_us) noexcept {
       services_.outputs.execution_status.transport_available;
 
   ClimateWallClockSnapshot rtc_snapshot{};
-  native::BleClimateReading tp357{};
+  ::growbox::climate::MeasuredValue safety_temperature{};
   const bool rtc_sampled =
       services_.inputs.clock.sample(now_ms, rtc_snapshot) && rtc_snapshot.valid;
-  const bool tp357_sampled = services_.inputs.ble.sampleTp357(now_ms, tp357);
+  if (!services_.inputs.lamp_temperature.sample(now_ms, safety_temperature)) {
+    safety_temperature = {};
+  }
 
   output::ScheduleIntent schedule_intent{};
   const std::uint64_t schedule_sequence = cycle_state_.nextOutputIntentSequence();
@@ -75,10 +76,6 @@ void RealInputRuntimeCoordinator::tick(std::uint64_t loop_started_us) noexcept {
                                     0.0F);
   }
 
-  ::growbox::climate::MeasuredValue safety_temperature{};
-  if (tp357_sampled) {
-    safety_temperature = {tp357.temperature_c, true, tp357.age_ms};
-  }
   const float scheduled_light = output::endpointIntentActive(schedule_intent.endpoints[0])
                                     ? schedule_intent.endpoints[0].level
                                     : 0.0F;

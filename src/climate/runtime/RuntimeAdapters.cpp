@@ -10,6 +10,15 @@ bool LockedFakeRoleDriver::apply(ClimateActuatorRole, float, std::uint64_t) noex
   return true;
 }
 
+bool Tp357LampSafetySource::sample(
+    std::uint64_t monotonic_ms, ::growbox::climate::MeasuredValue& temperature_c) noexcept {
+  temperature_c = {};
+  native::BleClimateReading tp357{};
+  if (!ble_.sampleTp357(monotonic_ms, tp357)) return false;
+  temperature_c = {tp357.temperature_c, true, tp357.age_ms};
+  return true;
+}
+
 namespace {
 
 ::growbox::climate::MeasuredValue selectedMeasuredValue(

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "climate/application/ClimateCompositeInput.h"
+#include "climate/application/ClimateInputContracts.h"
 
 #include <cmath>
 #include <cstring>

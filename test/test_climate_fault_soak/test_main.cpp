@@ -1,5 +1,6 @@
 #include "climate/application/ClimateApplication.h"
 
+#include "climate/ClimateRuntimeController.h"
 #include <cassert>
 #include <cmath>
 #include <cstddef>

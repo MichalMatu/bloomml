@@ -1,5 +1,6 @@
 #include "climate/application/ClimateApplication.h"
 
+#include "climate/ClimateRuntimeController.h"
 #include <array>
 #include <cassert>
 #include <cmath>
@@ -422,9 +423,122 @@ void testCompleteActuatorSinkCanBeInjectedWithoutRoleFanout() {
   assert(samePrevious(application.previousApplied(), sink.last_request));
 }
 
+class FakeProcess final : public ClimateProcess {
+public:
+  ClimateRuntimeStatus step(const ClimateControllerInput& input, std::uint64_t,
+                            ClimateRuntimeDecision& decision) noexcept override {
+    last_input = input;
+    ++steps;
+    decision = {};
+    decision.applied.exhaust_fan = input.capabilities.exhaust_fan ? 0.75F : 0.0F;
+    return ClimateRuntimeStatus::Ok;
+  }
+  void reconcileExecution(const ClimateExecutionProjection& execution,
+                          const ClimateCapabilities&, ClimateRuntimeDecision& decision) noexcept override {
+    ++reconciliations;
+    decision.execution = execution;
+    decision.applied = execution.executed;
+  }
+  void reset() noexcept override { ++resets; }
+  ClimateControllerInput last_input{};
+  unsigned steps{0U}, reconciliations{0U}, resets{0U};
+};
+
+void testProcessFeedbackAndReset() {
+  FakeProcess process{};
+  ConstantSnapshotProvider input(snapshotFor(20.0F));
+  RecordingActuatorSink output{};
+  ClimateApplication app(process, input, output);
+  ClimateRuntimeDecision decision{};
+  assert(app.tick(1'000U, decision).command_applied);
+  assert(near(output.last_request.exhaust_fan, 0.75F));
+  assert(near(process.last_input.state.measurements.air_temperature_c.value, 20.0F));
+  assert(process.last_input.capabilities.exhaust_fan);
+  assert(near(process.last_input.targets.air_temperature_c, 24.0F));
+  assert(process.reconciliations == 1U);
+  assert(app.tick(2'000U, decision).command_applied);
+  assert(near(process.last_input.previous.exhaust_fan, 0.75F));
+  app.reset();
+  assert(process.resets == 1U);
+}
+
+void testInputPortCanBeReplacedIndependently() {
+  FakeProcess process{};
+  RecordingActuatorSink output{};
+  ConstantSnapshotProvider original(snapshotFor(20.0F));
+  ScriptedSnapshotProvider replacement({{true, snapshotFor(27.0F)}});
+  ClimateRuntimeDecision decision{};
+  {
+    ClimateApplication app(process, original, output);
+    assert(app.tick(1'000U, decision).command_applied);
+    assert(near(process.last_input.state.measurements.air_temperature_c.value, 20.0F));
+    assert(near(output.last_request.exhaust_fan, 0.75F));
+    app.reset();
+  }
+  ClimateApplication app(process, replacement, output);
+  assert(app.tick(2'000U, decision).command_applied);
+  assert(near(process.last_input.state.measurements.air_temperature_c.value, 27.0F));
+  assert(near(output.last_request.exhaust_fan, 0.75F));
+  assert(original.calls == 1U && replacement.calls == 1U);
+  assert(process.steps == 2U && output.calls == 2U);
+}
+
+void testOutputPortCanBeReplacedIndependently() {
+  FakeProcess process{};
+  ConstantSnapshotProvider input(snapshotFor(20.0F));
+  RecordingActuatorSink original{};
+  RecordingRoleDriver replacement{};
+  ClimateRuntimeDecision decision{};
+  {
+    ClimateApplication app(process, input, original);
+    assert(app.tick(1'000U, decision).command_applied);
+    assert(near(original.last_request.exhaust_fan, 0.75F));
+    app.reset();
+  }
+  ClimateApplication app(process, input, replacement);
+  assert(app.tick(2'000U, decision).command_applied);
+  assert(same(replacement.requestAt(0U), original.last_request));
+  assert(original.calls == 1U && replacement.batches() == 1U);
+  assert(process.steps == 2U && input.calls == 2U);
+}
+
+void testProcessPortCanBeReplacedIndependently() {
+  ConstantSnapshotProvider input(snapshotFor(20.0F));
+  RecordingActuatorSink output{};
+  FakeProcess original{};
+  ClimateRuntimeController replacement{};
+  ClimateRuntimeDecision decision{};
+  {
+    ClimateApplication app(original, input, output);
+    assert(app.tick(1'000U, decision).command_applied);
+    assert(near(output.last_request.exhaust_fan, 0.75F));
+    app.reset();
+  }
+  ClimateApplication app(replacement, input, output);
+  assert(app.tick(2'000U, decision).command_applied);
+  assert(decision.applied.heater > 0.0F);
+  assert(same(output.last_request, decision.applied));
+  assert(original.steps == 1U && input.calls == 2U && output.calls == 2U);
+}
+
+void testMeasurementStatusContract() {
+  assert(measurementStatus({}, 30U) == MeasurementStatus::Unavailable);
+  assert(measurementStatus({21.0F, false, 1U}, 30U) == MeasurementStatus::Invalid);
+  assert(measurementStatus({21.0F, true, 31U}, 30U) == MeasurementStatus::Stale);
+  assert(measurementStatus({21.0F, true, 30U}, 30U) == MeasurementStatus::Fresh);
+  assert(measurementStatus({21.0F, true, kUnknownMeasurementAgeMs},
+                           kUnknownMeasurementAgeMs) == MeasurementStatus::Unavailable);
+  assert(measurementStatus({std::nanf(""), true, 1U}, 30U) == MeasurementStatus::Invalid);
+}
+
 } // namespace
 
 int main() {
+  testProcessFeedbackAndReset();
+  testInputPortCanBeReplacedIndependently();
+  testOutputPortCanBeReplacedIndependently();
+  testProcessPortCanBeReplacedIndependently();
+  testMeasurementStatusContract();
   testApplicationForwardsExternalPreviousExecutionFeedbackSeam();
   testFullIpoRuleSequenceHandlesChangingStaleInvalidAndUnavailableInput();
   testMlShadowDivergesButRuleSafeOutputRemainsAuthoritative();

@@ -1,4 +1,5 @@
 #include "climate/application/ClimateApplication.h"
+#include "climate/ClimateRuntimeController.h"
 #include "climate/application/ClimateCompositeInput.h"
 
 #include <cassert>

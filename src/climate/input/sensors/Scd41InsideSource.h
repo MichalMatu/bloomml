@@ -1,6 +1,6 @@
 #pragma once
 
-#include "climate/application/ClimateCompositeInput.h"
+#include "climate/application/ClimateInputContracts.h"
 #include "climate/input/i2c/NativeI2cBus.h"
 
 #include <driver/i2c_master.h>

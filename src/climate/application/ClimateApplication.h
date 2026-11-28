@@ -1,5 +1,6 @@
 #pragma once
 
+#include "climate/ClimateControlLoop.h"
 #include "climate/application/ClimateIoAdapters.h"
 
 #include <cstdint>
@@ -9,10 +10,10 @@ namespace growbox::app::climate_io {
 
 class ClimateApplication {
 public:
-  ClimateApplication(::growbox::climate::ClimateRuntimeController& runtime,
+  ClimateApplication(::growbox::climate::ClimateProcess& runtime,
                      ClimateSnapshotProvider& snapshot_provider,
                      ClimateRoleDriver& role_driver) noexcept;
-  ClimateApplication(::growbox::climate::ClimateRuntimeController& runtime,
+  ClimateApplication(::growbox::climate::ClimateProcess& runtime,
                      ClimateSnapshotProvider& snapshot_provider,
                      ::growbox::climate::ClimateActuatorSink& actuator_sink) noexcept;
 

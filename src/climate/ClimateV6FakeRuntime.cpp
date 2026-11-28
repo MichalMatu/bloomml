@@ -1,5 +1,6 @@
 #include "climate/ClimateV6FakeRuntime.h"
 
+#include "climate/ClimateRuntimeController.h"
 #include "climate/ClimateDeterministicFake.h"
 #include "climate/ClimateDiagnostics.h"
 #include "climate/application/ClimateApplication.h"

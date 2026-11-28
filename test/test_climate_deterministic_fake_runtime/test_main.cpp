@@ -1,4 +1,5 @@
 #include "climate/ClimateDeterministicFake.h"
+#include "climate/ClimateRuntimeController.h"
 #include "climate/application/ClimateApplication.h"
 
 #include <array>

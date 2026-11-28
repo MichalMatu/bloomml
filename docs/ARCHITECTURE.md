@@ -18,6 +18,34 @@ Normal configured physical output execution has one owner: `OutputSupervisor`.
 
 Production deterministic Rule control remains authoritative. ML may be evaluated in shadow/research modes but is not qualified as production actuation authority.
 
+## IPO implementation ports (M02)
+
+The application/control loop composes ClimateInputSource, ClimateProcess and
+ClimateActuatorSink. The portable Rule controller implements ClimateProcess;
+neither input nor output ports include the controller implementation.
+ClimateInputContracts/ClimateSnapshotContract and ClimateRoleContract describe
+normalized input/configuration and semantic roles independently of the adapters.
+Measurements carry validity, age in ms and unit-named fields; unknown age means
+unavailable in the diagnostic status contract. Rule retains its existing
+validity/freshness predicate. The fixed-board selector may collapse
+non-selected readings to
+unavailable; its selection diagnostics remain separate.
+
+The coordinator receives a ClimateClockSource and separately qualified
+LampSafetyTemperatureSource. The CrowPanel composition binds the latter to
+TP357 exactly as before; it cannot silently use a different climate source.
+OutputSupervisor remains the sole configured-output executor. The existing
+OutputTransport port is protocol-independent. One object may implement both
+DeviceElectricalSource (device ID, W, Wh, validity/age) and OutputTransport,
+without either port requiring the other. Electrical input is an extension seam
+exercised by the proposed host tests; qualification remains pending until
+the tests pass. It is not wired to Rule and does not constitute physical
+acknowledgement.
+No new sensor/actuator driver, wire format or model is admitted here.
+
+Mint remains the compiled reference composition; fixed-board admission, actual
+roles and IPO closed gate remain unchanged. No H2/H3 or hardware activation.
+
 ## Production real-input path
 
 ```text

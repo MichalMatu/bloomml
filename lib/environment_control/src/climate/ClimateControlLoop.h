@@ -1,6 +1,7 @@
 #pragma once
 
-#include "ClimateRuntimeController.h"
+#include "ClimateIoPorts.h"
+#include "ClimateProcess.h"
 
 #include <cstdint>
 
@@ -11,49 +12,6 @@ enum class ClimateLoopIoStatus : std::uint8_t {
   InputUnavailable,
   ActuatorApplyFailed,
   ActuatorFaultLatched,
-};
-
-class ClimateInputSource {
-public:
-  virtual ~ClimateInputSource() = default;
-  virtual bool sample(std::uint64_t monotonic_ms, ClimateControllerInput& input) noexcept = 0;
-};
-
-class ClimateActuatorSink {
-public:
-  virtual ~ClimateActuatorSink() = default;
-  virtual bool apply(const ClimatePolicyRequest& request, std::uint64_t monotonic_ms) noexcept = 0;
-
-  // Default sinks are exact: the accepted request is the applied request.
-  // Hardware adapters with binary/dwell arbitration override this method.
-  virtual bool applyAndReport(const ClimatePolicyRequest& request, std::uint64_t monotonic_ms,
-                              ClimatePolicyRequest& confirmed_applied) noexcept {
-    const bool ok = apply(request, monotonic_ms);
-    confirmed_applied = ok ? request : ClimatePolicyRequest{};
-    return ok;
-  }
-
-  // Execution-aware sink contract. Compatibility sinks report a complete accepted
-  // request; supervisor-backed sinks override this with command-truth projection.
-  virtual bool applyAndReportExecution(const ClimatePolicyRequest& request,
-                                       std::uint64_t monotonic_ms,
-                                       ClimateExecutionProjection& execution) noexcept {
-    execution = {};
-    ClimatePolicyRequest confirmed_applied{};
-    const bool ok = applyAndReport(request, monotonic_ms, confirmed_applied);
-    if (!ok) {
-      return false;
-    }
-    execution.executed = confirmed_applied;
-    execution.known_mask = ClimateExecutionKnownAll;
-    return true;
-  }
-
-  // Fail-safe OFF must bypass ordinary dwell/hysteresis in hardware adapters.
-  virtual bool applyFailSafeOff(std::uint64_t monotonic_ms) noexcept {
-    const ClimatePolicyRequest off{};
-    return apply(off, monotonic_ms);
-  }
 };
 
 struct ClimateLoopResult {
@@ -67,7 +25,7 @@ struct ClimateLoopResult {
 
 class ClimateControlLoop {
 public:
-  ClimateControlLoop(ClimateRuntimeController& runtime, ClimateInputSource& input_source,
+  ClimateControlLoop(ClimateProcess& runtime, ClimateInputSource& input_source,
                      ClimateActuatorSink& actuator_sink) noexcept;
 
   ClimateLoopResult tick(std::uint64_t monotonic_ms, ClimateRuntimeDecision& decision) noexcept;
@@ -94,7 +52,7 @@ private:
   PreviousClimateActions previousForInput() const noexcept;
   static bool isOff(const ClimatePolicyRequest& request) noexcept;
 
-  ClimateRuntimeController& runtime_;
+  ClimateProcess& runtime_;
   ClimateInputSource& input_source_;
   ClimateActuatorSink& actuator_sink_;
   PreviousClimateActions previous_applied_{};

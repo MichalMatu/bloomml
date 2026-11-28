@@ -1,6 +1,7 @@
 #pragma once
 #include "ClimateContract.h"
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -17,6 +18,17 @@ struct MeasuredValue {
   bool valid = false;
   std::uint64_t age_ms = kUnknownMeasurementAgeMs;
 };
+enum class MeasurementStatus : std::uint8_t { Unavailable, Invalid, Stale, Fresh };
+
+inline MeasurementStatus measurementStatus(const MeasuredValue& measured,
+                                           std::uint64_t timeout_ms) noexcept {
+  if (measured.age_ms == kUnknownMeasurementAgeMs) return MeasurementStatus::Unavailable;
+  if (!measured.valid || !std::isfinite(measured.value)) return MeasurementStatus::Invalid;
+  if (measured.age_ms > timeout_ms) return MeasurementStatus::Stale;
+  return MeasurementStatus::Fresh;
+}
+
+// Field suffixes are normalized units: C, percent RH, ppm; age is milliseconds.
 struct ClimateMeasurements {
   MeasuredValue air_temperature_c{detail::featureDefault(contract::FeatureIndex::AirTemperatureC),
                                   false, kUnknownMeasurementAgeMs};

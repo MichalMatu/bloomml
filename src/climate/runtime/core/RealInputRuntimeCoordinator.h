@@ -19,10 +19,8 @@ namespace growbox::app::climate_io {
 class ClimateApplication;
 class ClimateOutputSupervisorSink;
 
-namespace native {
-class BleClimateScanner;
-class Ds3231ClockSource;
-} // namespace native
+class LampSafetyTemperatureSource;
+class ClimateClockSource;
 
 namespace stage28d {
 class LampSafetyController;
@@ -38,8 +36,8 @@ struct RuntimeExecutionStatus;
 struct RuntimeTimingMetrics;
 
 struct RealInputRuntimeInputServices final {
-  native::BleClimateScanner& ble;
-  native::Ds3231ClockSource& clock;
+  LampSafetyTemperatureSource& lamp_temperature;
+  ClimateClockSource& clock;
   const RuntimeScheduleProfileOwner& profile;
 };
 
