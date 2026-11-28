@@ -12,6 +12,8 @@ Aktualny sprint software: **CLOSED — scoped**. Regresja współdzielonego bufo
 
 M03: konfigurowalne wejścia IPO — software CLOSED_SCOPED; [checkpoint M03](checkpoints/2026-11-28-bloomml-m03-configurable-inputs.md). Host, web i CrowPanel build PASS na kodzie 4fc585d; alternatywne profile pozostają nieaktywne sprzętowo.
 
+M04: konfigurowalne wyjścia IPO — software CLOSED_SCOPED; [checkpoint M04](checkpoints/2026-11-28-bloomml-m04-configurable-outputs.md). Host 62/62, web 116/116, architektura 3/3, CrowPanel build PASS. Produkcja nadal wyłącznie Mint; nowe role i adaptery tylko software/fake, zero wyjść = jawna odmowa uruchomienia. H2/H3 zamknięte.
+
 M02: separacja portów I/P/O — software CLOSED_SCOPED; szczegóły i dowody w [checkpoint M02](checkpoints/2026-11-28-bloomml-m02-ipo-separation.md). Mint pozostaje konfiguracją referencyjną, fizyczna aktywacja IPO nadal zamknięta.
 
 Naprawy `cf1c434` (web typecheck, HTTP diagnostics POST), `196c305` (96 naruszeń lint przeniesionych do wspólnego `app-chrome`) i `4aadf5f` (świeżość odczytu, timeout 504) zakończone. Web na `196c305`: **114/114 Vitest PASS**, typecheck/lint/build PASS; panel na `4aadf5f`: **135/135 pytest PASS**; host C++/display na `cf1c434`: **PASS**; bazowy IPO CTest na `54c486d`: **3/3 PASS**. Są to wyniki software na Macu, nie fizyczne testy CrowPanel. [Pełny checkpoint](checkpoints/2026-11-07-bloomml-general-repository-repair.md).

@@ -35,6 +35,7 @@ Current real-input firmware on boot:
 - Schemat: `schemas/device-profile.v2.schema.json`; przykład `profiles/crowpanel-ipo.v2.json`; status eksportu `draft_not_applied`.
 - `DeviceRegistry`: ID, driver, locator/adres, enabled oraz katalog możliwości, w tym role **przyszłe**, które nie są automatycznie sprzętowo obsługiwane.
 - `SignalRegistry`: semantyczna rola, kanał, źródło podstawowe/zapasowe, priorytet i jednostki; odczyt invalid/stale/nonfinite jest nieużywalny. Fallback i zamiana źródeł są testowane programowo; alternatywne grafy nie są dopuszczone do fizycznej aktywacji na CrowPanel. Opcjonalne W/Wh (shelly.meter) to wyłącznie kontrakt wejściowy draft.
+- M04: ConfiguredOutputEquipment wiąże 1–7 ról MVP z adapterami i wyprowadza ClimateCapabilities, konfigurację supervisora oraz polityki dwell. Szkic z zerem wyjść jest poprawny, lecz wykonanie odmawia startu. Shelly switch/meter jest tylko kontraktem draft oraz fake; fizyczna aktywacja nadal wyłącznie według istniejącego Mint i bramek. Persistence v2 odczytuje v1 i nie uznaje komendy za obserwację fizyczną. [Checkpoint M04](checkpoints/2026-11-28-bloomml-m04-configurable-outputs.md).
 - `ProcessRegistry`: temperatura, RH/VPD, harmonogram lampy, ochrona CO₂; fizyczne safety nie zależy od edytowalności grafu.
 - `OutputRegistry`: rola, unikatowy fizyczny endpoint, stan safe-OFF, minimalny czas ON/OFF. `ProcessBindings` ogranicza do dozwolonych efektów.
 - Symboliczny `OutputArbiter` może podglądać zgodne propozycje, lecz **nie wysyła komend**.
