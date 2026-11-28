@@ -33,6 +33,10 @@ struct SignalSelection {
   std::uint64_t age_ms = std::numeric_limits<std::uint64_t>::max();
   std::uint8_t source_priority = 255U;
   bool fallback = false;
+  // Rejected candidates preceding the winner (or every candidate if none wins).
+  std::uint8_t unavailable_sources = 0U;
+  std::uint8_t invalid_sources = 0U;
+  std::uint8_t stale_sources = 0U;
 
   bool usable() const noexcept { return status == SignalSelectionStatus::Ok; }
 };
@@ -64,7 +68,7 @@ inline SignalSelection selectFreshSignal(const Graph& graph, SignalRole role,
       role_exists = true;
       if (binding.priority != priority) continue;
       const auto* device = findDevice(graph, binding.device_id);
-      if (device == nullptr || !device->enabled) continue;
+      if (device == nullptr || !device->enabled) { ++result.unavailable_sources; continue; }
 
       bool matching_reading_seen = false;
       SignalReading candidate{};
@@ -78,9 +82,20 @@ inline SignalSelection selectFreshSignal(const Graph& graph, SignalRole role,
         matching_reading_seen = true;
         candidate = current;
       }
-      if (!matching_reading_seen || !candidate.valid ||
-          candidate.age_ms > timeout_ms || !std::isfinite(candidate.value) ||
-          std::fabs(candidate.value) > std::numeric_limits<float>::max()) continue;
+      if (!matching_reading_seen ||
+          candidate.age_ms == std::numeric_limits<std::uint64_t>::max()) {
+        ++result.unavailable_sources;
+        continue;
+      }
+      if (!candidate.valid || !std::isfinite(candidate.value) ||
+          std::fabs(candidate.value) > std::numeric_limits<float>::max()) {
+        ++result.invalid_sources;
+        continue;
+      }
+      if (candidate.age_ms > timeout_ms) {
+        ++result.stale_sources;
+        continue;
+      }
       result.status = SignalSelectionStatus::Ok;
       result.device_id = candidate.device_id;
       result.channel = candidate.channel;

@@ -1,5 +1,6 @@
 #include "IpoBoardAdmission.h"
 #include "IpoSignalSelector.h"
+#include "IpoInputReadingRegistry.h"
 #include "climate/runtime/profile/IpoProfileWire.h"
 #include "climate/runtime/profile/IpoProfileReadback.h"
 
@@ -112,6 +113,79 @@ void testInvalidSensorAndPriorityFallback() {
   selected = ipo::selectFreshSignal(
       graph, ipo::SignalRole::InsideTemperature, observations, 65U, 30'000U);
   assert(selected.status == ipo::SignalSelectionStatus::Capacity);
+}
+
+void testInputRegistryConfigurations() {
+  auto graph = ipo::makeCrowPanelMintReferenceGraph();
+  ipo::InputReadingRegistry frame(graph);
+  const auto t = ipo::SignalRole::InsideTemperature;
+  const auto rh = ipo::SignalRole::InsideHumidity;
+  const auto co2 = ipo::SignalRole::InsideCo2;
+  const auto clock = ipo::SignalRole::ClockTime;
+  constexpr std::uint64_t timeout = 30000U;
+  const auto fill = [&]() {
+    assert(frame.record({1U, ipo::Channel::Temperature, 24.0, 10U, true}));
+    assert(frame.record({1U, ipo::Channel::Humidity, 58.0, 10U, true}));
+    assert(frame.record({2U, ipo::Channel::Temperature, 23.0, 20U, true}));
+    assert(frame.record({2U, ipo::Channel::Humidity, 61.0, 20U, true}));
+    assert(frame.record({2U, ipo::Channel::Co2, 650.0, 20U, true}));
+    assert(frame.record({3U, ipo::Channel::Temperature, 22.0, 15U, true}));
+    assert(frame.record({3U, ipo::Channel::Humidity, 52.0, 15U, true}));
+    assert(frame.record({4U, ipo::Channel::UnixTime, 1795824001.0, 0U, true}));
+  };
+  fill();
+  assert(frame.select(t, timeout).device_id == 1U);
+  assert(frame.select(rh, timeout).device_id == 1U);
+  assert(frame.select(co2, timeout).value == 650.0);
+  assert(frame.select(clock, timeout).value == 1795824001.0);
+
+  // Swap only signal bindings. Existing processes and actuator routes stay intact.
+  graph.signals[0].device_id = 2U;
+  graph.signals[1].device_id = 2U;
+  frame.clear();
+  assert(frame.record({2U, ipo::Channel::Temperature, 23.0, 0U, true}));
+  assert(frame.record({2U, ipo::Channel::Humidity, 61.0, 0U, true}));
+  assert(frame.record({2U, ipo::Channel::Co2, 650.0, 0U, true}));
+  assert(frame.select(t, timeout).device_id == 2U);
+  assert(frame.select(rh, timeout).value == 61.0);
+  assert(frame.select(co2, timeout).usable());
+  assert(!frame.select(clock, timeout).usable());
+  assert(frame.select(clock, timeout).unavailable_sources == 1U);
+
+  // BLE-only climate: no fabricated CO2; independent RTC may still be present.
+  graph.signals[0].device_id = 3U;
+  graph.signals[1].device_id = 1U;
+  frame.clear();
+  assert(frame.record({3U, ipo::Channel::Temperature, 22.0, 0U, true}));
+  assert(frame.record({1U, ipo::Channel::Humidity, 58.0, 0U, true}));
+  assert(frame.select(t, timeout).device_id == 3U);
+  assert(frame.select(rh, timeout).device_id == 1U);
+  assert(!frame.select(co2, timeout).usable());
+
+  graph.signals[graph.signal_count++] = {t, 2U, ipo::Channel::Temperature, 1U};
+  frame.clear();
+  assert(frame.record({3U, ipo::Channel::Temperature, 22.0, timeout + 1U, true}));
+  assert(frame.record({2U, ipo::Channel::Temperature, 23.0, 0U, true}));
+  auto selected = frame.select(t, timeout);
+  assert(selected.usable() && selected.fallback && selected.device_id == 2U);
+  assert(selected.stale_sources == 1U);
+
+  frame.clear();
+  assert(frame.record({3U, ipo::Channel::Temperature, 22.0, 0U, false}));
+  assert(frame.record({2U, ipo::Channel::Temperature, 23.0, 0U, true}));
+  selected = frame.select(t, timeout);
+  assert(selected.usable() && selected.invalid_sources == 1U);
+  assert(!frame.record({2U, ipo::Channel::Temperature, 23.0, 0U, true}));
+  assert(frame.select(t, timeout).status == ipo::SignalSelectionStatus::AmbiguousReading);
+  frame.clear();
+  assert(!frame.record({99U, ipo::Channel::Temperature, 23.0, 0U, true}));
+  assert(!frame.select(t, timeout).usable());
+  frame.clear();
+  assert(frame.record({3U, ipo::Channel::Temperature, 22.0,
+      std::numeric_limits<std::uint64_t>::max(), true}));
+  assert(!frame.select(t, std::numeric_limits<std::uint64_t>::max()).usable());
+  assert(frame.select(t, timeout).unavailable_sources == 2U);
+  assert(!ipo::assessCrowPanelReference(graph).apply_authorized);
 }
 
 void testSymbolicOnlyArbitration() {
@@ -233,6 +307,7 @@ int main() {
   testRequiredRoutingCannotBeDeleted();
   testDwellAndPhysicalChannelClaimsFailClosed();
   testInvalidSensorAndPriorityFallback();
+  testInputRegistryConfigurations();
   testSymbolicOnlyArbitration();
   testScheduleBoundariesAndOwner();
   testFullTypedWireRoundtripAndCorruption();
