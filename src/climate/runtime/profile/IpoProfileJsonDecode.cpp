@@ -115,6 +115,7 @@ constexpr NamedEnum<Driver> kDrivers[]{
   {"adc.soil", Driver::SoilAdc}, {"rf433.binary_socket", Driver::Rf433BinarySocket},
   {"gpio.relay", Driver::GpioRelay}, {"pwm.channel", Driver::PwmChannel},
   {"modbus.relay", Driver::ModbusRelay}, {"shelly.meter", Driver::ShellyMeter},
+  {"shelly.switch_meter", Driver::ShellySwitchMeter},
 };
 constexpr NamedEnum<Channel> kChannels[]{
   {"temperature_c", Channel::Temperature}, {"humidity_pct", Channel::Humidity},

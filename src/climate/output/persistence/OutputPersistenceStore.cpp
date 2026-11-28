@@ -64,6 +64,7 @@ OutputPersistenceLoadResult OutputPersistenceStore::load() noexcept {
   result.backend_status = backend_status;
   result.codec_status = decoded.status;
   result.used_safe_defaults = false;
+  result.legacy_format = stored_size == kLegacyOutputPersistenceEncodedSize;
   result.snapshot = decoded.snapshot;
   return result;
 }

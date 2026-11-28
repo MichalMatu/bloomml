@@ -38,6 +38,7 @@ struct OutputPersistenceLoadResult {
   OutputPersistenceBackendStatus backend_status = OutputPersistenceBackendStatus::Unavailable;
   OutputPersistenceStatus codec_status = OutputPersistenceStatus::InvalidSafeDefaults;
   bool used_safe_defaults = false;
+  bool legacy_format = false;
   OutputPersistenceSnapshot snapshot{};
 };
 

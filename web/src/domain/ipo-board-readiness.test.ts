@@ -77,6 +77,26 @@ describe("DeviceProfile v2 / physical CrowPanel admission preview", () => {
     expect(validateIpoProfile(p).length).toBeGreaterThan(0)
   })
 
+  it("supports a dual-port Shelly draft but never admits it for hardware apply", () => {
+    const p = createDefaultIpoProfile()
+    p.devices.push(createIpoDevice("dual_1", "shelly.switch_meter"))
+    p.signals.push(
+      { role: "electrical.active_power_w", sources: [{ device_id: "dual_1", channel: "active_power_w" }] },
+      { role: "electrical.energy_wh", sources: [{ device_id: "dual_1", channel: "energy_wh" }] },
+    )
+    p.actuators.push({
+      id: "heater_1", device_id: "dual_1", channel: "switch", role: "heater",
+      safe_state: "off", min_on_ms: 1000, min_off_ms: 1000,
+    })
+    expect(validateIpoProfile(p)).toEqual([])
+    expect(assessCrowPanelProfile(p).matchesCurrentFirmware).toBe(false)
+    expect(assessCrowPanelProfile(p).applyEnabled).toBe(false)
+    const duplicate = createIpoDevice("meter_2", "shelly.meter")
+    duplicate.locator = "shelly:dual_1"
+    p.devices.push(duplicate)
+    expect(validateIpoProfile(p).length).toBeGreaterThan(0)
+  })
+
   it("requires physical RF dwell budgets even for otherwise valid graphs", () => {
     const p = createDefaultIpoProfile()
     const fan = p.actuators.find((a) => a.role === "exhaust_fan")

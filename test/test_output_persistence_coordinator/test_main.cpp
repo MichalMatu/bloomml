@@ -108,6 +108,30 @@ output::OutputSupervisorResolverConfig resolverConfig() {
   return config;
 }
 
+void testV1MigrationWritesV2ExactlyOnce() {
+  FakeBackend backend;
+  const std::uint8_t legacy[] = {71U, 79U, 80U, 49U, 1U, 0U, 134U, 0U, 113U, 125U, 223U, 74U, 1U, 0U, 3U, 1U, 1U, 0U, 0U, 1U, 1U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 1U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 1U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 1U, 0U, 0U, 0U, 0U, 1U, 1U, 2U, 0U, 1U, 1U, 0U, 0U, 0U, 0U, 0U, 1U, 1U, 3U, 0U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 0U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 0U, 0U, 0U, 0U, 0U, 1U, 1U, 3U, 0U, 2U, 1U, 2U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 2U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 2U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 2U, 0U, 0U, 0U, 0U, 1U, 1U, 3U, 1U, 0U, 1U, 1U, 2U, 0U, 0U, 0U, 3U, 0U, 0U, 0U};
+  for (std::size_t i = 0; i < sizeof(legacy); ++i) backend.blob.bytes[i] = legacy[i];
+  backend.stored_size = sizeof(legacy);
+  backend.read_status = output::OutputPersistenceBackendStatus::Ok;
+  output::OutputPersistenceStore store(backend, safePolicy());
+  auto state = configuredStateStore();
+  output::OutputPersistenceCoordinator coordinator(store);
+  const auto init = coordinator.initialize(state);
+  assert(init.status == output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(init.load.legacy_format && init.restored_command_truth);
+  assert(state.find(1U)->physical.state == output::PhysicalOutputState::Unknown);
+  assert(backend.write_count == 0U);
+  backend.write_status = output::OutputPersistenceBackendStatus::WriteFailed;
+  assert(coordinator.syncFromStateStore(state, false) == output::OutputPersistenceCoordinatorStatus::StoreError);
+  backend.write_status = output::OutputPersistenceBackendStatus::Ok;
+  assert(coordinator.syncFromStateStore(state, false) == output::OutputPersistenceCoordinatorStatus::Ok);
+  assert(backend.stored_size == output::kOutputPersistenceEncodedSize);
+  assert(backend.blob.bytes[4] == 2U);
+  assert(coordinator.syncFromStateStore(state, false) == output::OutputPersistenceCoordinatorStatus::Unchanged);
+  assert(backend.write_count == 2U);
+}
+
 void testStoredRoleRemapFailsBeforeAnyRestore() {
   FakeBackend backend;
   auto policy = safePolicy();
@@ -400,6 +424,7 @@ void testRestoreLastCommandHonorsRetransmitPolicyAcrossReboot() {
 } // namespace
 
 int main() {
+  testV1MigrationWritesV2ExactlyOnce();
   testStoredRoleRemapFailsBeforeAnyRestore();
   testSuccessfulCommandWritesOnceAndRestoresWithoutAttempt();
   testMissingBlobIsPersistedOnFirstSync();

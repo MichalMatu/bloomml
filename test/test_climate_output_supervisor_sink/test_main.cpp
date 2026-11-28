@@ -1,6 +1,7 @@
 #include "climate/output/supervisor/ClimateOutputSupervisorSink.h"
 #include "climate/output/ConfiguredOutputEquipment.h"
 #include "climate/output/ConfiguredOutputPolicies.h"
+#include "IpoBoardAdmission.h"
 #include "climate/application/ClimateInputContracts.h"
 
 #include <array>
@@ -119,6 +120,44 @@ void assertPhysicalUnknown(const output::OutputStateStore& store,
   assert(state != nullptr);
   assert(state->physical.state == output::PhysicalOutputState::Unknown);
   assert(!state->physical.has_independent_feedback);
+}
+
+void testMintEquipmentParity() {
+  namespace ipo = growbox::ipo;
+  FakeTransport adapter;
+  const auto graph = ipo::makeCrowPanelMintReferenceGraph();
+  output::ConfiguredOutputEquipment::Bindings bindings{};
+  for (std::uint16_t i = 1; i <= 3; ++i)
+    bindings[i-1U] = {ipo::Driver::Rf433BinarySocket, i, i, i, &adapter};
+  output::ConfiguredOutputEquipment equipment(graph, bindings, 3U);
+  assert(equipment.valid());
+  const auto previous = output::makeSafeDefaultOutputPolicyConfig(1U, 2U, 3U);
+  const auto& next = equipment.policy();
+  assert(previous.count == next.count && previous.version == next.version);
+  assert(previous.max_transition_failures == next.max_transition_failures);
+  for (std::size_t i = 0; i < next.count; ++i) {
+    const auto& a = previous.endpoints[i];
+    const auto& b = next.endpoints[i];
+    assert(a.endpoint == b.endpoint && a.role == b.role);
+    for (std::size_t j = 0; j < a.lifecycle.size(); ++j) {
+      const auto& x = a.lifecycle[j]; const auto& y = b.lifecycle[j];
+      assert(x.action == y.action && x.order == y.order && x.delay_ms == y.delay_ms);
+      assert(x.retransmit == y.retransmit && x.max_retries == y.max_retries);
+    }
+  }
+  output::ConfiguredOutputPolicies policies(equipment);
+  const auto& config = policies.config();
+  assert(config.endpoints[0].endpoint == 2U && !config.endpoints[0].binary_policy);
+  assert(config.endpoints[1].endpoint == 1U);
+  assert(config.endpoints[1].binary_policy->config().min_on_ms == 120000U);
+  assert(config.endpoints[1].binary_policy->config().min_off_ms == 120000U);
+  assert(config.endpoints[2].endpoint == 3U);
+  assert(config.endpoints[2].binary_policy->config().min_on_ms == 180000U);
+  assert(config.endpoints[2].binary_policy->config().min_off_ms == 180000U);
+  const auto caps = equipment.capabilities();
+  assert(caps.exhaust_fan && caps.humidifier && !caps.heater && !caps.cooler &&
+         !caps.dehumidifier && !caps.co2_doser);
+  assert(!ipo::assessCrowPanelReference(graph).apply_authorized);
 }
 
 void testConfiguredSupervisorAllRoles() {
@@ -575,6 +614,7 @@ void testHardSafetyOverridesSupervisorFailSafeOff() {
 } // namespace
 
 int main() {
+  testMintEquipmentParity();
   testConfiguredSupervisorAllRoles();
   testConfiguredEquipmentAndTransportSubstitution();
   testConfiguredDualDeviceHasIndependentPorts();

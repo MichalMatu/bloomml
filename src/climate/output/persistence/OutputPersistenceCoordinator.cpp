@@ -91,7 +91,7 @@ OutputPersistenceCoordinator::initialize(OutputStateStore& state_store) noexcept
 
   snapshot_ = result.load.snapshot;
   policy_ = snapshot_.policy;
-  if (result.load.status == OutputPersistenceStoreStatus::Ok) {
+  if (result.load.status == OutputPersistenceStoreStatus::Ok && !result.load.legacy_format) {
     persisted_blob_ = encoded;
     has_persisted_blob_ = true;
   } else {

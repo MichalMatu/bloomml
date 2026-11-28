@@ -78,6 +78,40 @@ void reachAutomatic(output::OutputSupervisorLifecycle& lifecycle) {
   assert(ready.after == output::SupervisorMode::Automatic);
 }
 
+void testAllSupportedEndpointCountsBootSafe() {
+  for (std::size_t count = 1; count <= output::kOutputEndpointCapacity; ++count) {
+    output::OutputPolicyConfig policy{};
+    policy.count = static_cast<std::uint8_t>(count);
+    output::OutputSupervisorResolverConfig config{};
+    config.count = count;
+    std::array<output::OutputEndpointId, output::kOutputEndpointCapacity> endpoints{};
+    for (std::size_t i = 0; i < count; ++i) {
+      endpoints[i] = static_cast<output::OutputEndpointId>(20U+i);
+      policy.endpoints[i].endpoint = endpoints[i];
+      policy.endpoints[i].role = static_cast<output::OutputEndpointRole>(i);
+      for (auto& action : policy.endpoints[i].lifecycle)
+        action.order = static_cast<std::uint8_t>(i);
+      config.endpoints[i] = {endpoints[i], nullptr};
+    }
+    assert(output::validateOutputPolicyConfig(policy) == output::OutputPolicyConfigStatus::Ok);
+    output::OutputStateStore state;
+    assert(state.configure(endpoints, count));
+    output::OutputSupervisorLifecycle lifecycle(policy);
+    ScriptedTransport transport;
+    output::OutputLifecycleExecutor executor(policy, lifecycle, transport, state, config);
+    assert(executor.start(beginBoot(lifecycle), 100U));
+    for (std::size_t i = 0; i < count; ++i) {
+      const auto result = executor.tick(100U);
+      assert(transport.sent_count == i+1U);
+      assert(transport.sent[i].endpoint == endpoints[i]);
+      assert(transport.sent[i].state == output::BinaryOutputState::Off);
+      assert(state.find(endpoints[i])->physical.state == output::PhysicalOutputState::Unknown);
+      assert(result.status == (i+1U == count ? output::OutputLifecycleExecutionStatus::Completed
+                                             : output::OutputLifecycleExecutionStatus::Pending));
+    }
+  }
+}
+
 void testOrderedZeroDelayExecutesOneStepPerTick() {
   auto policy = makePolicy();
   auto store = makeStore();
@@ -318,6 +352,7 @@ void testRetransmitFalseDedupesFromSuccessfulCommandTruth() {
 } // namespace
 
 int main() {
+  testAllSupportedEndpointCountsBootSafe();
   testOrderedZeroDelayExecutesOneStepPerTick();
   testDelayedStepIsNotEarlyAcrossMonotonicWrap();
   testRetryDoesNotAdvanceBinaryTruthUntilSuccess();
