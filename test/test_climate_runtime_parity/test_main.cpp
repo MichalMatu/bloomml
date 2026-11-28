@@ -334,9 +334,80 @@ void testGoalDiagnostics() {
   check(d.unmet == 0U && d.no_usable_route == 0U, "goals", "inside deadband");
 }
 
+void testM05CapabilityMatrix() {
+  using namespace growbox::climate;
+  struct Scenario {
+    float t, rh, co2, intake_t, intake_rh;
+    bool t_ok, rh_ok, co2_ok, intake_ok, enabled;
+  };
+  const std::array<Scenario, 10> scenarios{{
+      {24.0F, 60.0F, 900.0F, 20.0F, 50.0F, true, true, true, true, true},
+      {29.0F, 80.0F, 500.0F, 18.0F, 45.0F, true, true, true, true, true},
+      {18.0F, 35.0F, 1300.0F, 30.0F, 85.0F, true, true, true, true, true},
+      {29.0F, 35.0F, 1300.0F, 35.0F, 85.0F, true, true, true, true, true},
+      {43.0F, 98.0F, 1900.0F, 20.0F, 50.0F, true, true, true, true, true},
+      {7.0F, 60.0F, 1900.0F, 20.0F, 50.0F, true, true, true, true, true},
+      {24.0F, 60.0F, 500.0F, 20.0F, 50.0F, false, true, true, true, true},
+      {24.0F, 60.0F, 500.0F, 20.0F, 50.0F, true, false, true, true, true},
+      {28.0F, 80.0F, 500.0F, 20.0F, 50.0F, true, true, false, false, true},
+      {28.0F, 80.0F, 500.0F, 20.0F, 50.0F, true, true, true, true, false},
+  }};
+  unsigned cases = 0U;
+  for (unsigned mask = 0U; mask < 64U; ++mask) {
+    for (const auto& sc : scenarios) {
+      for (bool vpd : {false, true}) {
+        for (bool light : {false, true}) {
+          ClimateControllerInput in{};
+          const auto cap = [mask](unsigned bit) { return (mask & (1U << bit)) != 0U; };
+          in.capabilities = {cap(0), cap(1), cap(2), cap(3), cap(4), cap(5)};
+          in.targets.air_temperature_c = 24.0F;
+          in.targets.relative_humidity_pct = 60.0F;
+          in.targets.air_vpd_kpa = 1.2F;
+          in.targets.co2_enabled = sc.enabled;
+          in.targets.co2_ppm = sc.enabled ? 900.0F : 0.0F;
+          in.humidity_control_mode = vpd ? HumidityControlMode::Vpd : HumidityControlMode::Rh;
+          in.schedule.light_level = light ? 1.0F : 0.0F;
+          auto& m = in.state.measurements;
+          m.air_temperature_c = {sc.t, true, sc.t_ok ? 0U : in.sensor_timeout_ms + 1U};
+          m.relative_humidity_pct = {sc.rh, sc.rh_ok, 0U};
+          m.co2_ppm = {sc.co2, true, sc.co2_ok ? 0U : in.sensor_timeout_ms + 1U};
+          m.outside_temperature_c = {sc.intake_t, sc.intake_ok, 0U};
+          m.outside_humidity_pct = {sc.intake_rh, sc.intake_ok, 0U};
+          in.state.trends.temperature = {0.6F, true};
+          ClimatePolicyEvaluation evaluation{};
+          policy::evaluate(policy::ruleRequest(in), in, evaluation);
+          const auto& safe = evaluation.safe;
+          const auto levels = values(safe);
+          for (unsigned k = 0; k < levels.size(); ++k) {
+            check(std::isfinite(levels[k]) && levels[k] >= 0.0F && levels[k] <= 1.0F,
+                  "M05_matrix", "finite bounded intent");
+            check(cap(k) || levels[k] == 0.0F, "M05_matrix", "no phantom equipment");
+            if (!sc.t_ok || !sc.rh_ok)
+              check(levels[k] == 0.0F, "M05_matrix", "required measurement fail closed");
+          }
+          check(!(safe.heater > 0.0F && safe.cooler > 0.0F),
+                "M05_matrix", "no opposing thermal intents");
+          check(!(safe.humidifier > 0.0F && safe.dehumidifier > 0.0F),
+                "M05_matrix", "no opposing moisture intents");
+          check(!(safe.exhaust_fan > 0.0F && safe.co2_doser > 0.0F),
+                "M05_matrix", "no simultaneous ventilation and enrichment intent");
+          if (!sc.enabled || !sc.co2_ok)
+            check(safe.co2_doser == 0.0F, "M05_matrix", "no disabled or stale enrichment");
+          if (sc.t_ok && sc.rh_ok && sc.co2_ok && sc.co2 >= 1800.0F && cap(2))
+            check(safe.exhaust_fan == 1.0F, "M05_matrix", "existing high CO2 protection");
+          ++cases;
+        }
+      }
+    }
+  }
+  check(cases == 2560U, "M05_matrix", "full matrix executed");
+  std::cout << "M05_DECISION_MATRIX_CASES|" << cases << '\n';
+}
+
 } // namespace
 
 int main() {
+  testM05CapabilityMatrix();
   testGoalDiagnostics();
   testLampTrendAndConflicts();
   testDirectionalVentilation();
