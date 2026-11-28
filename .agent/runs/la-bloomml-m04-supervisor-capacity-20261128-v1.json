@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m04-supervisor-capacity-20261128-v1",
+  "task_digest": "72edefc0a141e93568cfa5aa65295155a9134e3978055ad5695c28a05068872e",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T01:27:09.932077+00:00",
+  "attempt_id": "48e9f2730dfef241d11abaab",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 30614,
+  "updated_at": "2026-11-28T01:27:10.168170+00:00",
+  "pid": 30614
+}

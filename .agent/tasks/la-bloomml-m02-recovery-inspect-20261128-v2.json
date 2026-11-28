@@ -1,0 +1,17 @@
+{
+  "id": "la-bloomml-m02-recovery-inspect-20261128-v2",
+  "dedupe_key": "la-bloomml-m02-recovery-inspect-20261128-v2",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "stream",
+  "command_timeout": 60,
+  "idle_timeout": 60,
+  "task_timeout": 300,
+  "commands": [
+    "if test -d /tmp/bloomml-m02.EonI5d/source; then\n  printf 'RECOVERY_DIRECTORY_PRESENT\\n'\n  git -C /tmp/bloomml-m02.EonI5d/source rev-parse HEAD\n  git -C /tmp/bloomml-m02.EonI5d/source --no-optional-locks status --short\n  git -C /tmp/bloomml-m02.EonI5d/source diff --stat\nelse\n  printf 'RECOVERY_DIRECTORY_ABSENT\\n'\nfi"
+  ]
+}

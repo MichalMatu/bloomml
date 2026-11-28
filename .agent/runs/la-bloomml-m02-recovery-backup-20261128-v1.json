@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m02-recovery-backup-20261128-v1",
+  "task_digest": "6c6208f96f153f55b204a465ac30475c61cfddc71efa1c11f4ce35b8a9283f62",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-27T23:55:53.796661+00:00",
+  "attempt_id": "a1632a7761c991ab191c162c",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 91320,
+  "updated_at": "2026-11-27T23:55:54.017196+00:00",
+  "pid": 91320
+}

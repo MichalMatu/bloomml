@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m04-equipment-adapters-20261128-v1",
+  "task_digest": "e4a2606d2a8b55b33b674ccbab9e2b89dbab7ca2557170e40f289e0768498576",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T01:31:22.862762+00:00",
+  "attempt_id": "44af406052d5a888d82aecdb",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 40544,
+  "updated_at": "2026-11-28T01:31:23.108960+00:00",
+  "pid": 40544
+}

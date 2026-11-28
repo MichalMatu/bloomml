@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m04-runtime-equipment-20261128-v1",
+  "task_digest": "271fb3ae120b459e40522522667fa21fba5f05795bd51aeb0f53bab980821e1d",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T01:38:16.222705+00:00",
+  "attempt_id": "5067843a7987d50e51ff4e42",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 56439,
+  "updated_at": "2026-11-28T01:38:16.687322+00:00",
+  "pid": 56439
+}

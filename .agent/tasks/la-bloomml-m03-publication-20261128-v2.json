@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-m03-publication-20261128-v2",
+  "dedupe_key": "la-bloomml-m03-publication-20261128-v2",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "stream",
+  "command_timeout": 300,
+  "idle_timeout": 120,
+  "task_timeout": 420,
+  "memory_limit_mb": 2048,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\ncd /tmp/bloomml-m03.Iyqgfp/source\nBASE=2e816ce6a8b57d47e98028b3f27d6f359c40025e\nCODE=4fc585d3155bddb115d3c5e6a52123f791edaf8c\nPUBLISH=\"$(git rev-parse HEAD)\"\ncase \"$PUBLISH\" in f091bdd*) ;; *) echo UNEXPECTED_LOCAL_HEAD; exit 1;; esac\ntest \"$(git rev-parse HEAD^)\" = \"$CODE\"\ntest -z \"$(git status --porcelain)\"\ntest \"$(git diff --binary \"$BASE\" \"$CODE\" | shasum -a 256 | awk '{print $1}')\" = 1c0ea4b9f9c3c1adec9fe2768532bc7159934aacf494c3c945b25f5392882b40\ngit diff --check \"$BASE\" HEAD\ngit fetch origin main\ntest \"$(git rev-parse origin/main)\" = \"$BASE\"\ngit merge-base --is-ancestor \"$BASE\" \"$PUBLISH\"\ngit log --format='%h %s' \"$BASE\"..HEAD\n# Retry the ordinary authorized fast-forward only once. Never bypass a rule.\ngit push --porcelain origin HEAD:main\ntest \"$(git ls-remote origin refs/heads/main | awk '{print $1}')\" = \"$PUBLISH\"\necho \"M03_PUBLISHED_SHA|$PUBLISH\"\necho M03_CLOSED_SCOPED\n"
+  ]
+}

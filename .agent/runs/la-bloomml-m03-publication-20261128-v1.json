@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m03-publication-20261128-v1",
+  "task_digest": "758243e77f0f17b038f0be28a9e81c4921f0d060a187aeef6c2b6f59d09ff059",
+  "status": "failed",
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-28T01:02:49.131801+00:00",
+  "attempt_id": "5d8ef27b0937c0abaf38be9f",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 79386,
+  "updated_at": "2026-11-28T01:02:49.618202+00:00",
+  "pid": 79386
+}

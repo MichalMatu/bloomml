@@ -1,0 +1,17 @@
+{
+  "id": "la-bloomml-m02-recovery-backup-20261128-v1",
+  "dedupe_key": "la-bloomml-m02-recovery-backup-20261128-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "stream",
+  "command_timeout": 120,
+  "idle_timeout": 60,
+  "task_timeout": 360,
+  "commands": [
+    "set -eu\ncd /tmp/bloomml-m02.EonI5d/source\ntest \"$(git rev-parse HEAD)\" = f780b2d4a88c2cf72c7160295d8fdea274eb0341\nbackup=\"$(mktemp -d \"$HOME/bloomml-m02-recovery.XXXXXX\")\"\ngit diff --binary HEAD > \"$backup/tracked.patch\"\ngit ls-files --others --exclude-standard > \"$backup/untracked.txt\"\ntar -cf \"$backup/untracked.tar\" -T \"$backup/untracked.txt\"\ngit status --short > \"$backup/status.txt\"\ngit rev-parse HEAD > \"$backup/base.txt\"\n(cd \"$backup\" && shasum -a 256 tracked.patch untracked.txt untracked.tar status.txt base.txt > SHA256SUMS && shasum -a 256 -c SHA256SUMS)\nprintf 'BACKUP_DIRECTORY|%s\\n' \"$backup\"\ngit diff --check\nprintf '\\nTRACKED_DIFF\\n'\ngit diff HEAD -- lib/environment_control/src/climate src/climate/application src/climate/runtime/core/RealInputRuntimeCoordinator.h src/climate/runtime/core/RealInputRuntimeCoordinator.cpp\nprintf '\\nNEW_CONTRACTS\\n'\nwhile IFS= read -r path; do printf '\\n--- %s ---\\n' \"$path\"; cat \"$path\"; done < \"$backup/untracked.txt\"\n"
+  ]
+}

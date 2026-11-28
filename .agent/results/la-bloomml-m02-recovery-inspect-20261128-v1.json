@@ -1,0 +1,58 @@
+{
+  "allow_write": false,
+  "attempt_id": "4ff15e3e303df0059b859752",
+  "command_timeout": 60,
+  "commands": [
+    {
+      "budget_exhausted": true,
+      "budget_remaining_seconds": 118.715,
+      "command": "if test -d /tmp/bloomml-m02.EonI5d/source; then\n  printf 'RECOVERY_DIRECTORY_PRESENT\\n'\n  git -C /tmp/bloomml-m02.EonI5d/source rev-parse HEAD\n  git -C /tmp/bloomml-m02.EonI5d/source --no-optional-locks status --short\n  git -C /tmp/bloomml-m02.EonI5d/source diff --stat\nelse\n  printf 'RECOVERY_DIRECTORY_ABSENT\\n'\nfi",
+      "elapsed_seconds": 0.0,
+      "exit_code": 125,
+      "idle_timed_out": false,
+      "memory_limited": false,
+      "not_started": true,
+      "output": "",
+      "required_budget_seconds": 120.0,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "failure_reason": "task_budget_exhausted",
+  "finished_at": "2026-11-27T23:43:04.496695+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.074,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.085,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-m02-recovery-inspect-20261128-v1",
+  "idle_timeout": 60,
+  "memory_limit_mb": 4096,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 0.0,
+      "outcome": "not_started",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-27T23:43:03.052886+00:00",
+  "status": "failed",
+  "task_digest": "b6381716b3e40fc87fb8ee5803d26c507884b4163a59f9b2fa896d9303845d4e",
+  "task_timeout": 120,
+  "verification": [],
+  "work_branch": "main"
+}

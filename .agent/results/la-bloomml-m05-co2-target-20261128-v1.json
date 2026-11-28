@@ -1,0 +1,60 @@
+{
+  "allow_write": true,
+  "attempt_id": "7caff1c5ea25d54d3b88b81a",
+  "command_timeout": 1800,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 1244,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nBASE=ceb234ace7050abb35964cef467266681e29b574\ntest \"$(git rev-parse HEAD)\" = \"$BASE\"\ntest -z \"$(git status --porcelain)\"\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-m05.XXXXXX)\"\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\ntest \"$(git rev-parse HEAD)\" = \"$BASE\"\necho \"M05_WORK|$WORK/source\"\npython3 - <<'PY'\nfrom pathlib import Path\ndef rep(path,old,new):\n    p=Path(path); s=p.read_text(); assert s.count(old)==1,(path,s.count(old)); p.write_text(s.replace(old,new))\np='lib/environment_control/src/climate/ClimatePolicy.cpp'\nrep(p,'''  if (input.targets.co2_enabled && input.capabilities.co2_doser &&\n      usable(measurements.co2_ppm, input.sensor_timeout_ms)) {\n    const float co2_error = input.targets.co2_ppm - measurements.co2_ppm.value;\n    if (co2_error > kCo2DeadbandPpm) {\n      request.co2_doser = level(co2_error, kCo2DeadbandPpm, kCo2FullScalePpm);\n    }\n  }''','''  if (input.targets.co2_enabled && std::isfinite(input.targets.co2_ppm) &&\n      input.targets.co2_ppm > 0.0F && usable(measurements.co2_ppm, input.sensor_timeout_ms)) {\n    const float co2_error = input.targets.co2_ppm - measurements.co2_ppm.value;\n    if (co2_error > kCo2DeadbandPpm && input.capabilities.co2_doser) {\n      request.co2_doser = level(co2_error, kCo2DeadbandPpm, kCo2FullScalePpm);\n    } else if (co2_error < -kCo2DeadbandPpm && input.capabilities.exhaust_fan &&\n               measurements.co2_ppm.value < kMaximumCo2Ppm) {\n      // A ventilation request is a conditional means of dilution, not a\n      // prediction of outdoor CO2 or proof of physical concentration change.\n      // At the emergency threshold the independent safety stage owns the override.\n      request.exhaust_fan = std::max(\n          request.exhaust_fan, level(co2_error, kCo2DeadbandPpm, kCo2FullScalePpm));\n    }\n  }''')\np='test/test_climate_runtime_parity/test_main.cpp'\nrep(p,'} // namespace\\n\\nint main() {','''void testCo2TargetVentilation() {\n  using namespace growbox::climate;\n  ClimateControllerInput input{};\n  auto& m = input.state.measurements;\n  m.air_temperature_c = {24.0F, true, 0U};\n  m.relative_humidity_pct = {60.0F, true, 0U};\n  input.targets.air_temperature_c = 24.0F;\n  input.targets.relative_humidity_pct = 60.0F;\n  input.targets.co2_enabled = true;\n  input.targets.co2_ppm = 900.0F;\n  input.capabilities.exhaust_fan = true;\n  input.capabilities.co2_doser = true;\n  struct Scenario {\n    const char* name;\n    float ppm;\n    bool fresh;\n    bool enabled;\n    bool fan;\n    bool doser;\n    float expected_fan;\n    float expected_doser;\n  };\n  const Scenario scenarios[] = {\n      {\"CO2 excess below safety\", 1200.0F, true, true, true, true, 0.5F, 0.0F},\n      {\"CO2 high without doser\", 1200.0F, true, true, true, false, 0.5F, 0.0F},\n      {\"CO2 no fan\", 1200.0F, true, true, false, true, 0.0F, 0.0F},\n      {\"CO2 deadband\", 950.0F, true, true, true, true, 0.0F, 0.0F},\n      {\"CO2 deficit\", 600.0F, true, true, true, true, 0.0F, 0.5F},\n      {\"CO2 stale\", 1200.0F, false, true, true, true, 0.0F, 0.0F},\n      {\"CO2 disabled\", 1200.0F, true, false, true, true, 0.0F, 0.0F},\n      {\"CO2 safety independent\", 1800.0F, true, false, true, true, 1.0F, 0.0F},\n  };\n  for (const auto& s : scenarios) {\n    m.co2_ppm = {s.ppm, true, s.fresh ? 0U : input.sensor_timeout_ms + 1U};\n    input.targets.co2_enabled = s.enabled;\n    input.capabilities.exhaust_fan = s.fan;\n    input.capabilities.co2_doser = s.doser;\n    ClimateRuntimeController runtime{nullptr, {}};\n    ClimateRuntimeDecision decision{};\n    runtime.step(input, 1000U, decision);\n    check(near(decision.rule.safe.exhaust_fan, s.expected_fan), s.name, \"ventilation\");\n    check(near(decision.rule.safe.co2_doser, s.expected_doser), s.name, \"dosing\");\n  }\n}\n} // namespace\n\nint main() {\n  testCo2TargetVentilation();''')\nPY\ngit diff --check\ngit diff --stat\nmake test-host > \"$WORK/stage1-host.log\" 2>&1 || { tail -n 100 \"$WORK/stage1-host.log\"; exit 1; }\ngrep -E 'tests passed|Total Test time' \"$WORK/stage1-host.log\"\npython3 scripts/check_runtime_boundaries.py\npython3 scripts/check_output_rf_ownership.py\npython3 scripts/check_runtime_config_ssot.py\ngit add lib/environment_control/src/climate/ClimatePolicy.cpp test/test_climate_runtime_parity/test_main.cpp\ngit diff --cached --check\ngit commit -m \"feat(climate): request ventilation for CO2 above the user target\"\ntest -z \"$(git status --porcelain)\"\necho \"M05_STAGE1_LOCAL_SHA|$(git rev-parse HEAD)\"\necho M05_STAGE1_PASS_NO_PUSH\n",
+      "current_rss_mb": 165.97,
+      "elapsed_seconds": 91.575,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 8192,
+      "memory_limited": false,
+      "output": "M05_WORK|/tmp/bloomml-m05.DdQJIx/source\n .../src/climate/ClimatePolicy.cpp                  | 13 +++++--\n test/test_climate_runtime_parity/test_main.cpp     | 45 ++++++++++++++++++++++\n 2 files changed, 55 insertions(+), 3 deletions(-)\n100% tests passed, 0 tests failed out of 53\nTotal Test time (real) =  17.27 sec\n100% tests passed, 0 tests failed out of 1\nTotal Test time (real) =   0.30 sec\n100% tests passed, 0 tests failed out of 1\nTotal Test time (real) =   0.31 sec\n100% tests passed, 0 tests failed out of 1\nTotal Test time (real) =   0.32 sec\n100% tests passed, 0 tests failed out of 1\nTotal Test time (real) =   0.29 sec\n100% tests passed, 0 tests failed out of 1\nTotal Test time (real) =   0.31 sec\n100% tests passed, 0 tests failed out of 1\nTotal Test time (real) =   0.34 sec\n100% tests passed, 0 tests failed out of 2\nTotal Test time (real) =   0.70 sec\n100% tests passed, 0 tests failed out of 1\nTotal Test time (real) =   0.33 sec\nRUNTIME_BOUNDARY_PASS\nOUTPUT_EXECUTION_OWNERSHIP_PASS\nRUNTIME_CONFIG_SSOT_PASS\n[main 4962797] feat(climate): request ventilation for CO2 above the user target\n 2 files changed, 55 insertions(+), 3 deletions(-)\nM05_STAGE1_LOCAL_SHA|4962797da258a598a32c0a07f991b9c8e352f686\nM05_STAGE1_PASS_NO_PUSH\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 298.81,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-28T02:13:33.201952+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.07,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.105,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-m05-co2-target-20261128-v1",
+  "idle_timeout": 600,
+  "memory_limit_mb": 8192,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 91.575,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-28T02:11:58.815654+00:00",
+  "status": "done",
+  "task_digest": "2fc44e8a62dfcec85fe494933d5d139c21cafa908202fe97044275dcb8abb908",
+  "task_timeout": 2100,
+  "verification": [],
+  "work_branch": "main"
+}

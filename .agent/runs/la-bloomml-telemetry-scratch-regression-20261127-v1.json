@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-telemetry-scratch-regression-20261127-v1",
+  "task_digest": "a4777c5b2c8f17a4784de22cf3e39934219fe26ab0d8ae26c0792a0dab53da57",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-27T06:00:53.545842+00:00",
+  "attempt_id": "769428151131175632d3f85d",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 29563,
+  "updated_at": "2026-11-27T06:00:53.932497+00:00",
+  "pid": 29563
+}

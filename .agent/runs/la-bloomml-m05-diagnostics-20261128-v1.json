@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m05-diagnostics-20261128-v1",
+  "task_digest": "d013c095b3b878274e5b4325e64f6af516040c80288a7572c359fca8c781fb43",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T02:39:23.187220+00:00",
+  "attempt_id": "3a4343271d3196301a1a662e",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 16446,
+  "updated_at": "2026-11-28T02:39:23.427823+00:00",
+  "pid": 16446
+}

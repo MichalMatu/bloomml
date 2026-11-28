@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m03-environment-wiring-20261128-v1",
+  "task_digest": "4e0a43d9041f925f191aa75f53e4d3162c2ff26548776758cd7ee7beb83d114c",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T00:37:22.921143+00:00",
+  "attempt_id": "5b4424f91dbb01a04243274f",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 99343,
+  "updated_at": "2026-11-28T00:37:23.195528+00:00",
+  "pid": 99343
+}

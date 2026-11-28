@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m03-electrical-contract-20261128-v1",
+  "task_digest": "022defb46ae4bfeab5c76eceb450f67703d3146a489ea9e4dc52887d2aabe670",
+  "status": "failed",
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-28T00:47:35.752012+00:00",
+  "attempt_id": "ba6135b9ceaaadc0ca5d8b37",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 35576,
+  "updated_at": "2026-11-28T00:47:36.119864+00:00",
+  "pid": 35576
+}

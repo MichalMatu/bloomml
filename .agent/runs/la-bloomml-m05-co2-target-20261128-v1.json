@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m05-co2-target-20261128-v1",
+  "task_digest": "2fc44e8a62dfcec85fe494933d5d139c21cafa908202fe97044275dcb8abb908",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T02:13:33.201952+00:00",
+  "attempt_id": "7caff1c5ea25d54d3b88b81a",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 49731,
+  "updated_at": "2026-11-28T02:13:33.432909+00:00",
+  "pid": 49731
+}

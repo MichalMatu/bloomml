@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-post-h1-doc-consistency-20261127-v1",
+  "task_digest": "a755445b67441fd6647f55928af837b8d0c398843422182ecfa4dec8254ac86a",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-27T05:33:23.146007+00:00",
+  "attempt_id": "6e00daa2e974002130971373",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 83839,
+  "updated_at": "2026-11-27T05:33:23.404477+00:00",
+  "pid": 83839
+}

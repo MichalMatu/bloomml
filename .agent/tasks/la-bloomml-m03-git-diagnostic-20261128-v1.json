@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-m03-git-diagnostic-20261128-v1",
+  "dedupe_key": "la-bloomml-m03-git-diagnostic-20261128-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "stream",
+  "command_timeout": 180,
+  "idle_timeout": 90,
+  "task_timeout": 300,
+  "memory_limit_mb": 2048,
+  "commands": [
+    "set -euo pipefail\nBASE=2e816ce6a8b57d47e98028b3f27d6f359c40025e\nCODE=4fc585d3155bddb115d3c5e6a52123f791edaf8c\nMANAGED=\"$(git rev-parse --show-toplevel)\"\nTEMP=/tmp/bloomml-m03.Iyqgfp/source\necho \"HOST|$(uname -s)\"; git --version\npython3 - \"$MANAGED\" \"$TEMP\" <<'PY'\nimport subprocess,sys,urllib.parse\nfor label,p in zip(('managed','candidate'),sys.argv[1:]):\n    def git(*args):\n        r=subprocess.run(['git','-C',p,*args],capture_output=True,text=True)\n        return r.returncode,r.stdout.strip()\n    print(label+'|head|'+git('rev-parse','HEAD')[1])\n    print(label+'|dirty|'+str(bool(git('status','--porcelain')[1])))\n    for flag in ([],['--push']):\n        rc,url=git('remote','get-url',*flag,'origin')\n        if rc: print(label+'|remote_missing'); continue\n        u=urllib.parse.urlsplit(url)\n        if u.scheme in ('https','http','ssh'):\n            print(label+'|remote|'+('push' if flag else 'fetch')+'|'+str(u.hostname)+'|'+u.path+'|embedded_credentials='+str(bool(u.password or u.query or u.fragment or (u.username and u.scheme in ('http','https')))))\n        else: print(label+'|remote|non_http_or_ssh_syntax')\n    for key in ('credential.helper','http.extraHeader','core.hooksPath','remote.origin.pushurl','push.gpgSign','http.proxy','http.sslVerify'):\n        rc,_=git('config','--get-all',key)\n        print(label+'|config_present|'+key+'|'+str(rc==0))\n    print(label+'|shallow|'+git('rev-parse','--is-shallow-repository')[1])\nPY\ncd \"$TEMP\"\ntest \"$(git rev-parse HEAD^)\" = \"$CODE\"\ntest -z \"$(git status --porcelain)\"\ntest \"$(git diff --binary \"$BASE\" \"$CODE\" | shasum -a 256 | awk '{print $1}')\" = 1c0ea4b9f9c3c1adec9fe2768532bc7159934aacf494c3c945b25f5392882b40\ngit fsck --connectivity-only --no-reflogs --no-dangling\ngit count-objects -v\ngit log --format='%h %s' \"$BASE\"..HEAD\ngit ls-remote origin refs/heads/main refs/heads/agent-control\necho \"DRY_RUN_BEGIN\"\n# No actual ref update, no credential/debug traces.\nset +e\nGIT_TERMINAL_PROMPT=0 git push --dry-run --porcelain origin HEAD:main\ndry_rc=$?\nset -e\necho \"DRY_RUN_RC|$dry_rc\"\nif command -v gh >/dev/null 2>&1; then\n  echo GH_CLI_PRESENT\n  # Query only permission booleans; never print credentials or auth status secrets.\n  set +e\n  gh api repos/MichalMatu/bloomml --jq '{permissions: .permissions, archived: .archived, disabled: .disabled}' 2>/dev/null\n  echo \"GH_REPO_PERMISSION_RC|$?\"\n  set -e\nelse\n  echo GH_CLI_ABSENT\nfi\necho \"DIAGNOSTIC_COMPLETE_NO_REMOTE_MUTATION\"\n"
+  ]
+}

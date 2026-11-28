@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m05-conflicts-20261128-v1",
+  "task_digest": "fc200596920414d98ab17de41506a1f1df99e26a3073e404b753a7c594a5d779",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T02:33:57.354811+00:00",
+  "attempt_id": "586fdc8b4e5efb9e98faaec3",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 8393,
+  "updated_at": "2026-11-28T02:33:57.600765+00:00",
+  "pid": 8393
+}

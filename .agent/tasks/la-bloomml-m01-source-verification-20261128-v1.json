@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-m01-source-verification-20261128-v1",
+  "dedupe_key": "la-bloomml-m01-source-verification-20261128-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": false,
+  "resources": [],
+  "output_policy": "stream",
+  "command_timeout": 180,
+  "idle_timeout": 90,
+  "task_timeout": 300,
+  "memory_limit_mb": 1024,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\ntest \"$(git rev-parse HEAD)\" = \"1a133a77ddd70cd9155728ff7917c45a36ba0b29\"\necho \"SOURCE_SHA|$(git rev-parse HEAD)\"\ntest -z \"$(git status --porcelain)\"\ngit diff --check\npython3 scripts/check_runtime_boundaries.py\npython3 scripts/check_output_rf_ownership.py\npython3 scripts/check_runtime_config_ssot.py\npython3 - <<'PY'\nfrom pathlib import Path\nchecks = {\n 'src/climate/ClimateV6RealInputRuntime.cpp': ['makeCrowPanelMintReferenceGraph', 'ClosedIpoActivationGate'],\n 'src/climate/output/OutputTypes.h': ['kOutputEndpointCapacity = 3U'],\n 'src/climate/runtime/schedule/RuntimeScheduleProfile.h': ['output.capabilities.heater = false', 'output.capabilities.co2_doser = false'],\n 'lib/environment_control/src/climate/ClimatePolicy.cpp': ['ruleRequestImpl', 'absoluteHumidityGm3', 'kMaximumCo2Ppm'],\n 'src/climate/runtime/profile/IpoProfileActivationTransaction.h': ['runtime_.replaceValidated(candidate.schedule'],\n}\nfor path, needles in checks.items():\n    content = Path(path).read_text()\n    for needle in needles:\n        assert needle in content, (path, needle)\n    print('SOURCE_ASSERT_PASS|' + path)\nPY\necho \"M01_READ_ONLY_VERIFICATION_PASS\""
+  ]
+}

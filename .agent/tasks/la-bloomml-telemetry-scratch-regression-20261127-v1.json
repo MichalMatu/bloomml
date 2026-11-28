@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-telemetry-scratch-regression-20261127-v1",
+  "dedupe_key": "la-bloomml-telemetry-scratch-regression-20261127-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 600,
+  "idle_timeout": 180,
+  "task_timeout": 900,
+  "memory_limit_mb": 1536,
+  "commands": [
+    "set -euo pipefail\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-telemetry-regression.XXXXXX)\"\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=0584ceb0182c15c0cf034385731aa957303d1924\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\npython3 - <<'PY'\nfrom pathlib import Path\np=Path('test/test_stage27_telemetry/test_main.cpp')\ns=p.read_text()\nanchor='  char too_small[32]{};'\nassert s.count(anchor)==1\nnew='''  // The storage worker reuses one scratch buffer for all three record types.\n  // A shorter subsequent record must not expose bytes from the previous one.\n  char scratch[1024];\n  std::memset(scratch, 'X', sizeof(scratch));\n  assert(formatStage27SessionNdjson(scratch, sizeof(session_buffer), session) == session_length);\n  assert(std::strlen(scratch) == session_length);\n  assert(std::strcmp(scratch, session_buffer) == 0);\n  assert(formatStage27SampleNdjson(scratch, sizeof(scratch), snapshot) == sample_length);\n  assert(std::strlen(scratch) == sample_length);\n  assert(std::strcmp(scratch, sample_buffer) == 0);\n  assert(formatStage27HealthNdjson(scratch, sizeof(scratch), snapshot, storage) == health_length);\n  assert(std::strlen(scratch) == health_length);\n  assert(std::strcmp(scratch, health_buffer) == 0);\n  assert(formatStage27SessionNdjson(scratch, sizeof(session_buffer), session) == session_length);\n  assert(std::strlen(scratch) == session_length);\n  assert(std::strcmp(scratch, session_buffer) == 0);\n\n'''\np.write_text(s.replace(anchor,new+anchor))\nPY\ngit diff --check\ncmake -S test/host -B \"$WORK/build\" -DCMAKE_BUILD_TYPE=Debug\ncmake --build \"$WORK/build\" --target stage27_telemetry_tests stage27_file_durability_tests output_execution_telemetry_tests --parallel 1\nctest --test-dir \"$WORK/build\" -R '^(stage27_telemetry_tests|stage27_file_durability_tests|output_execution_telemetry_tests)$' --output-on-failure --no-tests=error\ngit diff --stat\ntest \"$(git ls-remote --heads origin main | awk '{print $1}')\" = \"$EXPECTED\"\ngit add test/test_stage27_telemetry/test_main.cpp\ngit commit -m \"test: cover reused telemetry formatting scratch buffer\"\ngit push origin HEAD:main\necho \"PUSHED_SHA|$(git rev-parse HEAD)\""
+  ]
+}

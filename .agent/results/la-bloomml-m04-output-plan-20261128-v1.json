@@ -1,0 +1,60 @@
+{
+  "allow_write": true,
+  "attempt_id": "30b7fbde5784b9401fb892a3",
+  "command_timeout": 1800,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 4218,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nBASE=f091bdd1356fe73b53b003ad77069f612811e9b6\ntest \"$(git rev-parse HEAD)\" = \"$BASE\"\ntest -z \"$(git status --porcelain)\"\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-m04.XXXXXX)\"\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\ntest \"$(git rev-parse HEAD)\" = \"$BASE\"\necho \"M04_WORK|$WORK/source\"\necho \"M04_CAPACITY_IMPACT\"\ngit grep -n -E 'kOutputEndpointCapacity|kOutputPersistenceEncodedSize|kOutputPolicySchemaVersion|kOutputPersistenceSchemaVersion' -- src/climate test/test_output* | cut -d: -f1 | sort -u\npython3 - <<'PY'\nfrom pathlib import Path\np=Path('lib/ipo_profile/src/IpoOutputPlan.h')\nassert not p.exists()\np.write_text(r'''#pragma once\n\n#include \"IpoGraph.h\"\n\nnamespace growbox::ipo {\n\n// Bounded binary equipment projection. No adapter, physical IO, activation,\n// mutable execution state or Process dependency.\ninline constexpr std::size_t kMvpOutputRoleCount = 7U;\nenum class OutputPlanStatus : std::uint8_t {\n  Ok, InvalidGraph, Capacity, UnsupportedRole, UnsupportedChannel,\n  DisabledDevice, DuplicateRole, InvalidEndpoint\n};\nstruct ConfiguredOutput {\n  std::uint16_t endpoint = 0U;\n  std::uint16_t device_id = 0U;\n  OutputRole role = OutputRole::Exhaust;\n  Driver driver = Driver::Rf433BinarySocket;\n  std::uint32_t physical_locator = 0U;\n  std::uint32_t min_on_ms = 0U;\n  std::uint32_t min_off_ms = 0U;\n};\nstruct OutputPlan {\n  OutputPlanStatus status = OutputPlanStatus::InvalidGraph;\n  std::array<ConfiguredOutput, kMvpOutputRoleCount> entries{};\n  std::size_t count = 0U;\n  bool valid() const noexcept { return status == OutputPlanStatus::Ok; }\n  const ConfiguredOutput* find(OutputRole role) const noexcept {\n    if (!valid()) return nullptr;\n    for (std::size_t i = 0; i < count; ++i)\n      if (entries[i].role == role) return &entries[i];\n    return nullptr;\n  }\n};\ninline OutputPlan buildOutputPlan(const Graph& graph) noexcept {\n  const auto reject = [](OutputPlanStatus status) {\n    OutputPlan result{};\n    result.status = status;\n    return result;\n  };\n  if (validateGraph(graph) != GraphStatus::Ok)\n    return reject(OutputPlanStatus::InvalidGraph);\n  if (graph.actuator_count > kMvpOutputRoleCount)\n    return reject(OutputPlanStatus::Capacity);\n  OutputPlan result{};\n  result.status = OutputPlanStatus::Ok;\n  for (std::size_t i = 0; i < graph.actuator_count; ++i) {\n    const auto& binding = graph.actuators[i];\n    if (static_cast<std::size_t>(binding.role) >= kMvpOutputRoleCount)\n      return reject(OutputPlanStatus::UnsupportedRole);\n    if (binding.channel != Channel::Switch)\n      return reject(OutputPlanStatus::UnsupportedChannel);\n    if (binding.id == UINT16_MAX)\n      return reject(OutputPlanStatus::InvalidEndpoint);\n    const auto* device = findDevice(graph, binding.device_id);\n    if (!device || !device->enabled)\n      return reject(OutputPlanStatus::DisabledDevice);\n    if (result.find(binding.role))\n      return reject(OutputPlanStatus::DuplicateRole);\n    result.entries[result.count++] = {binding.id, device->id, binding.role,\n        device->driver, device->physical_locator, binding.min_on_ms, binding.min_off_ms};\n  }\n  return result;\n}\n} // namespace growbox::ipo\n''')\np=Path('test/test_ipo_profile/test_main.cpp')\ns=p.read_text()\nassert s.count('#include \"IpoBoardAdmission.h\"')==1\ns=s.replace('#include \"IpoBoardAdmission.h\"', '#include \"IpoBoardAdmission.h\"\\n#include \"IpoOutputPlan.h\"')\ntest=r'''void testMvpOutputPlans() {\n  for (unsigned mask = 0; mask < 128U; ++mask) {\n    ipo::Graph graph{};\n    graph.processes[graph.process_count++] = {1U, ipo::ProcessKind::Co2Safety, true};\n    unsigned expected = 0U;\n    for (unsigned role = 0; role < 7U; ++role) {\n      if (!(mask & (1U << role))) continue;\n      const auto id = static_cast<std::uint16_t>(role + 1U);\n      graph.devices[graph.device_count++] = {id, ipo::Driver::GpioRelay, id, true};\n      graph.actuators[graph.actuator_count++] = {\n          static_cast<std::uint16_t>(id + 20U), id, ipo::Channel::Switch,\n          static_cast<ipo::OutputRole>(role), true, 1000U, 2000U};\n      ++expected;\n    }\n    auto plan = ipo::buildOutputPlan(graph);\n    assert(plan.valid() && plan.count == expected);\n    for (unsigned role = 0; role < 7U; ++role) {\n      const auto* entry = plan.find(static_cast<ipo::OutputRole>(role));\n      assert((entry != nullptr) == bool(mask & (1U << role)));\n      if (entry) {\n        assert(entry->endpoint == role + 21U && entry->device_id == role + 1U);\n        assert(entry->min_on_ms == 1000U && entry->min_off_ms == 2000U);\n      }\n    }\n  }\n  auto graph = ipo::makeCrowPanelMintReferenceGraph();\n  assert(ipo::buildOutputPlan(graph).valid());\n  graph.actuators[1].role = graph.actuators[0].role;\n  graph.link_count = 0U;\n  auto rejected = ipo::buildOutputPlan(graph);\n  assert(rejected.status == ipo::OutputPlanStatus::DuplicateRole && rejected.count == 0U);\n  graph = ipo::makeCrowPanelMintReferenceGraph();\n  graph.actuators[0].device_id = 999U;\n  assert(!ipo::buildOutputPlan(graph).valid());\n  graph = ipo::makeCrowPanelMintReferenceGraph();\n  for (auto& device : graph.devices)\n    if (device.id == graph.actuators[0].device_id) device.enabled = false;\n  assert(ipo::buildOutputPlan(graph).status == ipo::OutputPlanStatus::DisabledDevice);\n}\n\n'''\nassert s.count('void testReferenceHardwareAdmission() {')==1\ns=s.replace('void testReferenceHardwareAdmission() {',test+'void testReferenceHardwareAdmission() {')\nassert s.count('  testReferenceHardwareAdmission();')==1\ns=s.replace('  testReferenceHardwareAdmission();','  testMvpOutputPlans();\\n  testReferenceHardwareAdmission();')\np.write_text(s)\nPY\ngit add lib/ipo_profile/src/IpoOutputPlan.h test/test_ipo_profile/test_main.cpp\ngit diff --cached --check\nmake test-ipo\npython3 scripts/check_runtime_boundaries.py\npython3 scripts/check_output_rf_ownership.py\npython3 scripts/check_runtime_config_ssot.py\ngit commit -m \"feat(ipo): derive bounded optional output plan from validated graph\"\necho \"M04_STAGE1_LOCAL_SHA|$(git rev-parse HEAD)\"\ntest -z \"$(git status --porcelain)\"\necho M04_STAGE1_PASS_NO_PUSH\n",
+      "current_rss_mb": 11.67,
+      "elapsed_seconds": 10.163,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 8192,
+      "memory_limited": false,
+      "output": "M04_WORK|/tmp/bloomml-m04.5fHZ3j/source\nM04_CAPACITY_IMPACT\nsrc/climate/output/OutputExecution.h\nsrc/climate/output/OutputExecutionProjection.cpp\nsrc/climate/output/OutputExecutionTelemetry.cpp\nsrc/climate/output/OutputExecutionTelemetry.h\nsrc/climate/output/OutputIntents.h\nsrc/climate/output/OutputStateStore.cpp\nsrc/climate/output/OutputStateStore.h\nsrc/climate/output/OutputTypes.h\nsrc/climate/output/control/OutputMaintenanceControl.cpp\nsrc/climate/output/lifecycle/OutputLifecycleExecutor.cpp\nsrc/climate/output/lifecycle/OutputLifecycleExecutor.h\nsrc/climate/output/persistence/OutputPersistenceSchema.cpp\nsrc/climate/output/persistence/OutputPersistenceSchema.h\nsrc/climate/output/policy/OutputPolicyConfig.cpp\nsrc/climate/output/policy/OutputPolicyConfig.h\nsrc/climate/output/supervisor/OutputSupervisorExecutor.cpp\nsrc/climate/output/supervisor/OutputSupervisorResolver.cpp\nsrc/climate/output/supervisor/OutputSupervisorResolver.h\nsrc/climate/runtime/core/RealInputRuntimeComposition.cpp\ntest/test_output_automation_control/test_main.cpp\ntest/test_output_execution_contracts/test_main.cpp\ntest/test_output_execution_projection/test_main.cpp\ntest/test_output_execution_telemetry/test_main.cpp\ntest/test_output_lifecycle_executor/test_main.cpp\ntest/test_output_maintenance_control/test_main.cpp\ntest/test_output_persistence_coordinator/test_main.cpp\ntest/test_output_persistence_schema/test_main.cpp\ntest/test_output_persistence_store/test_main.cpp\ntest/test_output_policy_config/test_main.cpp\ntest/test_output_runtime_lifecycle_control/test_main.cpp\ntest/test_output_state_store/test_main.cpp\ntest/test_output_supervisor_executor/test_main.cpp\ntest/test_output_supervisor_resolver/test_main.cpp\ntest/test_output_types/test_main.cpp\ncmake -S test/host -B build/host-tests\n-- The CXX compiler identification is AppleClang 21.0.0.21000101\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (1.2s)\n-- Generating done (0.3s)\n-- Build files have been written to: /tmp/bloomml-m04.5fHZ3j/source/build/host-tests\ncmake --build build/host-tests --target ipo_profile_tests ipo_activation_tests ipo_nvs_journal_tests --parallel 2\ngmake[1]: Entering directory '/private/tmp/bloomml-m04.5fHZ3j/source/build/host-tests'\n[  0%] Building CXX object CMakeFiles/ipo_profile_tests.dir/tmp/bloomml-m04.5fHZ3j/source/test/test_ipo_profile/test_main.cpp.o\n[100%] Linking CXX executable ipo_profile_tests\n[100%] Built target ipo_profile_tests\n[100%] Building CXX object CMakeFiles/ipo_activation_tests.dir/tmp/bloomml-m04.5fHZ3j/source/test/test_ipo_activation/test_main.cpp.o\n[100%] Linking CXX executable ipo_activation_tests\n[100%] Built target ipo_activation_tests\n[  0%] Building CXX object CMakeFiles/ipo_nvs_journal_tests.dir/tmp/bloomml-m04.5fHZ3j/source/test/test_ipo_nvs_journal/test_main.cpp.o\n[100%] Building CXX object CMakeFiles/ipo_nvs_journal_tests.dir/tmp/bloomml-m04.5fHZ3j/source/src/climate/runtime/profile/IpoProfileNvsJournal.cpp.o\n[100%] Linking CXX executable ipo_nvs_journal_tests\n[100%] Built target ipo_nvs_journal_tests\ngmake[1]: Leaving directory '/private/tmp/bloomml-m04.5fHZ3j/source/build/host-tests'\nctest --test-dir build/host-tests -R '^(ipo_profile_tests|ipo_activation_tests|ipo_nvs_journal_tests)$' --output-on-failure\nTest project /tmp/bloomml-m04.5fHZ3j/source/build/host-tests\n    Start 51: ipo_profile_tests\n1/3 Test #51: ipo_profile_tests ................   Passed    0.44 sec\n    Start 52: ipo_activation_tests\n2/3 Test #52: ipo_activation_tests .............   Passed    0.32 sec\n    Start 53: ipo_nvs_journal_tests\n3/3 Test #53: ipo_nvs_journal_tests ............   Passed    0.32 sec\n\n100% tests passed, 0 tests failed out of 3\n\nTotal Test time (real) =   1.09 sec\nRUNTIME_BOUNDARY_PASS\nOUTPUT_EXECUTION_OWNERSHIP_PASS\nRUNTIME_CONFIG_SSOT_PASS\n[main b9078cc] feat(ipo): derive bounded optional output plan from validated graph\n 2 files changed, 107 insertions(+)\n create mode 100644 lib/ipo_profile/src/IpoOutputPlan.h\nM04_STAGE1_LOCAL_SHA|b9078cced5016eb6f231c1dfb69e145039006f0a\nM04_STAGE1_PASS_NO_PUSH\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 177.59,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-28T01:21:16.685640+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.085,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.129,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-m04-output-plan-20261128-v1",
+  "idle_timeout": 600,
+  "memory_limit_mb": 8192,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 10.163,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-28T01:21:04.442092+00:00",
+  "status": "done",
+  "task_digest": "ca2baf3a04c2d1177b2502d5805d11c0f86af11e4b329d617415cfa8f05f28ef",
+  "task_timeout": 2100,
+  "verification": [],
+  "work_branch": "main"
+}

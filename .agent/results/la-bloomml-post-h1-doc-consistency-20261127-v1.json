@@ -1,0 +1,60 @@
+{
+  "allow_write": true,
+  "attempt_id": "6e00daa2e974002130971373",
+  "command_timeout": 180,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 490,
+      "command": "set -euo pipefail\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-doc-review.XXXXXX)\"\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=8c642b37ca4aeb5bbfe272ce42d87f475992a41b\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\npython3 - <<'PY'\nfrom pathlib import Path\ndef edit(path,old,new):\n    p=Path(path)\n    s=p.read_text()\n    assert s.count(old)==1, (path, old)\n    p.write_text(s.replace(old,new))\nedit('docs/README.md','**Resume point (2026-11-07): connect authorized CrowPanel on `/dev/cu.usbserial-120` and prove physical output isolation.** Until this is confirmed, hardware qualification and IPO v2 activation API are blocked. Start with [NEXT_CHAT.md](NEXT_CHAT.md) and the [final checkpoint](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md).','**Resume point (2026-11-27): H0 PASS, H1 PARTIAL, IPO activation CLOSED.** Native NVS qualification was skipped and remains an operator-owned local follow-up. Continue independent software work without reopening hardware gates. Start with [NEXT_CHAT.md](NEXT_CHAT.md) and the [hardware progress checkpoint](checkpoints/2026-11-27-bloomml-hardware-progress.md).')\nedit('docs/README.md','exact resume procedure: hardware connection/isolation first','exact resume procedure: H1 partial and independent software work')\nedit('docs/ARCHITECTURE.md','real hardware and power loss remain unqualified because the authorized device was absent.','native NVS and power-loss qualification remain open. H0 passed and H1 is partial as of 2026-11-27; see [hardware progress](checkpoints/2026-11-27-bloomml-hardware-progress.md).')\nedit('docs/CURRENT_STATUS.md','SHA testów i builda są różne; późniejsze zmiany dotyczyły testów i dokumentacji, nie produkcyjnej ścieżki firmware.','SHA testów i builda są różne. Późniejsze zmiany produkcyjne RF, telemetrii i budżetu stosu mają osobne dowody w checkpoincie sprzętowym z 2026-11-27.')\nPY\ngit diff --check\npython3 scripts/check_runtime_boundaries.py\npython3 scripts/check_output_rf_ownership.py\npython3 scripts/check_runtime_config_ssot.py\ngit diff --stat\ntest \"$(git ls-remote --heads origin main | awk '{print $1}')\" = \"$EXPECTED\"\ngit add docs/README.md docs/ARCHITECTURE.md docs/CURRENT_STATUS.md\ngit commit -m \"docs: align live navigation and architecture with H1 partial evidence\"\ngit push origin HEAD:main\necho \"PUSHED_SHA|$(git rev-parse HEAD)\"",
+      "current_rss_mb": 21.2,
+      "elapsed_seconds": 5.493,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 1024,
+      "memory_limited": false,
+      "output": "RUNTIME_BOUNDARY_PASS\nOUTPUT_EXECUTION_OWNERSHIP_PASS\nRUNTIME_CONFIG_SSOT_PASS\n docs/ARCHITECTURE.md   | 2 +-\n docs/CURRENT_STATUS.md | 2 +-\n docs/README.md         | 4 ++--\n 3 files changed, 4 insertions(+), 4 deletions(-)\n[main 0584ceb] docs: align live navigation and architecture with H1 partial evidence\n 3 files changed, 4 insertions(+), 4 deletions(-)\nTo https://github.com/MichalMatu/bloomml.git\n   8c642b3..0584ceb  HEAD -> main\nPUSHED_SHA|0584ceb0182c15c0cf034385731aa957303d1924\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 21.2,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-27T05:33:23.146007+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.07,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.091,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-post-h1-doc-consistency-20261127-v1",
+  "idle_timeout": 90,
+  "memory_limit_mb": 1024,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 5.493,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-27T05:33:15.501003+00:00",
+  "status": "done",
+  "task_digest": "a755445b67441fd6647f55928af837b8d0c398843422182ecfa4dec8254ac86a",
+  "task_timeout": 360,
+  "verification": [],
+  "work_branch": "main"
+}

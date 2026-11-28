@@ -1,0 +1,60 @@
+{
+  "allow_write": true,
+  "attempt_id": "d69db12c9edd846560f68371",
+  "command_timeout": 300,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 812,
+      "command": "set -euo pipefail\ncd /tmp/bloomml-m03.Iyqgfp/source\nBASE=2e816ce6a8b57d47e98028b3f27d6f359c40025e\nCODE=4fc585d3155bddb115d3c5e6a52123f791edaf8c\nPUBLISH=f091bdd1356fe73b53b003ad77069f612811e9b6\ntest \"$(git rev-parse HEAD)\" = \"$PUBLISH\"\ntest \"$(git rev-parse HEAD^)\" = \"$CODE\"\ntest -z \"$(git status --porcelain)\"\ntest \"$(git diff --binary \"$BASE\" \"$CODE\" | shasum -a 256 | awk '{print $1}')\" = 1c0ea4b9f9c3c1adec9fe2768532bc7159934aacf494c3c945b25f5392882b40\ngit fetch origin main\ntest \"$(git rev-parse origin/main)\" = \"$BASE\"\ngit merge-base --is-ancestor \"$BASE\" \"$PUBLISH\"\ngit fsck --connectivity-only --no-reflogs --no-dangling\necho \"NEW_OBJECTS|$(git rev-list --objects \"$BASE\"..HEAD | wc -l | tr -d ' ')\"\ngit rev-list --objects \"$BASE\"..HEAD | git cat-file --batch-check='%(objecttype) %(objectsize) %(rest)' | sort -k2,2nr | head -n 8\n# Ordinary fast-forward with a non-thin pack to rule out missing delta bases.\n# No force, no alternate credentials, no changed permissions. Packet trace\n# is kept in a private temporary file; publish only allowlisted status fields.\nTRACE=\"$(mktemp /tmp/bloomml-m03-packet.XXXXXX)\"\nchmod 600 \"$TRACE\"\nset +e\nGIT_TERMINAL_PROMPT=0 GIT_TRACE_PACKET=\"$TRACE\" git push --no-thin --porcelain origin HEAD:main\nrc=$?\nset -e\necho \"PUSH_RC|$rc\"\npython3 - \"$TRACE\" <<'PY'\nimport re,sys\nfrom pathlib import Path\ntext=Path(sys.argv[1]).read_text(errors='replace')\nfor line in text.splitlines():\n    match=re.search(r'\\b(?:unpack (?:ok|error|failed)|(?:ok|ng) refs/heads/main(?: [A-Za-z0-9_. -]{1,100})?)\\b',line)\n    if match: print('PACKET_STATUS|'+match.group(0))\nprint('PACKET_TRACE_LINES|'+str(len(text.splitlines())))\nPY\nREMOTE=\"$(git ls-remote origin refs/heads/main | awk '{print $1}')\"\necho \"REMOTE_MAIN|$REMOTE\"\nif [ \"$REMOTE\" = \"$PUBLISH\" ] && [ \"$rc\" -eq 0 ]; then\n  echo \"M03_PUBLISHED_SHA|$PUBLISH\"\n  echo M03_CLOSED_SCOPED\nelse\n  test \"$REMOTE\" = \"$BASE\"\n  echo M03_BLOCKED_REMOTE_REJECT\n  exit 1\nfi\n",
+      "current_rss_mb": 15.84,
+      "elapsed_seconds": 5.618,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 2048,
+      "memory_limited": false,
+      "output": "From https://github.com/MichalMatu/bloomml\n * branch            main       -> FETCH_HEAD\nNEW_OBJECTS|66\nblob 21170 web/src/domain/ipo-profile.ts\nblob 18592 src/climate/runtime/profile/IpoProfileJsonDecode.cpp\nblob 17835 test/test_ipo_profile/test_main.cpp\nblob 16473 test/test_ipo_profile/test_main.cpp\nblob 15379 src/climate/ClimateV6RealInputRuntime.cpp\nblob 15235 src/climate/ClimateV6RealInputRuntime.cpp\nblob 14911 test/test_ipo_profile/test_main.cpp\nblob 13926 test/test_ipo_profile/test_main.cpp\nTo https://github.com/MichalMatu/bloomml.git\n \tHEAD:refs/heads/main\t2e816ce..f091bdd\nDone\nPUSH_RC|0\nPACKET_STATUS|unpack ok\nPACKET_STATUS|ok refs/heads/main\nPACKET_TRACE_LINES|38\nREMOTE_MAIN|f091bdd1356fe73b53b003ad77069f612811e9b6\nM03_PUBLISHED_SHA|f091bdd1356fe73b53b003ad77069f612811e9b6\nM03_CLOSED_SCOPED\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 15.84,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-28T01:12:45.574430+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.101,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.164,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-m03-git-transport-20261128-v1",
+  "idle_timeout": 120,
+  "memory_limit_mb": 2048,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 5.618,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-28T01:12:37.389382+00:00",
+  "status": "done",
+  "task_digest": "8651d3afe8d8241cdddbdb6322db47edbdc5e0fd475538cb7b1986c0ad698b41",
+  "task_timeout": 420,
+  "verification": [],
+  "work_branch": "main"
+}

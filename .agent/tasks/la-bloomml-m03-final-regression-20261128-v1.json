@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-m03-final-regression-20261128-v1",
+  "dedupe_key": "la-bloomml-m03-final-regression-20261128-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "stream",
+  "command_timeout": 5400,
+  "idle_timeout": 1200,
+  "task_timeout": 6000,
+  "memory_limit_mb": 8192,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nBASE=2e816ce6a8b57d47e98028b3f27d6f359c40025e\nCODE=4fc585d3155bddb115d3c5e6a52123f791edaf8c\ncd /tmp/bloomml-m03.Iyqgfp/source\ntest \"$(git rev-parse HEAD)\" = \"$CODE\"\ntest -z \"$(git status --porcelain)\"\ngit fetch origin main\ntest \"$(git rev-parse origin/main)\" = \"$BASE\"\ngit merge-base --is-ancestor \"$BASE\" \"$CODE\"\ngit diff --check \"$BASE\" \"$CODE\"\ngit diff --stat \"$BASE\" \"$CODE\"\necho \"M03_CODE|$CODE\"\necho \"M03_PATCH_SHA256|$(git diff --binary \"$BASE\" \"$CODE\" | shasum -a 256 | awk '{print $1}')\"\n# Assert no direct changes to safety, rule, output, admission, activation, or profile fixture.\ntest -z \"$(git diff --name-only \"$BASE\" \"$CODE\" -- src/climate/output lib/environment_control src/climate/runtime/core lib/ipo_profile/src/IpoBoardAdmission.h src/climate/runtime/profile/IpoProfileActivationTransaction.h profiles/crowpanel-ipo.v2.json)\"\npython3 scripts/check_runtime_boundaries.py\npython3 scripts/check_output_rf_ownership.py\npython3 scripts/check_runtime_config_ssot.py\nmake test-host\necho M03_HOST_PASS\nmake build-crowpanel\necho M03_CROWPANEL_BUILD_PASS\ntest \"$(git rev-parse HEAD)\" = \"$CODE\"\ntest -z \"$(git status --porcelain)\"\necho M03_FINAL_REGRESSION_PASS_NO_PUSH\n"
+  ]
+}

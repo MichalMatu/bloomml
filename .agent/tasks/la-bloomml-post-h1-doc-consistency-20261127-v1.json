@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-post-h1-doc-consistency-20261127-v1",
+  "dedupe_key": "la-bloomml-post-h1-doc-consistency-20261127-v1",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "summary",
+  "command_timeout": 180,
+  "idle_timeout": 90,
+  "task_timeout": 360,
+  "memory_limit_mb": 1024,
+  "commands": [
+    "set -euo pipefail\nexport GIT_TERMINAL_PROMPT=0\nWORK=\"$(mktemp -d /tmp/bloomml-doc-review.XXXXXX)\"\ngit clone --quiet --branch main https://github.com/MichalMatu/bloomml.git \"$WORK/source\"\ncd \"$WORK/source\"\nEXPECTED=8c642b37ca4aeb5bbfe272ce42d87f475992a41b\ntest \"$(git rev-parse HEAD)\" = \"$EXPECTED\"\npython3 - <<'PY'\nfrom pathlib import Path\ndef edit(path,old,new):\n    p=Path(path)\n    s=p.read_text()\n    assert s.count(old)==1, (path, old)\n    p.write_text(s.replace(old,new))\nedit('docs/README.md','**Resume point (2026-11-07): connect authorized CrowPanel on `/dev/cu.usbserial-120` and prove physical output isolation.** Until this is confirmed, hardware qualification and IPO v2 activation API are blocked. Start with [NEXT_CHAT.md](NEXT_CHAT.md) and the [final checkpoint](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md).','**Resume point (2026-11-27): H0 PASS, H1 PARTIAL, IPO activation CLOSED.** Native NVS qualification was skipped and remains an operator-owned local follow-up. Continue independent software work without reopening hardware gates. Start with [NEXT_CHAT.md](NEXT_CHAT.md) and the [hardware progress checkpoint](checkpoints/2026-11-27-bloomml-hardware-progress.md).')\nedit('docs/README.md','exact resume procedure: hardware connection/isolation first','exact resume procedure: H1 partial and independent software work')\nedit('docs/ARCHITECTURE.md','real hardware and power loss remain unqualified because the authorized device was absent.','native NVS and power-loss qualification remain open. H0 passed and H1 is partial as of 2026-11-27; see [hardware progress](checkpoints/2026-11-27-bloomml-hardware-progress.md).')\nedit('docs/CURRENT_STATUS.md','SHA testów i builda są różne; późniejsze zmiany dotyczyły testów i dokumentacji, nie produkcyjnej ścieżki firmware.','SHA testów i builda są różne. Późniejsze zmiany produkcyjne RF, telemetrii i budżetu stosu mają osobne dowody w checkpoincie sprzętowym z 2026-11-27.')\nPY\ngit diff --check\npython3 scripts/check_runtime_boundaries.py\npython3 scripts/check_output_rf_ownership.py\npython3 scripts/check_runtime_config_ssot.py\ngit diff --stat\ntest \"$(git ls-remote --heads origin main | awk '{print $1}')\" = \"$EXPECTED\"\ngit add docs/README.md docs/ARCHITECTURE.md docs/CURRENT_STATUS.md\ngit commit -m \"docs: align live navigation and architecture with H1 partial evidence\"\ngit push origin HEAD:main\necho \"PUSHED_SHA|$(git rev-parse HEAD)\""
+  ]
+}

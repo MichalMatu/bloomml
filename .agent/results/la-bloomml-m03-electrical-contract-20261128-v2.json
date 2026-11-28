@@ -1,0 +1,60 @@
+{
+  "allow_write": true,
+  "attempt_id": "ada7a2466bdc0c65588d8d29",
+  "command_timeout": 3600,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 5557,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\ncd /tmp/bloomml-m03.Iyqgfp/source\ntest \"$(git rev-parse HEAD)\" = d77a722e45799a81ea0d7a47adacd62b8040a232\ngit fetch origin main\ntest \"$(git rev-parse origin/main)\" = 2e816ce6a8b57d47e98028b3f27d6f359c40025e\ntest -z \"$(git diff --name-only)\"\ntest -z \"$(git ls-files --others --exclude-standard)\"\ngit diff --cached --stat\ntest \"$(git diff --cached --name-only | wc -l | tr -d ' ')\" = 7\ngit diff --cached --check\npython3 - <<'PY'\nfrom pathlib import Path\np=Path('web/src/domain/ipo-profile.ts')\ns=p.read_text()\nold='    \"gpio.relay\": \"gpio:4\", \"pwm.channel\": \"pwm:0\", \"modbus.relay\": \"modbus:1:1\",'\nassert s.count(old)==1\nassert '\"shelly.meter\":' not in s\np.write_text(s.replace(old,old+'\\n    \"shelly.meter\": \"shelly:\" + id,'))\np=Path('web/src/domain/ipo-board-readiness.test.ts')\ns=p.read_text()\nold='import { assessIpoProfile, createDefaultIpoProfile, validateIpoProfile } from \"./ipo-profile\"'\nassert s.count(old)==1\ns=s.replace(old,'import { assessIpoProfile, createDefaultIpoProfile, createIpoDevice, validateIpoProfile } from \"./ipo-profile\"')\nold='    p.devices.push({\\n      id: \"meter_1\", label: \"Shelly\", driver: \"shelly.meter\",\\n      locator: \"shelly:meter_1\", enabled: true,\\n    })'\nassert s.count(old)==1\ns=s.replace(old,'    p.devices.push(createIpoDevice(\"meter_1\", \"shelly.meter\"))\\n    expect(p.devices[p.devices.length - 1].locator).toBe(\"shelly:meter_1\")')\np.write_text(s)\nPY\ngit add web/src/domain/ipo-profile.ts web/src/domain/ipo-board-readiness.test.ts\ngit diff --cached --check\nmake test-ipo\npython3 scripts/check_runtime_boundaries.py\npython3 scripts/check_output_rf_ownership.py\npython3 scripts/check_runtime_config_ssot.py\ncd web\npnpm typecheck\npnpm test\npnpm lint\npnpm build\ncd ..\ngit commit -m \"feat(ipo): declare optional electrical input channels without device authority\"\necho \"M03_STAGE4_LOCAL_SHA|$(git rev-parse HEAD)\"\ntest -z \"$(git status --porcelain)\"\necho \"M03_STAGE4_PASS_NO_PUSH\"\n",
+      "current_rss_mb": 448.23,
+      "elapsed_seconds": 29.291,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 8192,
+      "memory_limited": false,
+      "output": "From https://github.com/MichalMatu/bloomml\n * branch            main       -> FETCH_HEAD\n lib/ipo_profile/src/IpoGraph.h                     | 10 +++++++---\n schemas/device-profile.v2.schema.json              |  7 +++++--\n .../runtime/profile/IpoProfileJsonDecode.cpp       |  4 +++-\n test/test_ipo_profile/test_main.cpp                | 23 ++++++++++++++++++++++\n web/src/domain/ipo-board-readiness.test.ts         | 17 ++++++++++++++++\n web/src/domain/ipo-catalog.ts                      |  8 ++++++--\n web/src/domain/ipo-profile.ts                      |  2 +-\n 7 files changed, 62 insertions(+), 9 deletions(-)\ncmake -S test/host -B build/host-tests\n-- Configuring done (0.1s)\n-- Generating done (0.2s)\n-- Build files have been written to: /tmp/bloomml-m03.Iyqgfp/source/build/host-tests\ncmake --build build/host-tests --target ipo_profile_tests ipo_activation_tests ipo_nvs_journal_tests --parallel 2\ngmake[1]: Entering directory '/private/tmp/bloomml-m03.Iyqgfp/source/build/host-tests'\n[100%] Built target ipo_profile_tests\n[100%] Built target ipo_activation_tests\n[100%] Built target ipo_nvs_journal_tests\ngmake[1]: Leaving directory '/private/tmp/bloomml-m03.Iyqgfp/source/build/host-tests'\nctest --test-dir build/host-tests -R '^(ipo_profile_tests|ipo_activation_tests|ipo_nvs_journal_tests)$' --output-on-failure\nTest project /tmp/bloomml-m03.Iyqgfp/source/build/host-tests\n    Start 51: ipo_profile_tests\n1/3 Test #51: ipo_profile_tests ................   Passed    0.01 sec\n    Start 52: ipo_activation_tests\n2/3 Test #52: ipo_activation_tests .............   Passed    0.01 sec\n    Start 53: ipo_nvs_journal_tests\n3/3 Test #53: ipo_nvs_journal_tests ............   Passed    0.01 sec\n\n100% tests passed, 0 tests failed out of 3\n\nTotal Test time (real) =   0.03 sec\nRUNTIME_BOUNDARY_PASS\nOUTPUT_EXECUTION_OWNERSHIP_PASS\nRUNTIME_CONFIG_SSOT_PASS\n$ tsc --noEmit\n$ vitest run\n\n\u001b[1m\u001b[30m\u001b[46m RUN \u001b[49m\u001b[39m\u001b[22m \u001b[36mv4.1.10 \u001b[39m\u001b[90m/private/tmp/bloomml-m03.Iyqgfp/source/web\u001b[39m\n\n \u001b[32m✓\u001b[39m src/chamber-3d/components/pots/square-pot-geometry.test.ts \u001b[2m(\u001b[22m\u001b[2m14 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/chamber-3d/components/pots/felt-pot-geometry.test.ts \u001b[2m(\u001b[22m\u001b[2m13 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 10\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/chamber-3d/components/fans/fan-geometry.test.ts \u001b[2m(\u001b[22m\u001b[2m21 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 8\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/chamber-3d/components/enclosure/tent-frame.test.ts \u001b[2m(\u001b[22m\u001b[2m5 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 13\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/config/ui-consistency.test.ts \u001b[2m(\u001b[22m\u001b[2m13 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 43\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/domain/ipo-board-readiness.test.ts \u001b[2m(\u001b[22m\u001b[2m11 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 14\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/domain/configuration.test.ts \u001b[2m(\u001b[22m\u001b[2m13 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 56\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/chamber-3d/components/enclosure/tent-shell-geometry.test.ts \u001b[2m(\u001b[22m\u001b[2m4 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/chamber-3d/components/lights/light-geometry.test.ts \u001b[2m(\u001b[22m\u001b[2m8 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 14\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/chamber-3d/components/enclosure/tent-vent-geometry.test.ts \u001b[2m(\u001b[22m\u001b[2m5 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 13\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/domain/paths.test.ts \u001b[2m(\u001b[22m\u001b[2m2 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 3\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/chamber-3d/components/enclosure/enclosure-cm.test.ts \u001b[2m(\u001b[22m\u001b[2m4 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 6\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m src/chamber-3d/utils/segment-mesh.test.ts \u001b[2m(\u001b[22m\u001b[2m2 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 3\u001b[2mms\u001b[22m\u001b[39m\n\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m13 passed\u001b[39m\u001b[22m\u001b[90m (13)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m115 passed\u001b[39m\u001b[22m\u001b[90m (115)\u001b[39m\n\u001b[2m   Start at \u001b[22m 01:52:19\n\u001b[2m   Duration \u001b[22m 936ms\u001b[2m (transform 773ms, setup 0ms, import 1.20s, tests 194ms, environment 1ms)\u001b[22m\n\n$ eslint .\n$ tsc --noEmit && vite build\nvite v8.1.5 building client environment for production...\n\u001b[2K\ntransforming...✓ 2508 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                                                0.64 kB │ gzip:   0.40 kB\ndist/assets/geist-cyrillic-ext-wght-normal-DjL33-gN.woff2      7.42 kB\ndist/assets/geist-vietnamese-wght-normal-6IgcOCM7.woff2        8.00 kB\ndist/assets/geist-cyrillic-wght-normal-BEAKL7Jp.woff2         15.08 kB\ndist/assets/geist-latin-ext-wght-normal-DC-KSUi6.woff2        16.51 kB\ndist/assets/geist-latin-wght-normal-BgDaEnEv.woff2            29.40 kB\ndist/assets/index-Dn0SepR9.css                                48.76 kB │ gzip:   9.40 kB\ndist/assets/setup-page-DccI48j5.js                             9.91 kB │ gzip:   3.69 kB\ndist/assets/App-BCUsnOYX.js                                   74.77 kB │ gzip:  12.97 kB\ndist/assets/index-BuG-3WST.js                                368.77 kB │ gzip: 115.74 kB\ndist/assets/chamber-3d-page-j0u7zwzg.js                    1,082.60 kB │ gzip: 304.15 kB\n\n✓ built in 989ms\n[plugin builtin:vite-reporter] \n(!) Some chunks are larger than 500 kB after minification. Consider:\n- Using dynamic import() to code-split the application\n- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\n[main 4fc585d] feat(ipo): declare optional electrical input channels without device authority\n 7 files changed, 62 insertions(+), 10 deletions(-)\nM03_STAGE4_LOCAL_SHA|4fc585d3155bddb115d3c5e6a52123f791edaf8c\nM03_STAGE4_PASS_NO_PUSH\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 494.17,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-28T00:52:33.999501+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.074,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.108,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-m03-electrical-contract-20261128-v2",
+  "idle_timeout": 900,
+  "memory_limit_mb": 8192,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 29.291,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-28T00:52:03.089610+00:00",
+  "status": "done",
+  "task_digest": "d39c4ef7b5dafc581fe288c935ffd7df7b9bca0462453e1936ddb23123b3af0f",
+  "task_timeout": 4200,
+  "verification": [],
+  "work_branch": "main"
+}

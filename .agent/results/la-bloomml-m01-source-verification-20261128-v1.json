@@ -1,0 +1,60 @@
+{
+  "allow_write": false,
+  "attempt_id": "b8491e59bbc7ab5c60d5a5db",
+  "command_timeout": 180,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 503,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\ntest \"$(git rev-parse HEAD)\" = \"1a133a77ddd70cd9155728ff7917c45a36ba0b29\"\necho \"SOURCE_SHA|$(git rev-parse HEAD)\"\ntest -z \"$(git status --porcelain)\"\ngit diff --check\npython3 scripts/check_runtime_boundaries.py\npython3 scripts/check_output_rf_ownership.py\npython3 scripts/check_runtime_config_ssot.py\npython3 - <<'PY'\nfrom pathlib import Path\nchecks = {\n 'src/climate/ClimateV6RealInputRuntime.cpp': ['makeCrowPanelMintReferenceGraph', 'ClosedIpoActivationGate'],\n 'src/climate/output/OutputTypes.h': ['kOutputEndpointCapacity = 3U'],\n 'src/climate/runtime/schedule/RuntimeScheduleProfile.h': ['output.capabilities.heater = false', 'output.capabilities.co2_doser = false'],\n 'lib/environment_control/src/climate/ClimatePolicy.cpp': ['ruleRequestImpl', 'absoluteHumidityGm3', 'kMaximumCo2Ppm'],\n 'src/climate/runtime/profile/IpoProfileActivationTransaction.h': ['runtime_.replaceValidated(candidate.schedule'],\n}\nfor path, needles in checks.items():\n    content = Path(path).read_text()\n    for needle in needles:\n        assert needle in content, (path, needle)\n    print('SOURCE_ASSERT_PASS|' + path)\nPY\necho \"M01_READ_ONLY_VERIFICATION_PASS\"",
+      "current_rss_mb": 3.36,
+      "elapsed_seconds": 0.562,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 1024,
+      "memory_limited": false,
+      "output": "SOURCE_SHA|1a133a77ddd70cd9155728ff7917c45a36ba0b29\nRUNTIME_BOUNDARY_PASS\nOUTPUT_EXECUTION_OWNERSHIP_PASS\nRUNTIME_CONFIG_SSOT_PASS\nSOURCE_ASSERT_PASS|src/climate/ClimateV6RealInputRuntime.cpp\nSOURCE_ASSERT_PASS|src/climate/output/OutputTypes.h\nSOURCE_ASSERT_PASS|src/climate/runtime/schedule/RuntimeScheduleProfile.h\nSOURCE_ASSERT_PASS|lib/environment_control/src/climate/ClimatePolicy.cpp\nSOURCE_ASSERT_PASS|src/climate/runtime/profile/IpoProfileActivationTransaction.h\nM01_READ_ONLY_VERIFICATION_PASS\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 3.36,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-27T23:14:55.052488+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.077,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.109,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-m01-source-verification-20261128-v1",
+  "idle_timeout": 90,
+  "memory_limit_mb": 1024,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 0.562,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-27T23:14:52.694385+00:00",
+  "status": "done",
+  "task_digest": "39200a60367f825a3ebf1d4df8daf34f7ff1cbc7aa4090cda325718f479753b6",
+  "task_timeout": 300,
+  "verification": [],
+  "work_branch": "main"
+}

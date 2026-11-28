@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m03-input-registry-20261128-v1",
+  "task_digest": "693349e2752203c4ed117acd4f300b1b977a45b88ea7f4ca58b896370f0f0181",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T00:32:19.374608+00:00",
+  "attempt_id": "442a8c8799c9e09f5397dfe3",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 90315,
+  "updated_at": "2026-11-28T00:32:19.625037+00:00",
+  "pid": 90315
+}

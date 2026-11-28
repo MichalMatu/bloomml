@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m02-recovery-inspect-20261128-v1",
+  "task_digest": "b6381716b3e40fc87fb8ee5803d26c507884b4163a59f9b2fa896d9303845d4e",
+  "status": "failed",
+  "failure_reason": "task_budget_exhausted",
+  "finished_at": "2026-11-27T23:43:04.496695+00:00",
+  "attempt_id": "4ff15e3e303df0059b859752",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 55081,
+  "updated_at": "2026-11-27T23:43:04.724100+00:00",
+  "pid": 55081
+}

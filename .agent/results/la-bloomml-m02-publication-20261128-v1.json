@@ -1,0 +1,60 @@
+{
+  "allow_write": true,
+  "attempt_id": "26930d1c499ff0539bab01cc",
+  "command_timeout": 180,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 1243,
+      "command": "set -eu\ncd /tmp/bloomml-m02.EonI5d/source\nBASE=f780b2d4a88c2cf72c7160295d8fdea274eb0341\nPATCH_SHA=9bbf2e06189fd4e43fa74106d94290ea1a1f91950cf76571e11f2430ef7890f2\ntest \"$(git rev-parse HEAD)\" = \"$BASE\"\ntest \"$(git diff --binary HEAD | shasum -a 256 | awk '{print $1}')\" = \"$PATCH_SHA\"\ntest -z \"$(git ls-files --others --exclude-standard)\"\ngit diff --check\ngit fetch origin main\ntest \"$(git rev-parse origin/main)\" = \"$BASE\"\npython3 scripts/check_runtime_boundaries.py\npython3 scripts/check_output_rf_ownership.py\npython3 scripts/check_runtime_config_ssot.py\ngit add -A\ntest \"$(git diff --cached --binary HEAD | shasum -a 256 | awk '{print $1}')\" = \"$PATCH_SHA\"\ngit diff --cached --check\ngit commit -m \"refactor(ipo): separate input process and output implementation ports\"\nCODE_SHA=\"$(git rev-parse HEAD)\"\nexport CODE_SHA BASE PATCH_SHA\npython3 - <<'PY'\nfrom pathlib import Path\nimport os\np=Path('docs/ARCHITECTURE.md')\ns=p.read_text()\nold='exercised by the proposed host tests; qualification remains pending until\\nthe tests pass. It is not wired to Rule and does not constitute physical\\nacknowledgement.'\nnew='exercised by passing host tests. It is not wired to Rule and does not\\nconstitute physical acknowledgement.'\nassert s.count(old)==1\np.write_text(s.replace(old,new))\np=Path('docs/CURRENT_STATUS.md')\ns=p.read_text()\nanchor='## Najnowszy sprint software — bez aktywacji IPO'\nassert s.count(anchor)==1\np.write_text(s.replace(anchor,anchor+'\\n\\nM02: separacja portów I/P/O — software CLOSED_SCOPED; szczegóły i dowody w [checkpoint M02](checkpoints/2026-11-28-bloomml-m02-ipo-separation.md). Mint pozostaje konfiguracją referencyjną, fizyczna aktywacja IPO nadal zamknięta.'))\np=Path('docs/checkpoints/2026-11-28-bloomml-m02-ipo-separation.md')\nassert not p.exists()\np.write_text(f\"\"\"# BloomML M02 — IPO implementation ports\n\nStatus: CLOSED_SCOPED — software separation only; not physical qualification.\nBaseline: {os.environ['BASE']}\nCode commit: {os.environ['CODE_SHA']}\nReviewed patch SHA-256: {os.environ['PATCH_SHA']}\n\n## Scope\nComposition binds ClimateInputSource, ClimateProcess and ClimateActuatorSink. Independent host substitution tests cover each port, execution feedback/reset, measurement status and a dual-role electrical input/output fake. Rule retains its existing usability predicate. TP357 remains the independently bound LampSafety source. OutputSupervisor retains physical output ownership. Electrical telemetry is a contract seam, not a real Shelly driver, physical ACK or thermal model. Mint bindings and closed activation remain unchanged.\n\n## Evidence\nInitial Local Agent M02-v1 failed compilation. Recovered changes were backed up; the operator applied reviewed header/test fixes locally. Operator-provided Mac logs show make test-host PASS: 53/53 main CTest suites plus 9/9 display/Clay tests; all three architecture checks PASS; ESP-IDF 5.5 CrowPanel build complete, binary 0xd1e20, 80% app partition free. Those runs preceded commit, and the audited patch was identified by SHA-256 above; firmware build metadata therefore references the baseline rather than the new commit. No new hardware evidence. Publication task verifies the exact patch hash and reruns the three architecture guards; it does not claim to have independently rerun the operator's build or tests.\n\nH0 historical PASS, H1 PARTIAL, H2/H3 NOT ADMITTED, ClosedIpoActivationGate unchanged. No flash, serial, hardware operation, native NVS or ML/MPC activation. M03 requires separate coordinator authorization.\n\"\"\")\nPY\ngit add docs/ARCHITECTURE.md docs/CURRENT_STATUS.md docs/checkpoints/2026-11-28-bloomml-m02-ipo-separation.md\ngit diff --cached --check\ngit commit -m \"docs: close M02 scoped software separation with operator evidence\"\ngit fetch origin main\ntest \"$(git rev-parse origin/main)\" = \"$BASE\"\ntest -z \"$(git status --porcelain)\"\ngit push origin HEAD:main\necho \"CODE_SHA|$CODE_SHA\"\necho \"PUBLISHED_SHA|$(git rev-parse HEAD)\"\necho \"M02_PUBLICATION_COMPLETE\"",
+      "current_rss_mb": 17.8,
+      "elapsed_seconds": 3.978,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 4096,
+      "memory_limited": false,
+      "output": "From https://github.com/MichalMatu/bloomml\n * branch            main       -> FETCH_HEAD\nRUNTIME_BOUNDARY_PASS\nOUTPUT_EXECUTION_OWNERSHIP_PASS\nRUNTIME_CONFIG_SSOT_PASS\n[main 3268500] refactor(ipo): separate input process and output implementation ports\n 39 files changed, 561 insertions(+), 225 deletions(-)\n create mode 100644 lib/environment_control/src/climate/ClimateIoPorts.h\n create mode 100644 lib/environment_control/src/climate/ClimatePolicyTypes.h\n create mode 100644 lib/environment_control/src/climate/ClimateProcess.h\n create mode 100644 src/climate/application/ClimateInputContracts.h\n create mode 100644 src/climate/application/ClimateRoleContract.h\n create mode 100644 src/climate/application/ClimateSnapshotContract.h\n[main 2e816ce] docs: close M02 scoped software separation with operator evidence\n 3 files changed, 18 insertions(+), 3 deletions(-)\n create mode 100644 docs/checkpoints/2026-11-28-bloomml-m02-ipo-separation.md\nFrom https://github.com/MichalMatu/bloomml\n * branch            main       -> FETCH_HEAD\nTo https://github.com/MichalMatu/bloomml.git\n   f780b2d..2e816ce  HEAD -> main\nCODE_SHA|326850099912508eb4026cf4d8bdac82d45e81a6\nPUBLISHED_SHA|2e816ce6a8b57d47e98028b3f27d6f359c40025e\nM02_PUBLICATION_COMPLETE\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 17.8,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-28T00:29:10.102452+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.104,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.081,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-m02-publication-20261128-v1",
+  "idle_timeout": 90,
+  "memory_limit_mb": 4096,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 3.978,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-28T00:29:04.468123+00:00",
+  "status": "done",
+  "task_digest": "87905e3cf083b4d7ce4d73f115d622e41952ec7f1a0e580bdb11b2afadc82f31",
+  "task_timeout": 360,
+  "verification": [],
+  "work_branch": "main"
+}

@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m02-ipo-separation-20261128-v1",
+  "task_digest": "0429b20533fcca4d23d3afba3d2268e17f1978ff1120004d931133706fedca4c",
+  "status": "failed",
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-27T23:22:11.611626+00:00",
+  "attempt_id": "b657ebb082e3d89f0e0f22a0",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 17629,
+  "updated_at": "2026-11-27T23:22:12.066876+00:00",
+  "pid": 17629
+}

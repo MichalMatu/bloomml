@@ -1,0 +1,61 @@
+{
+  "allow_write": true,
+  "attempt_id": "771e1039a6373a97867579b0",
+  "command_timeout": 300,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 659,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\ncd /tmp/bloomml-m03.Iyqgfp/source\nBASE=2e816ce6a8b57d47e98028b3f27d6f359c40025e\nCODE=4fc585d3155bddb115d3c5e6a52123f791edaf8c\nPUBLISH=\"$(git rev-parse HEAD)\"\ncase \"$PUBLISH\" in f091bdd*) ;; *) echo UNEXPECTED_LOCAL_HEAD; exit 1;; esac\ntest \"$(git rev-parse HEAD^)\" = \"$CODE\"\ntest -z \"$(git status --porcelain)\"\ntest \"$(git diff --binary \"$BASE\" \"$CODE\" | shasum -a 256 | awk '{print $1}')\" = 1c0ea4b9f9c3c1adec9fe2768532bc7159934aacf494c3c945b25f5392882b40\ngit diff --check \"$BASE\" HEAD\ngit fetch origin main\ntest \"$(git rev-parse origin/main)\" = \"$BASE\"\ngit merge-base --is-ancestor \"$BASE\" \"$PUBLISH\"\ngit log --format='%h %s' \"$BASE\"..HEAD\n# Retry the ordinary authorized fast-forward only once. Never bypass a rule.\ngit push --porcelain origin HEAD:main\ntest \"$(git ls-remote origin refs/heads/main | awk '{print $1}')\" = \"$PUBLISH\"\necho \"M03_PUBLISHED_SHA|$PUBLISH\"\necho M03_CLOSED_SCOPED\n",
+      "current_rss_mb": 14.48,
+      "elapsed_seconds": 8.837,
+      "exit_code": 1,
+      "idle_timed_out": false,
+      "memory_limit_mb": 2048,
+      "memory_limited": false,
+      "output": "From https://github.com/MichalMatu/bloomml\n * branch            main       -> FETCH_HEAD\nf091bdd docs: close M03 configurable inputs with scoped software evidence\n4fc585d feat(ipo): declare optional electrical input channels without device authority\nd77a722 refactor(ipo): select configured clock through shared input contract\nb03d01b refactor(ipo): wire environment inputs through configured device registry\nedda0f2 feat(ipo): add bounded graph-backed input observation registry\nerror: failed to push some refs to 'https://github.com/MichalMatu/bloomml.git'\nTo https://github.com/MichalMatu/bloomml.git\n!\tHEAD:refs/heads/main\t[remote rejected] (failed)\nDone\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 23.86,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-28T01:07:25.320835+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.074,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.094,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-m03-publication-20261128-v2",
+  "idle_timeout": 120,
+  "memory_limit_mb": 2048,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 8.837,
+      "outcome": "failed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-28T01:07:14.736580+00:00",
+  "status": "failed",
+  "task_digest": "28df4afce20d0fa1bb67c1950cef0e8ff2765e84870cbda28319d080373eb705",
+  "task_timeout": 420,
+  "verification": [],
+  "work_branch": "main"
+}

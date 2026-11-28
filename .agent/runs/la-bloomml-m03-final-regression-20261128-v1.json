@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m03-final-regression-20261128-v1",
+  "task_digest": "21d6e1af28b575410bae139c218c617466920298fd17a2dfe897d5c3965e2766",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T01:00:29.556094+00:00",
+  "attempt_id": "f75c47e04effa571aa632e4b",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 59821,
+  "updated_at": "2026-11-28T01:00:30.006614+00:00",
+  "pid": 59821
+}

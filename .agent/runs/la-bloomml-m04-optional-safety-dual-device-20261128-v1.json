@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m04-optional-safety-dual-device-20261128-v1",
+  "task_digest": "b957214844e49458ba8dd65feb889135d2ec7332aad07bede2602f5ca96d0921",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T01:42:54.320556+00:00",
+  "attempt_id": "db62e4c06f1ca3003c294bd3",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 81972,
+  "updated_at": "2026-11-28T01:42:54.564514+00:00",
+  "pid": 81972
+}

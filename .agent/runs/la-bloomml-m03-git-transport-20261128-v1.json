@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m03-git-transport-20261128-v1",
+  "task_digest": "8651d3afe8d8241cdddbdb6322db47edbdc5e0fd475538cb7b1986c0ad698b41",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T01:12:45.574430+00:00",
+  "attempt_id": "d69db12c9edd846560f68371",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 3164,
+  "updated_at": "2026-11-28T01:12:46.036127+00:00",
+  "pid": 3164
+}

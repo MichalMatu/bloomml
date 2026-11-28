@@ -1,0 +1,18 @@
+{
+  "id": "la-bloomml-m03-electrical-contract-20261128-v2",
+  "dedupe_key": "la-bloomml-m03-electrical-contract-20261128-v2",
+  "dedupe_revision": 1,
+  "agent_binding": "815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5",
+  "mode": "commands",
+  "work_branch": "main",
+  "allow_write": true,
+  "resources": [],
+  "output_policy": "stream",
+  "command_timeout": 3600,
+  "idle_timeout": 900,
+  "task_timeout": 4200,
+  "memory_limit_mb": 8192,
+  "commands": [
+    "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\ncd /tmp/bloomml-m03.Iyqgfp/source\ntest \"$(git rev-parse HEAD)\" = d77a722e45799a81ea0d7a47adacd62b8040a232\ngit fetch origin main\ntest \"$(git rev-parse origin/main)\" = 2e816ce6a8b57d47e98028b3f27d6f359c40025e\ntest -z \"$(git diff --name-only)\"\ntest -z \"$(git ls-files --others --exclude-standard)\"\ngit diff --cached --stat\ntest \"$(git diff --cached --name-only | wc -l | tr -d ' ')\" = 7\ngit diff --cached --check\npython3 - <<'PY'\nfrom pathlib import Path\np=Path('web/src/domain/ipo-profile.ts')\ns=p.read_text()\nold='    \"gpio.relay\": \"gpio:4\", \"pwm.channel\": \"pwm:0\", \"modbus.relay\": \"modbus:1:1\",'\nassert s.count(old)==1\nassert '\"shelly.meter\":' not in s\np.write_text(s.replace(old,old+'\\n    \"shelly.meter\": \"shelly:\" + id,'))\np=Path('web/src/domain/ipo-board-readiness.test.ts')\ns=p.read_text()\nold='import { assessIpoProfile, createDefaultIpoProfile, validateIpoProfile } from \"./ipo-profile\"'\nassert s.count(old)==1\ns=s.replace(old,'import { assessIpoProfile, createDefaultIpoProfile, createIpoDevice, validateIpoProfile } from \"./ipo-profile\"')\nold='    p.devices.push({\\n      id: \"meter_1\", label: \"Shelly\", driver: \"shelly.meter\",\\n      locator: \"shelly:meter_1\", enabled: true,\\n    })'\nassert s.count(old)==1\ns=s.replace(old,'    p.devices.push(createIpoDevice(\"meter_1\", \"shelly.meter\"))\\n    expect(p.devices[p.devices.length - 1].locator).toBe(\"shelly:meter_1\")')\np.write_text(s)\nPY\ngit add web/src/domain/ipo-profile.ts web/src/domain/ipo-board-readiness.test.ts\ngit diff --cached --check\nmake test-ipo\npython3 scripts/check_runtime_boundaries.py\npython3 scripts/check_output_rf_ownership.py\npython3 scripts/check_runtime_config_ssot.py\ncd web\npnpm typecheck\npnpm test\npnpm lint\npnpm build\ncd ..\ngit commit -m \"feat(ipo): declare optional electrical input channels without device authority\"\necho \"M03_STAGE4_LOCAL_SHA|$(git rev-parse HEAD)\"\ntest -z \"$(git status --porcelain)\"\necho \"M03_STAGE4_PASS_NO_PUSH\"\n"
+  ]
+}

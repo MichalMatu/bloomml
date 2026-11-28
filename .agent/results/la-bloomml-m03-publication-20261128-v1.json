@@ -1,0 +1,61 @@
+{
+  "allow_write": true,
+  "attempt_id": "5d8ef27b0937c0abaf38be9f",
+  "command_timeout": 3600,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 1576,
+      "command": "set -euo pipefail\ntest \"$(uname -s)\" = Darwin\nBASE=2e816ce6a8b57d47e98028b3f27d6f359c40025e\nCODE=4fc585d3155bddb115d3c5e6a52123f791edaf8c\ncd /tmp/bloomml-m03.Iyqgfp/source\ntest \"$(git rev-parse HEAD)\" = \"$CODE\"\ntest -z \"$(git status --porcelain)\"\ngit fetch origin main\ntest \"$(git rev-parse origin/main)\" = \"$BASE\"\ngit merge-base --is-ancestor \"$BASE\" \"$CODE\"\ngit diff --check \"$BASE\" \"$CODE\"\ntest -z \"$(git diff --name-only \"$BASE\" \"$CODE\" -- src/climate/output lib/environment_control src/climate/runtime/core lib/ipo_profile/src/IpoBoardAdmission.h src/climate/runtime/profile/IpoProfileActivationTransaction.h profiles/crowpanel-ipo.v2.json)\"\nPATCH_SHA=\"$(git diff --binary \"$BASE\" \"$CODE\" | shasum -a 256 | awk '{print $1}')\"\necho \"M03_PATCH_SHA256|$PATCH_SHA\"\nLOG=\"$(mktemp /tmp/bloomml-m03-host.XXXXXX)\"\nif ! make test-host >\"$LOG\" 2>&1; then tail -n 120 \"$LOG\"; exit 1; fi\ngrep -E '100% tests passed|tests failed out of|[0-9]+/[0-9]+ Test' \"$LOG\" | tail -n 15\npython3 scripts/check_runtime_boundaries.py\npython3 scripts/check_output_rf_ownership.py\npython3 scripts/check_runtime_config_ssot.py\ntest -z \"$(git status --porcelain)\"\npython3 - <<'PY'\nfrom pathlib import Path\ndef replace(p, old, new):\n    p=Path(p); s=p.read_text(); assert s.count(old)==1,(p,old,s.count(old)); p.write_text(s.replace(old,new))\np=Path('docs/checkpoints/2026-11-28-bloomml-m03-configurable-inputs.md')\nassert not p.exists()\np.write_text(\"# BloomML M03 — wymienne wejścia IPO\\n\\nStatus: CLOSED_SCOPED — software only; physical activation remains closed.\\nBaseline: 2e816ce6a8b57d47e98028b3f27d6f359c40025e\\nQualified code: 4fc585d3155bddb115d3c5e6a52123f791edaf8c\\n\\n## Scope and limits\\n\\n- Bounded input observation registry and existing priority selector resolve configured device IDs by installed driver/locator, not fixed Mint numeric IDs. SCD41 T/RH/CO2 and both existing BLE sensors can supply graph-defined environmental roles. Unknown, stale and invalid observations are rejected; unavailable/invalid/stale counts describe sources considered by the selector, not every raw rejected hardware packet.\\n- Configured DS3231 clock uses the same semantic clock role for the Rule snapshot and lamp schedule, sharing a timestamped result. Native RTC diagnostics remain separate.\\n- Host tests cover Mint, SCD41-only environmental readings, BLE-only with absent CO2, mixed inputs, priority fallback, missing/invalid/stale readings, ID substitution and clock validity. BLE-only does not synthesize CO2; independent TP357 LampSafety still requires its own hardware reading.\\n- Optional active_power_w / energy_wh and shelly.meter are draft input capabilities in C++, schema and web catalog; no Shelly transport, output authority, physical reading, or telemetry publication is implemented.\\n- Production continues to boot the built-in Mint reference graph. Generic source substitution is software-tested, not a deployed alternate profile. Board admission, wire version, protected Rule, LampSafety, OutputSupervisor and ClosedIpoActivationGate remain unchanged. No physical apply, dynamic driver discovery, hardware test, flash, native NVS or ML/MPC activation.\\n\\n## Evidence\\n\\nLocal Agent, Mac, isolated clone, exact code commit above:\\n- Stage 1 registry: edda0f2b74a33a887610c9d9785fceea7b3773db; IPO 3/3 and architecture 3/3 PASS.\\n- Stage 2 environmental adapter: b03d01b6d839394592a2b28079f8d94ca39fe938; IPO 3/3 and architecture 3/3 PASS.\\n- Stage 3 clock: d77a722e45799a81ea0d7a47adacd62b8040a232; IPO 3/3 and architecture 3/3 PASS.\\n- Stage 4 v1 failed TypeScript because the Shelly draft device factory lacked a locator. v2 corrected the factory and added a regression. IPO 3/3, guards 3/3, Vitest 115/115, TypeScript, lint and web build PASS. Nonblocking large web chunk warning.\\n- Stage 5 terminal result done / command exit 0: full make test-host and all three architecture checks PASS; ESP-IDF 5.5 make build-crowpanel PASS, app binary 0xd22c0, 79% partition free. Result output retains the build tail; successful command completion gates earlier tests. Publication rechecks host with a compact summary and verifies the qualified code and unchanged base before a normal push. Compiler SDK warnings do not indicate a failed build.\\n\\nControl-plane results:\\n- .agent/results/la-bloomml-m03-input-registry-20261128-v1.json\\n- .agent/results/la-bloomml-m03-environment-wiring-20261128-v1.json\\n- .agent/results/la-bloomml-m03-clock-quality-20261128-v1.json\\n- .agent/results/la-bloomml-m03-electrical-contract-20261128-v2.json\\n- .agent/results/la-bloomml-m03-final-regression-20261128-v1.json\\n\\nH0 historical PASS, H1 PARTIAL, H2/H3 NOT ADMITTED. M04 is not started.\\n\")\np='docs/CURRENT_STATUS.md'\nreplace(p,'## Najnowszy sprint software — bez aktywacji IPO\\n','## Najnowszy sprint software — bez aktywacji IPO\\n\\nM03: konfigurowalne wejścia IPO — software CLOSED_SCOPED; [checkpoint M03](checkpoints/2026-11-28-bloomml-m03-configurable-inputs.md). Host, web i CrowPanel build PASS na kodzie 4fc585d; alternatywne profile pozostają nieaktywne sprzętowo.\\n')\nreplace(p,'CrowPanel reference selector: TP357 T/RH, SCD41 CO₂, Xiaomi ambient T/RH; filtr valid/finite/age; brak dynamicznej rejestracji driverów','Wspólny rejestr odczytów BLE T/RH i SCD41 T/RH/CO₂, role i priorytety z grafu; DS3231 przez konfigurowalny zegar. Mint na starcie bez zmian; brak dynamicznej rejestracji driverów i aktywacji innych grafów')\np='docs/CONFIGURATION_FLOW.md'\nreplace(p,'  TP357 / SCD41 CO2 / Xiaomi -> fixed-board freshness selector','  TP357 / SCD41 / Xiaomi -> bounded observation registry -> graph freshness selector\\n  DS3231 -> configured clock -> Rule + lamp schedule')\nreplace(p,'Dynamiczny hardware fallback nie jest obecnie dopuszczony na CrowPanel.','Fallback i zamiana źródeł są testowane programowo; alternatywne grafy nie są dopuszczone do fizycznej aktywacji na CrowPanel. Opcjonalne W/Wh (shelly.meter) to wyłącznie kontrakt wejściowy draft.')\nreplace(p,'T/RH z SCD41 nie są zakwalifikowanym fallbackiem','T/RH dostępne w rejestrze wejść, ale nie są sprzętowo zakwalifikowanym fallbackiem')\nreplace(p,'| `IpoSignalSelector.h` + `RuntimeInsideSource`/`RuntimeNearbySource` | Wybór użytecznego pomiaru spośród referencyjnych źródeł |','| `IpoInputReadingRegistry.h` / `RuntimeInputRegistry.h` / `IpoSignalSelector.h` | Rejestr odczytów według drivera i locatora; wybór semantycznej roli według grafu i priorytetu |\\n| `ConfiguredClockSource.h` | Wybór zegara i współdzielony odczyt dla harmonogramu i Rule |')\nPY\nprintf '\\nQualified code patch SHA-256: %s\\n' \"$PATCH_SHA\" >> docs/checkpoints/2026-11-28-bloomml-m03-configurable-inputs.md\ngit add docs/CURRENT_STATUS.md docs/CONFIGURATION_FLOW.md docs/checkpoints/2026-11-28-bloomml-m03-configurable-inputs.md\ngit diff --cached --check\ngit commit -m \"docs: close M03 configurable inputs with scoped software evidence\"\nPUBLISH=\"$(git rev-parse HEAD)\"\ntest \"$(git rev-parse HEAD^)\" = \"$CODE\"\ntest -z \"$(git status --porcelain)\"\ngit fetch origin main\ntest \"$(git rev-parse origin/main)\" = \"$BASE\"\ngit push origin HEAD:main\ntest \"$(git ls-remote origin refs/heads/main | awk '{print $1}')\" = \"$PUBLISH\"\necho \"M03_PUBLISHED_SHA|$PUBLISH\"\necho M03_CLOSED_SCOPED\n",
+      "current_rss_mb": 14.5,
+      "elapsed_seconds": 13.074,
+      "exit_code": 1,
+      "idle_timed_out": false,
+      "memory_limit_mb": 8192,
+      "memory_limited": false,
+      "output": "From https://github.com/MichalMatu/bloomml\n * branch            main       -> FETCH_HEAD\nM03_PATCH_SHA256|1c0ea4b9f9c3c1adec9fe2768532bc7159934aacf494c3c945b25f5392882b40\n1/1 Test #1: display_runtime_tests ............   Passed    0.01 sec\n100% tests passed, 0 tests failed out of 1\n1/1 Test #1: display_observer_tests ...........   Passed    0.01 sec\n100% tests passed, 0 tests failed out of 1\n1/1 Test #1: display_raster_tests .............   Passed    0.01 sec\n100% tests passed, 0 tests failed out of 1\n1/1 Test #1: display_async_tests ..............   Passed    0.01 sec\n100% tests passed, 0 tests failed out of 1\n1/1 Test #1: display_button_tests .............   Passed    0.01 sec\n100% tests passed, 0 tests failed out of 1\n1/2 Test #1: growbox_clay_ui_tests .............   Passed    0.02 sec\n2/2 Test #2: growbox_clay_ui_simulator_smoke ...   Passed    0.01 sec\n100% tests passed, 0 tests failed out of 2\n1/1 Test #1: display_clay_pages_tests .........   Passed    0.04 sec\n100% tests passed, 0 tests failed out of 1\nRUNTIME_BOUNDARY_PASS\nOUTPUT_EXECUTION_OWNERSHIP_PASS\nRUNTIME_CONFIG_SSOT_PASS\n[main f091bdd] docs: close M03 configurable inputs with scoped software evidence\n 3 files changed, 42 insertions(+), 5 deletions(-)\n create mode 100644 docs/checkpoints/2026-11-28-bloomml-m03-configurable-inputs.md\nFrom https://github.com/MichalMatu/bloomml\n * branch            main       -> FETCH_HEAD\nTo https://github.com/MichalMatu/bloomml.git\n ! [remote rejected] HEAD -> main (failed)\nerror: failed to push some refs to 'https://github.com/MichalMatu/bloomml.git'\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 62.81,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "failure_reason": "command_failed",
+  "finished_at": "2026-11-28T01:02:49.131801+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.069,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.133,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-m03-publication-20261128-v1",
+  "idle_timeout": 900,
+  "memory_limit_mb": 8192,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 13.074,
+      "outcome": "failed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-28T01:02:34.599035+00:00",
+  "status": "failed",
+  "task_digest": "758243e77f0f17b038f0be28a9e81c4921f0d060a187aeef6c2b6f59d09ff059",
+  "task_timeout": 4200,
+  "verification": [],
+  "work_branch": "main"
+}

@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m03-git-diagnostic-20261128-v1",
+  "task_digest": "2748257f1ee7cb78238b9251684f32b7ffe5697a5624d15e39e1220bb72705d1",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T01:11:11.686637+00:00",
+  "attempt_id": "64260b53f91c8eda24ebcf78",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 489,
+  "updated_at": "2026-11-28T01:11:11.945635+00:00",
+  "pid": 489
+}

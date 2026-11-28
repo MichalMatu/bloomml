@@ -1,0 +1,60 @@
+{
+  "allow_write": false,
+  "attempt_id": "be5a352a8f56450b2d019208",
+  "command_timeout": 60,
+  "commands": [
+    {
+      "background_process_leak": false,
+      "captured_output_chars": 4130,
+      "command": "if test -d /tmp/bloomml-m02.EonI5d/source; then\n  printf 'RECOVERY_DIRECTORY_PRESENT\\n'\n  git -C /tmp/bloomml-m02.EonI5d/source rev-parse HEAD\n  git -C /tmp/bloomml-m02.EonI5d/source --no-optional-locks status --short\n  git -C /tmp/bloomml-m02.EonI5d/source diff --stat\nelse\n  printf 'RECOVERY_DIRECTORY_ABSENT\\n'\nfi",
+      "current_rss_mb": 7.88,
+      "elapsed_seconds": 0.449,
+      "exit_code": 0,
+      "idle_timed_out": false,
+      "memory_limit_mb": 4096,
+      "memory_limited": false,
+      "output": "RECOVERY_DIRECTORY_PRESENT\nf780b2d4a88c2cf72c7160295d8fdea274eb0341\n M docs/ARCHITECTURE.md\n M lib/environment_control/src/climate/ClimateControlLoop.cpp\n M lib/environment_control/src/climate/ClimateControlLoop.h\n M lib/environment_control/src/climate/ClimatePolicy.cpp\n M lib/environment_control/src/climate/ClimatePolicy.h\n M lib/environment_control/src/climate/ClimateRuntimeController.h\n M lib/environment_control/src/climate/ClimateTypes.h\n M scripts/check_runtime_boundaries.py\n M src/climate/ClimateDeterministicFake.h\n M src/climate/ClimateV6FakeRuntime.cpp\n M src/climate/ClimateV6RealInputRuntime.cpp\n M src/climate/application/ClimateApplication.cpp\n M src/climate/application/ClimateApplication.h\n M src/climate/application/ClimateCompositeInput.h\n M src/climate/application/ClimateIoAdapters.h\n M src/climate/application/ClimateSemanticOutput.h\n M src/climate/input/rtc/Ds3231ClockSource.h\n M src/climate/input/sensors/Scd41InsideSource.h\n M src/climate/output/supervisor/ClimateOutputSupervisorSink.h\n M src/climate/runtime/RuntimeAdapters.cpp\n M src/climate/runtime/RuntimeAdapters.h\n M src/climate/runtime/core/RealInputRuntimeComposition.h\n M src/climate/runtime/core/RealInputRuntimeCoordinator.cpp\n M src/climate/runtime/core/RealInputRuntimeCoordinator.h\n M src/climate/runtime/schedule/RuntimeScheduleProfile.h\n M test/test_climate_application_composition/test_main.cpp\n M test/test_climate_composite_input/test_main.cpp\n M test/test_climate_control_loop/test_main.cpp\n M test/test_climate_deterministic_fake_runtime/test_main.cpp\n M test/test_climate_fault_soak/test_main.cpp\n M test/test_climate_output_supervisor_sink/test_main.cpp\n M test/test_climate_virtual_hil/test_main.cpp\n?? lib/environment_control/src/climate/ClimateIoPorts.h\n?? lib/environment_control/src/climate/ClimatePolicyTypes.h\n?? lib/environment_control/src/climate/ClimateProcess.h\n?? src/climate/application/ClimateInputContracts.h\n?? src/climate/application/ClimateRoleContract.h\n?? src/climate/application/ClimateSnapshotContract.h\n docs/ARCHITECTURE.md                               | 24 ++++++++++\n .../src/climate/ClimateControlLoop.cpp             |  2 +-\n .../src/climate/ClimateControlLoop.h               | 50 ++-----------------\n .../src/climate/ClimatePolicy.cpp                  |  2 +-\n .../src/climate/ClimatePolicy.h                    | 28 +----------\n .../src/climate/ClimateRuntimeController.h         | 35 ++------------\n lib/environment_control/src/climate/ClimateTypes.h | 12 +++++\n scripts/check_runtime_boundaries.py                | 19 ++++++++\n src/climate/ClimateDeterministicFake.h             |  2 +-\n src/climate/ClimateV6FakeRuntime.cpp               |  1 +\n src/climate/ClimateV6RealInputRuntime.cpp          |  3 +-\n src/climate/application/ClimateApplication.cpp     |  4 +-\n src/climate/application/ClimateApplication.h       |  5 +-\n src/climate/application/ClimateCompositeInput.h    | 53 +-------------------\n src/climate/application/ClimateIoAdapters.h        | 47 ++----------------\n src/climate/application/ClimateSemanticOutput.h    |  2 +-\n src/climate/input/rtc/Ds3231ClockSource.h          |  2 +-\n src/climate/input/sensors/Scd41InsideSource.h      |  2 +-\n .../supervisor/ClimateOutputSupervisorSink.h       |  1 +\n src/climate/runtime/RuntimeAdapters.cpp            |  9 ++++\n src/climate/runtime/RuntimeAdapters.h              | 13 ++++-\n .../runtime/core/RealInputRuntimeComposition.h     |  1 +\n .../runtime/core/RealInputRuntimeCoordinator.cpp   | 13 ++---\n .../runtime/core/RealInputRuntimeCoordinator.h     | 10 ++--\n .../runtime/schedule/RuntimeScheduleProfile.h      |  2 +-\n .../test_main.cpp                                  | 56 ++++++++++++++++++++++\n test/test_climate_composite_input/test_main.cpp    |  1 +\n test/test_climate_control_loop/test_main.cpp       |  1 +\n .../test_main.cpp                                  |  1 +\n test/test_climate_fault_soak/test_main.cpp         |  1 +\n .../test_main.cpp                                  | 45 +++++++++++++++++\n test/test_climate_virtual_hil/test_main.cpp        |  1 +\n 32 files changed, 223 insertions(+), 225 deletions(-)\n",
+      "output_policy": "stream",
+      "output_truncated": false,
+      "peak_rss_mb": 7.88,
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1,
+      "timed_out": false
+    }
+  ],
+  "daemon_version": "4.20.16",
+  "edits": {},
+  "finished_at": "2026-11-27T23:51:49.286167+00:00",
+  "git_diff": {
+    "elapsed_seconds": 0.071,
+    "exit_code": 0,
+    "output": ""
+  },
+  "git_status": {
+    "elapsed_seconds": 0.081,
+    "exit_code": 0,
+    "output": ""
+  },
+  "id": "la-bloomml-m02-recovery-inspect-20261128-v2",
+  "idle_timeout": 60,
+  "memory_limit_mb": 4096,
+  "mode": "commands",
+  "stages": [
+    {
+      "elapsed_seconds": 0.449,
+      "outcome": "passed",
+      "stage_index": 1,
+      "stage_name": "command-1",
+      "stage_phase": "commands",
+      "stage_total": 1
+    }
+  ],
+  "started_at": "2026-11-27T23:51:47.270543+00:00",
+  "status": "done",
+  "task_digest": "21b7d0057a12d2412f55a41947b0af8ce4bf50e5bed3c291f939765de9795c1c",
+  "task_timeout": 300,
+  "verification": [],
+  "work_branch": "main"
+}

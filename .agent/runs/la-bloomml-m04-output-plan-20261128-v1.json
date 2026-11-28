@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m04-output-plan-20261128-v1",
+  "task_digest": "ca2baf3a04c2d1177b2502d5805d11c0f86af11e4b329d617415cfa8f05f28ef",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T01:21:16.685640+00:00",
+  "attempt_id": "30b7fbde5784b9401fb892a3",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 22614,
+  "updated_at": "2026-11-28T01:21:16.993418+00:00",
+  "pid": 22614
+}

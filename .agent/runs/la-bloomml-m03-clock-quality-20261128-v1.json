@@ -1,0 +1,13 @@
+{
+  "event": "task_finished",
+  "task_id": "la-bloomml-m03-clock-quality-20261128-v1",
+  "task_digest": "ede53574a276e05a04651cd4ea9935ad15ff416a433fcabcb241c98601d1f557",
+  "status": "done",
+  "failure_reason": null,
+  "finished_at": "2026-11-28T00:42:14.660270+00:00",
+  "attempt_id": "973bec3f0c0c079d3dca0a6d",
+  "daemon_version": "4.20.16",
+  "daemon_pid": 15096,
+  "updated_at": "2026-11-28T00:42:14.943814+00:00",
+  "pid": 15096
+}
