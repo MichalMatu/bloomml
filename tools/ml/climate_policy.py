@@ -9,10 +9,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+import math
 
 from .climate_input import (
     DEFAULT_SENSOR_TIMEOUT_MS,
     ClimateTargets,
+    ClimateTrends,
     HumidityControlMode,
     MeasurementStatus,
     air_vpd_kpa,
@@ -114,6 +116,7 @@ class ClimateRulePolicy:
         *,
         status: Mapping[str, MeasurementStatus] | None = None,
         sensor_timeout_ms: int = DEFAULT_SENSOR_TIMEOUT_MS,
+        trends: ClimateTrends | None = None,
     ) -> ClimateAction:
         statuses = status or {}
         timeout = int(sensor_timeout_ms)
@@ -209,8 +212,24 @@ class ClimateRulePolicy:
                         values["exhaust_fan"], min(humidity_level, _level(moisture_gap, 0.5, 3.0))
                     )
 
+        trend = (trends or ClimateTrends()).temperature
+        if (
+            math.isfinite(profile.light_level) and profile.light_level > 0.0
+            and trend.available and math.isfinite(trend.rate_per_min)
+            and 0.0 <= temperature_error <= cfg.temperature_deadband_c
+            and trend.rate_per_min > 0.1
+        ):
+            anticipatory = _level(trend.rate_per_min, 0.1, 1.0)
+            if caps.cooler.available:
+                values["cooler"] = max(values["cooler"], anticipatory)
+            elif (
+                caps.exhaust_fan.available and outside_temperature_ok
+                and state.outside_temperature_c < state.air_temperature_c - cfg.temperature_deadband_c
+            ):
+                values["exhaust_fan"] = max(values["exhaust_fan"], anticipatory)
+
         co2_ok = _usable("co2_ppm", state.co2_ppm, statuses, timeout)
-        if targets.co2_enabled and co2_ok:
+        if targets.co2_enabled and co2_ok and math.isfinite(targets.co2_ppm) and targets.co2_ppm > 0:
             co2_error = targets.co2_ppm - state.co2_ppm
             if co2_error > cfg.co2_deadband_ppm and caps.co2_doser.available:
                 values["co2_doser"] = _level(
@@ -225,6 +244,9 @@ class ClimateRulePolicy:
                     values["exhaust_fan"],
                     _level(co2_error, cfg.co2_deadband_ppm, cfg.co2_full_scale_ppm),
                 )
+
+        if values["exhaust_fan"] > 0.0:
+            values["co2_doser"] = 0.0
 
         return ClimateAction.from_mapping(values).clipped()
 

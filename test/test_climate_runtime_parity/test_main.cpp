@@ -228,9 +228,60 @@ void testDirectionalVentilation() {
   in.capabilities.exhaust_fan = false;
   check(near(fan(), 0.0F), "directional_ventilation", "unavailable fan");
 }
+void testLampTrendAndConflicts() {
+  using namespace growbox::climate;
+  ClimateControllerInput in{};
+  in.targets.air_temperature_c = 24.0F;
+  in.targets.relative_humidity_pct = 60.0F;
+  in.targets.co2_enabled = true;
+  in.targets.co2_ppm = 900.0F;
+  in.capabilities.exhaust_fan = true;
+  in.capabilities.co2_doser = true;
+  auto& m = in.state.measurements;
+  m.air_temperature_c = {24.0F, true, 0U};
+  m.relative_humidity_pct = {60.0F, true, 0U};
+  m.co2_ppm = {600.0F, true, 0U};
+  m.outside_temperature_c = {20.0F, true, 0U};
+  m.outside_humidity_pct = {60.0F, true, 0U};
+  in.schedule.light_level = 1.0F;
+  auto request = [&] { return policy::ruleRequest(in); };
+  check(near(request().exhaust_fan, 0.0F), "lamp_conflict", "schedule alone cannot imply heat");
+  in.state.trends.temperature = {0.6F, true};
+  check(near(request().exhaust_fan, 0.5F), "lamp_conflict", "observed rise and cool intake");
+  check(near(request().co2_doser, 0.0F), "lamp_conflict", "ventilation wins over enrichment");
+  in.schedule.light_level = 0.0F;
+  check(near(request().exhaust_fan, 0.0F), "lamp_conflict", "no lamp anticipation at night");
+  check(near(request().co2_doser, 0.5F), "lamp_conflict", "enrichment resumes when not ventilating");
+  in.schedule.light_level = 1.0F;
+  m.outside_temperature_c.value = 30.0F;
+  check(near(request().exhaust_fan, 0.0F), "lamp_conflict", "hot intake cannot anticipate cooling");
+  in.capabilities.cooler = true;
+  check(near(request().cooler, 0.5F), "lamp_conflict", "direct cooler can anticipate without exchange");
+  check(near(request().co2_doser, 0.5F), "lamp_conflict", "direct cooling can coexist with dosing");
+  in.state.trends.temperature = {-0.6F, true};
+  check(near(request().cooler, 0.0F), "lamp_conflict", "falling trend does not anticipate");
+  in.state.trends.temperature = {0.6F, false};
+  check(near(request().cooler, 0.0F), "lamp_conflict", "unknown trend does not anticipate");
+  m.air_temperature_c.value = 28.0F;
+  m.outside_temperature_c.value = 20.0F;
+  check(request().exhaust_fan > 0.0F && near(request().co2_doser, 0.0F),
+        "lamp_conflict", "thermal ventilation suppresses enrichment regardless of lamp");
+  m.air_temperature_c.value = 24.0F;
+  m.relative_humidity_pct.value = 80.0F;
+  check(request().exhaust_fan > 0.0F && near(request().co2_doser, 0.0F),
+        "lamp_conflict", "moisture ventilation suppresses enrichment");
+  m.relative_humidity_pct.value = 60.0F;
+  for (unsigned i = 0; i < 32; ++i) {
+    m.air_temperature_c.value = 24.0F + ((i % 2U) ? 0.1F : -0.1F);
+    check(near(request().exhaust_fan, 0.0F) && near(request().cooler, 0.0F),
+          "lamp_conflict", "deadband repeatability with no valid trend");
+  }
+}
+
 } // namespace
 
 int main() {
+  testLampTrendAndConflicts();
   testDirectionalVentilation();
   testCo2TargetVentilation();
   for (const auto& fixture : growbox::climate::parity_fixture::kCases) {

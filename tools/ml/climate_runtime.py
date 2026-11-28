@@ -186,6 +186,7 @@ class ClimateRuntimeController:
             profile,
             status=statuses,
             sensor_timeout_ms=self.config.sensor_timeout_ms,
+            trends=trends,
         )
         rule_arbitrated = arbitrate_climate_action(rule_raw, scenario)
         rule_safe = apply_climate_safety(

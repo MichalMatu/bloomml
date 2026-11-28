@@ -142,6 +142,27 @@ ClimatePolicyRequest ruleRequestImpl(const ClimateControllerInput& input) noexce
     }
   }
 
+  // A scheduled lamp is not proof of emitted heat. Only a fresh measured
+  // rising temperature trend near the upper target band permits anticipatory
+  // cooling. The normalized demand is a heuristic, not watts or a forecast.
+  const auto& trend = input.state.trends.temperature;
+  if (std::isfinite(input.schedule.light_level) && input.schedule.light_level > 0.0F &&
+      trend.available && std::isfinite(trend.rate_per_min) &&
+      temperature_error >= 0.0F && temperature_error <= kTemperatureDeadbandC) {
+    constexpr float kRisingTrendDeadbandCPerMin = 0.1F;
+    constexpr float kRisingTrendFullScaleCPerMin = 1.0F;
+    if (trend.rate_per_min > kRisingTrendDeadbandCPerMin) {
+      const float anticipatory = level(trend.rate_per_min, kRisingTrendDeadbandCPerMin,
+                                       kRisingTrendFullScaleCPerMin);
+      if (input.capabilities.cooler) {
+        request.cooler = std::max(request.cooler, anticipatory);
+      } else if (input.capabilities.exhaust_fan && outside_temperature_ok &&
+                 measurements.outside_temperature_c.value < temperature - kTemperatureDeadbandC) {
+        request.exhaust_fan = std::max(request.exhaust_fan, anticipatory);
+      }
+    }
+  }
+
   if (input.targets.co2_enabled && std::isfinite(input.targets.co2_ppm) &&
       input.targets.co2_ppm > 0.0F && usable(measurements.co2_ppm, input.sensor_timeout_ms)) {
     const float co2_error = input.targets.co2_ppm - measurements.co2_ppm.value;
@@ -156,6 +177,11 @@ ClimatePolicyRequest ruleRequestImpl(const ClimateControllerInput& input) noexce
           request.exhaust_fan, level(co2_error, kCo2DeadbandPpm, kCo2FullScalePpm));
     }
   }
+  // Ventilation requested for temperature, moisture or CO2 takes precedence
+  // over enrichment. Never deliberately enrich while requesting exhaust.
+  // Thermal and moisture compensators may coexist when needed; opposing
+  // direct actuators remain handled by the existing shared arbitration.
+  if (request.exhaust_fan > 0.0F) request.co2_doser = 0.0F;
   return clippedImpl(request);
 }
 
