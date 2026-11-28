@@ -1,4 +1,5 @@
 #include "IpoBoardAdmission.h"
+#include "IpoOutputPlan.h"
 #include "IpoSignalSelector.h"
 #include "IpoInputReadingRegistry.h"
 #include "climate/input/ConfiguredClockSource.h"
@@ -15,6 +16,46 @@ namespace runtime = growbox::app::climate_io::runtime;
 namespace profile = growbox::app::climate_io::runtime::profile;
 
 namespace {
+
+void testMvpOutputPlans() {
+  for (unsigned mask = 0; mask < 128U; ++mask) {
+    ipo::Graph graph{};
+    graph.processes[graph.process_count++] = {1U, ipo::ProcessKind::Co2Safety, true};
+    unsigned expected = 0U;
+    for (unsigned role = 0; role < 7U; ++role) {
+      if (!(mask & (1U << role))) continue;
+      const auto id = static_cast<std::uint16_t>(role + 1U);
+      graph.devices[graph.device_count++] = {id, ipo::Driver::GpioRelay, id, true};
+      graph.actuators[graph.actuator_count++] = {
+          static_cast<std::uint16_t>(id + 20U), id, ipo::Channel::Switch,
+          static_cast<ipo::OutputRole>(role), true, 1000U, 2000U};
+      ++expected;
+    }
+    auto plan = ipo::buildOutputPlan(graph);
+    assert(plan.valid() && plan.count == expected);
+    for (unsigned role = 0; role < 7U; ++role) {
+      const auto* entry = plan.find(static_cast<ipo::OutputRole>(role));
+      assert((entry != nullptr) == bool(mask & (1U << role)));
+      if (entry) {
+        assert(entry->endpoint == role + 21U && entry->device_id == role + 1U);
+        assert(entry->min_on_ms == 1000U && entry->min_off_ms == 2000U);
+      }
+    }
+  }
+  auto graph = ipo::makeCrowPanelMintReferenceGraph();
+  assert(ipo::buildOutputPlan(graph).valid());
+  graph.actuators[1].role = graph.actuators[0].role;
+  graph.link_count = 0U;
+  auto rejected = ipo::buildOutputPlan(graph);
+  assert(rejected.status == ipo::OutputPlanStatus::DuplicateRole && rejected.count == 0U);
+  graph = ipo::makeCrowPanelMintReferenceGraph();
+  graph.actuators[0].device_id = 999U;
+  assert(!ipo::buildOutputPlan(graph).valid());
+  graph = ipo::makeCrowPanelMintReferenceGraph();
+  for (auto& device : graph.devices)
+    if (device.id == graph.actuators[0].device_id) device.enabled = false;
+  assert(ipo::buildOutputPlan(graph).status == ipo::OutputPlanStatus::DisabledDevice);
+}
 
 void testReferenceHardwareAdmission() {
   auto graph = ipo::makeCrowPanelMintReferenceGraph();
@@ -382,6 +423,7 @@ void testStoredProfileIsNotActiveProfileEvidence() {
 } // namespace
 
 int main() {
+  testMvpOutputPlans();
   testReferenceHardwareAdmission();
   testCo2BindingCannotBeDeleted();
   testRequiredRoutingCannotBeDeleted();
