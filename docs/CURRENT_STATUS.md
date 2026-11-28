@@ -10,6 +10,8 @@ Aktualny sprint software: **CLOSED — scoped**. Regresja współdzielonego bufo
 
 ## Najnowszy sprint software — bez aktywacji IPO
 
+M05: autonomiczny Rule wieloparametrowy — software CLOSED_SCOPED; [checkpoint M05](checkpoints/2026-11-28-bloomml-m05-multiparameter-rule.md). Host 62/62, web 117/117, Python 13, architektura 3/3 i CrowPanel build PASS. Bez zmiany kwalifikacji sprzętowej.
+
 M03: konfigurowalne wejścia IPO — software CLOSED_SCOPED; [checkpoint M03](checkpoints/2026-11-28-bloomml-m03-configurable-inputs.md). Host, web i CrowPanel build PASS na kodzie 4fc585d; alternatywne profile pozostają nieaktywne sprzętowo.
 
 M04: konfigurowalne wyjścia IPO — software CLOSED_SCOPED; [checkpoint M04](checkpoints/2026-11-28-bloomml-m04-configurable-outputs.md). Host 62/62, web 116/116, architektura 3/3, CrowPanel build PASS. Produkcja nadal wyłącznie Mint; nowe role i adaptery tylko software/fake, zero wyjść = jawna odmowa uruchomienia. H2/H3 zamknięte.

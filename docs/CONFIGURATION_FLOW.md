@@ -32,6 +32,8 @@ Current real-input firmware on boot:
 
 ## Kontrakt DeviceProfile v2
 
+M05: opcjonalne cele CO₂ dzień/noc (400–1700 ppm, wyłączone domyślnie), profil wire v2 czyta v1 z wyłączonym CO₂. Ocena osiągalności i priorytety Rule są diagnostyką decyzji, nie gwarancją fizycznej realizacji. [Checkpoint M05](checkpoints/2026-11-28-bloomml-m05-multiparameter-rule.md).
+
 - Schemat: `schemas/device-profile.v2.schema.json`; przykład `profiles/crowpanel-ipo.v2.json`; status eksportu `draft_not_applied`.
 - `DeviceRegistry`: ID, driver, locator/adres, enabled oraz katalog możliwości, w tym role **przyszłe**, które nie są automatycznie sprzętowo obsługiwane.
 - `SignalRegistry`: semantyczna rola, kanał, źródło podstawowe/zapasowe, priorytet i jednostki; odczyt invalid/stale/nonfinite jest nieużywalny. Fallback i zamiana źródeł są testowane programowo; alternatywne grafy nie są dopuszczone do fizycznej aktywacji na CrowPanel. Opcjonalne W/Wh (shelly.meter) to wyłącznie kontrakt wejściowy draft.
