@@ -16,7 +16,6 @@ constexpr float kTemperatureFullScaleC = 4.0F;
 constexpr float kHumidityFullScalePct = 18.0F;
 constexpr float kVpdFullScaleKpa = 0.7F;
 constexpr float kCo2FullScalePpm = 500.0F;
-constexpr float kOutsideImprovementMargin = 0.08F;
 constexpr float kAbsoluteHumidityBenefitDeadbandGm3 = 0.5F;
 constexpr float kAbsoluteHumidityBenefitFullScaleGm3 = 3.0F;
 constexpr float kMinimumTemperatureC = 8.0F;
@@ -106,30 +105,39 @@ ClimatePolicyRequest ruleRequestImpl(const ClimateControllerInput& input) noexce
   const bool outside_humidity_ok =
       usable(measurements.outside_humidity_pct, input.sensor_timeout_ms);
   if (input.capabilities.exhaust_fan) {
+    // This is a directional opportunity score, not a prediction of air
+    // exchange, chamber temperature, actuator power or response time.
+    float thermal_direction = 0.0F;
     if (outside_temperature_ok) {
-      constexpr float kMixFraction = 0.20F;
-      const float mixed_temperature =
-          temperature + kMixFraction * (measurements.outside_temperature_c.value - temperature);
-      const float current_temp_score = std::abs(temperature_error) / 5.0F;
-      const float mixed_temp_score =
-          std::abs(mixed_temperature - input.targets.air_temperature_c) / 5.0F;
-      const float temperature_improvement = current_temp_score - mixed_temp_score;
-      if (temperature_improvement > kOutsideImprovementMargin) {
-        request.exhaust_fan =
-            std::max(request.exhaust_fan, clip01(temperature_improvement / 0.75F));
+      thermal_direction = measurements.outside_temperature_c.value - temperature;
+      const bool thermal_benefit =
+          (temperature_error > kTemperatureDeadbandC && thermal_direction < 0.0F) ||
+          (temperature_error < -kTemperatureDeadbandC && thermal_direction > 0.0F);
+      if (thermal_benefit) {
+        request.exhaust_fan = level(
+            std::min(std::abs(temperature_error), std::abs(thermal_direction)),
+            kTemperatureDeadbandC, kTemperatureFullScaleC);
       }
     }
 
-    if (too_humid && outside_temperature_ok && outside_humidity_ok) {
+    // Moisture transport is assessed using absolute humidity;
+    // RH alone is not evidence of wetter/drier intake. Temperature effects
+    // remain a separate directional constraint, not a forecast.
+    const bool worsens_temperature =
+        (temperature_error > kTemperatureDeadbandC && thermal_direction > 0.0F) ||
+        (temperature_error < -kTemperatureDeadbandC && thermal_direction < 0.0F);
+    if ((too_humid || too_dry) && outside_temperature_ok && outside_humidity_ok &&
+        !worsens_temperature) {
       const float inside_absolute_humidity = absoluteHumidityGm3(temperature, humidity);
       const float intake_absolute_humidity = absoluteHumidityGm3(
           measurements.outside_temperature_c.value, measurements.outside_humidity_pct.value);
-      const float drying_gap = inside_absolute_humidity - intake_absolute_humidity;
-      if (drying_gap > kAbsoluteHumidityBenefitDeadbandGm3) {
-        const float drying_benefit = level(drying_gap, kAbsoluteHumidityBenefitDeadbandGm3,
-                                           kAbsoluteHumidityBenefitFullScaleGm3);
+      const float moisture_gap = too_humid ? inside_absolute_humidity - intake_absolute_humidity
+                                           : intake_absolute_humidity - inside_absolute_humidity;
+      if (moisture_gap > kAbsoluteHumidityBenefitDeadbandGm3) {
+        const float benefit = level(moisture_gap, kAbsoluteHumidityBenefitDeadbandGm3,
+                                    kAbsoluteHumidityBenefitFullScaleGm3);
         request.exhaust_fan =
-            std::max(request.exhaust_fan, std::min(humidity_level, drying_benefit));
+            std::max(request.exhaust_fan, std::min(humidity_level, benefit));
       }
     }
   }

@@ -1,3 +1,4 @@
+#include "ClimatePolicy.h"
 #include "ClimateRuntimeController.h"
 #include "climate_runtime_parity_generated.h"
 
@@ -189,9 +190,48 @@ void testCo2TargetVentilation() {
     check(near(decision.rule.safe.co2_doser, s.expected_doser), s.name, "dosing");
   }
 }
+void testDirectionalVentilation() {
+  using namespace growbox::climate;
+  ClimateControllerInput in{};
+  in.capabilities.exhaust_fan = true;
+  in.targets.air_temperature_c = 24.0F;
+  in.targets.relative_humidity_pct = 60.0F;
+  auto& m = in.state.measurements;
+  m.air_temperature_c = {28.0F, true, 0U};
+  m.relative_humidity_pct = {60.0F, true, 0U};
+  m.outside_temperature_c = {15.0F, true, 0U};
+  m.outside_humidity_pct = {60.0F, true, 0U};
+  auto fan = [&] { return policy::ruleRequest(in).exhaust_fan; };
+  check(near(fan(), 0.925F), "directional_ventilation", "cooling gradient capped by target error");
+  m.outside_temperature_c.value = 35.0F;
+  check(near(fan(), 0.0F), "directional_ventilation", "hot intake cannot cool");
+  m.outside_temperature_c = {15.0F, false, 0U};
+  check(near(fan(), 0.0F), "directional_ventilation", "unknown intake cannot cool");
+  m.outside_temperature_c = {15.0F, true, 0U};
+  m.outside_humidity_pct.valid = false;
+  check(near(fan(), 0.925F), "directional_ventilation", "temperature opportunity does not require RH");
+  m.air_temperature_c.value = 24.0F;
+  m.relative_humidity_pct.value = 80.0F;
+  m.outside_humidity_pct = {85.0F, true, 0U};
+  check(fan() > 0.0F, "directional_ventilation", "cold high-RH intake can carry less moisture");
+  m.outside_temperature_c.value = 35.0F;
+  m.outside_humidity_pct.value = 65.0F;
+  check(near(fan(), 0.0F), "directional_ventilation", "warm low-RH intake can carry more moisture");
+  m.relative_humidity_pct.value = 35.0F;
+  check(fan() > 0.0F, "directional_ventilation", "moist intake opportunity");
+  m.air_temperature_c.value = 28.0F;
+  check(near(fan(), 0.0F), "directional_ventilation", "moisture ventilation must not worsen temperature");
+  m.air_temperature_c.value = 24.0F;
+  in.humidity_control_mode = HumidityControlMode::Vpd;
+  in.targets.air_vpd_kpa = 1.2F;
+  check(fan() > 0.0F, "directional_ventilation", "VPD moisture opportunity");
+  in.capabilities.exhaust_fan = false;
+  check(near(fan(), 0.0F), "directional_ventilation", "unavailable fan");
+}
 } // namespace
 
 int main() {
+  testDirectionalVentilation();
   testCo2TargetVentilation();
   for (const auto& fixture : growbox::climate::parity_fixture::kCases) {
     runCase(fixture);

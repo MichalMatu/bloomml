@@ -170,41 +170,60 @@ class ClimateRulePolicy:
             "outside_humidity_pct", state.outside_humidity_pct, statuses, timeout
         )
         if caps.exhaust_fan.available:
+            thermal_direction = 0.0
             if outside_temperature_ok:
-                mix_fraction = 0.20
-                mixed_temperature = state.air_temperature_c + mix_fraction * (
-                    state.outside_temperature_c - state.air_temperature_c
+                thermal_direction = state.outside_temperature_c - state.air_temperature_c
+                thermal_benefit = (
+                    temperature_error > cfg.temperature_deadband_c and thermal_direction < 0.0
+                ) or (
+                    temperature_error < -cfg.temperature_deadband_c and thermal_direction > 0.0
                 )
-                current_temp_score = abs(temperature_error) / 5.0
-                mixed_temp_score = abs(mixed_temperature - targets.air_temperature_c) / 5.0
-                temperature_improvement = current_temp_score - mixed_temp_score
-                if temperature_improvement > cfg.outside_improvement_margin:
-                    values["exhaust_fan"] = max(
-                        values["exhaust_fan"], _clip(temperature_improvement / 0.75)
+                if thermal_benefit:
+                    values["exhaust_fan"] = _level(
+                        min(abs(temperature_error), abs(thermal_direction)),
+                        cfg.temperature_deadband_c,
+                        cfg.temperature_full_scale_c,
                     )
 
-            if too_humid and outside_temperature_ok and outside_humidity_ok:
+            worsens_temperature = (
+                temperature_error > cfg.temperature_deadband_c and thermal_direction > 0.0
+            ) or (
+                temperature_error < -cfg.temperature_deadband_c and thermal_direction < 0.0
+            )
+            if (
+                (too_humid or too_dry)
+                and outside_temperature_ok and outside_humidity_ok and not worsens_temperature
+            ):
                 inside_absolute_humidity = _absolute_humidity_g_m3(
                     state.air_temperature_c, state.relative_humidity_pct
                 )
                 intake_absolute_humidity = _absolute_humidity_g_m3(
                     state.outside_temperature_c, state.outside_humidity_pct
                 )
-                drying_gap = inside_absolute_humidity - intake_absolute_humidity
-                if drying_gap > 0.5:
-                    drying_benefit = _level(drying_gap, 0.5, 3.0)
+                moisture_gap = (
+                    inside_absolute_humidity - intake_absolute_humidity if too_humid
+                    else intake_absolute_humidity - inside_absolute_humidity
+                )
+                if moisture_gap > 0.5:
                     values["exhaust_fan"] = max(
-                        values["exhaust_fan"], min(humidity_level, drying_benefit)
+                        values["exhaust_fan"], min(humidity_level, _level(moisture_gap, 0.5, 3.0))
                     )
 
         co2_ok = _usable("co2_ppm", state.co2_ppm, statuses, timeout)
-        if targets.co2_enabled and co2_ok and caps.co2_doser.available:
+        if targets.co2_enabled and co2_ok:
             co2_error = targets.co2_ppm - state.co2_ppm
-            if co2_error > cfg.co2_deadband_ppm:
+            if co2_error > cfg.co2_deadband_ppm and caps.co2_doser.available:
                 values["co2_doser"] = _level(
-                    co2_error,
-                    cfg.co2_deadband_ppm,
-                    cfg.co2_full_scale_ppm,
+                    co2_error, cfg.co2_deadband_ppm, cfg.co2_full_scale_ppm
+                )
+            elif (
+                co2_error < -cfg.co2_deadband_ppm
+                and state.co2_ppm < ClimateSafetyLimits().maximum_co2_ppm
+                and caps.exhaust_fan.available
+            ):
+                values["exhaust_fan"] = max(
+                    values["exhaust_fan"],
+                    _level(co2_error, cfg.co2_deadband_ppm, cfg.co2_full_scale_ppm),
                 )
 
         return ClimateAction.from_mapping(values).clipped()
