@@ -12,6 +12,7 @@
 #include "climate/input/sensors/Scd41InsideSource.h"
 #include "climate/output/OutputBindings.h"
 #include "climate/runtime/RuntimeAdapters.h"
+#include "climate/input/ConfiguredClockSource.h"
 #include "climate/runtime/RuntimeBuildConfig.h"
 #include "climate/runtime/profile/IpoProfileNvsJournal.h"
 #include "climate/runtime/profile/IpoProfileActivationTransaction.h"
@@ -153,7 +154,8 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
   runtime::RuntimeNearbySource outside(input_registry, profile_owner);
   const bool schedule_profile_valid = profile_owner.valid();
   runtime::ConfiguredScheduleConfigSource schedule_config(profile_owner);
-  CompositeClimateSnapshotProvider composite(inside, outside, clock, schedule_config);
+  runtime::ConfiguredClockSource configured_clock(ipo_reference, clock);
+  CompositeClimateSnapshotProvider composite(inside, outside, configured_clock, schedule_config);
   if (!schedule_profile_valid || !ipo_admission.matches_compiled_board) {
     ESP_LOGE(kTag, "IPO reference or schedule invalid; locking physical outputs");
     execution_status.transport_available = false;
@@ -251,7 +253,7 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
 
   runtime::Tp357LampSafetySource lamp_temperature(ble);
   runtime::RealInputRuntimeServices services{
-      {lamp_temperature, clock, profile_owner},
+      {lamp_temperature, configured_clock, profile_owner},
       application,
       {control_owner.lampSafety(), execution_status, output_owner.transport(),
        output_owner.lifecycle(), output_owner.lifecycleExecutor(), output_owner.runtimeLifecycle(),

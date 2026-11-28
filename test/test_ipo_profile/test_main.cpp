@@ -1,6 +1,7 @@
 #include "IpoBoardAdmission.h"
 #include "IpoSignalSelector.h"
 #include "IpoInputReadingRegistry.h"
+#include "climate/input/ConfiguredClockSource.h"
 #include "climate/runtime/profile/IpoProfileWire.h"
 #include "climate/runtime/profile/IpoProfileReadback.h"
 
@@ -207,6 +208,44 @@ void testPhysicalLocatorIndependentOfConfiguredId() {
   assert(!frame.select(ipo::SignalRole::InsideTemperature, 30U).usable());
 }
 
+class FakeRtc final : public growbox::app::climate_io::ClimateClockSource {
+public:
+  bool sample(std::uint64_t, growbox::app::climate_io::ClimateWallClockSnapshot& out) noexcept override {
+    ++calls;
+    out = snapshot;
+    return available;
+  }
+  growbox::app::climate_io::ClimateWallClockSnapshot snapshot{true, 1795824001ULL};
+  bool available{true};
+  unsigned calls{0U};
+};
+
+void testConfiguredClockSource() {
+  auto graph = ipo::makeCrowPanelMintReferenceGraph();
+  graph.devices[3].id = 43U;
+  graph.signals[5].device_id = 43U;
+  FakeRtc rtc;
+  runtime::ConfiguredClockSource source(graph, rtc);
+  growbox::app::climate_io::ClimateWallClockSnapshot clock{};
+  assert(source.sample(1000U, clock) && clock.unix_time_s == 1795824001ULL);
+  assert(source.lastSelection().device_id == 43U);
+  assert(source.sample(1000U, clock) && rtc.calls == 1U);
+  rtc.snapshot.valid = false;
+  assert(!source.sample(2000U, clock) && !clock.valid && clock.unix_time_s == 0U);
+  assert(source.lastSelection().invalid_sources == 1U);
+  rtc.available = false;
+  assert(!source.sample(3000U, clock));
+  assert(source.lastSelection().unavailable_sources == 1U);
+  graph.devices[3].enabled = false;
+  assert(!source.sample(4000U, clock) && rtc.calls == 3U);
+  graph.devices[3].enabled = true;
+  --graph.signal_count;
+  rtc.available = true;
+  rtc.snapshot.valid = true;
+  assert(!source.sample(5000U, clock));
+  assert(source.lastSelection().status == ipo::SignalSelectionStatus::MissingRole);
+}
+
 void testSymbolicOnlyArbitration() {
   const auto graph = ipo::makeCrowPanelMintReferenceGraph();
   const ipo::Proposal proposals[]{
@@ -328,6 +367,7 @@ int main() {
   testInvalidSensorAndPriorityFallback();
   testInputRegistryConfigurations();
   testPhysicalLocatorIndependentOfConfiguredId();
+  testConfiguredClockSource();
   testSymbolicOnlyArbitration();
   testScheduleBoundariesAndOwner();
   testFullTypedWireRoundtripAndCorruption();
