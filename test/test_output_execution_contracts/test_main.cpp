@@ -35,8 +35,13 @@ int main() {
   OutputCommand third{};
   third.endpoint = 3U;
   assert(appendOutputCommand(plan, third));
+  for (OutputEndpointId id = 4U; id <= kOutputEndpointCapacity; ++id) {
+    OutputCommand next{};
+    next.endpoint = id;
+    assert(appendOutputCommand(plan, next));
+  }
   OutputCommand overflow{};
-  overflow.endpoint = 4U;
+  overflow.endpoint = 8U;
   assert(!appendOutputCommand(plan, overflow));
   assert(plan.size == kOutputEndpointCapacity);
   OutputCommand invalid{};

@@ -11,6 +11,10 @@ bool validRole(OutputEndpointRole role) noexcept {
   case OutputEndpointRole::ExhaustFan:
   case OutputEndpointRole::ScheduledLight:
   case OutputEndpointRole::Humidifier:
+  case OutputEndpointRole::Heater:
+  case OutputEndpointRole::Cooler:
+  case OutputEndpointRole::Dehumidifier:
+  case OutputEndpointRole::Co2Doser:
     return true;
   }
   return false;
@@ -44,7 +48,7 @@ OutputPolicyConfigStatus validateOutputPolicyConfig(const OutputPolicyConfig& co
   if (config.version != kOutputPolicySchemaVersion) {
     return OutputPolicyConfigStatus::UnsupportedVersion;
   }
-  if (config.count != kOutputEndpointCapacity) {
+  if (config.count == 0U || config.count > kOutputEndpointCapacity) {
     return OutputPolicyConfigStatus::InvalidEndpointCount;
   }
   if (config.max_transition_failures == 0U ||
@@ -100,12 +104,6 @@ OutputPolicyConfigStatus validateOutputPolicyConfig(const OutputPolicyConfig& co
     }
   }
 
-  for (bool seen : role_seen) {
-    if (!seen) {
-      return OutputPolicyConfigStatus::MissingRequiredRole;
-    }
-  }
-
   for (std::size_t event_index = 0U; event_index < kOutputLifecycleEventCount; ++event_index) {
     std::array<bool, kOutputEndpointCapacity> order_seen{};
     for (std::size_t endpoint_index = 0U; endpoint_index < config.count; ++endpoint_index) {
@@ -124,7 +122,7 @@ OutputPolicyConfig makeSafeDefaultOutputPolicyConfig(OutputEndpointId exhaust_fa
                                                      OutputEndpointId scheduled_light,
                                                      OutputEndpointId humidifier) noexcept {
   OutputPolicyConfig config{};
-  config.count = static_cast<std::uint8_t>(kOutputEndpointCapacity);
+  config.count = 3U; // Mint reference, not supervisor capacity.
   config.max_transition_failures = 1U;
 
   config.endpoints[0].endpoint = exhaust_fan;

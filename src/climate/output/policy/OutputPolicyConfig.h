@@ -17,6 +17,10 @@ enum class OutputEndpointRole : std::uint8_t {
   ExhaustFan = 0U,
   ScheduledLight,
   Humidifier,
+  Heater,
+  Cooler,
+  Dehumidifier,
+  Co2Doser,
 };
 
 enum class OutputLifecycleEvent : std::uint8_t {

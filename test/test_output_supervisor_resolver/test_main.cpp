@@ -15,7 +15,7 @@ output::OutputStateStore makeStore() {
   output::OutputStateStore store;
   const std::array<output::OutputEndpointId, output::kOutputEndpointCapacity> endpoints{
       kFan, kLamp, kHumidifier};
-  assert(store.configure(endpoints, endpoints.size()));
+  assert(store.configure(endpoints, 3U));
   return store;
 }
 
@@ -31,6 +31,28 @@ output::OutputSupervisorResolver makeResolver(output::BinaryActuatorPolicy& fan,
 
 void setIntent(output::EndpointIntent& intent, output::OutputEndpointId endpoint, float level) {
   assert(output::setEndpointIntent(intent, endpoint, level));
+}
+
+void testVariableEndpointCount() {
+  for (std::size_t count = 1U; count <= output::kOutputEndpointCapacity; ++count) {
+    output::OutputSupervisorResolverConfig config{};
+    output::OutputStateStore store;
+    std::array<output::OutputEndpointId, output::kOutputEndpointCapacity> endpoints{};
+    output::OutputSupervisorCycleInput input{};
+    input.mode = output::SupervisorMode::Automatic;
+    for (std::size_t i = 0U; i < count; ++i) {
+      const auto endpoint = static_cast<output::OutputEndpointId>(20U + i);
+      endpoints[i] = endpoint;
+      config.endpoints[i] = {endpoint, nullptr};
+      setIntent(input.control.endpoints[i], endpoint, 1.0F);
+    }
+    config.count = count;
+    assert(store.configure(endpoints, count));
+    output::OutputSupervisorResolver resolver(config);
+    output::OutputSupervisorResolution resolution{};
+    assert(resolver.valid() && resolver.resolve(input, store, resolution));
+    assert(resolution.endpoint_count == count && resolution.plan.size == count);
+  }
 }
 
 void testRejectsInvalidConfigurationAndUnconfiguredStore() {
@@ -237,6 +259,7 @@ void testNonAutomaticModeSuppressesNormalIntentButNotSafety() {
 } // namespace
 
 int main() {
+  testVariableEndpointCount();
   testRejectsInvalidConfigurationAndUnconfiguredStore();
   testManualScheduleClimatePrecedence();
   testSafetyOverridesManualAndCanActWithoutLowerIntent();

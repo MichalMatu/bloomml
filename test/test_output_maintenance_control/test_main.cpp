@@ -46,7 +46,7 @@ struct Fixture {
   output::OutputSupervisorResolverConfig configureResolver() {
     const std::array<output::OutputEndpointId, output::kOutputEndpointCapacity> endpoints{1U, 2U,
                                                                                           3U};
-    assert(state.configure(endpoints, endpoints.size()));
+    assert(state.configure(endpoints, 3U));
     resolver.endpoints[0] = {1U, &fan};
     resolver.endpoints[1] = {2U, nullptr};
     resolver.endpoints[2] = {3U, &humidifier};

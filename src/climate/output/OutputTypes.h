@@ -11,7 +11,7 @@ using NormalizedOutputLevel = float;
 
 inline constexpr OutputEndpointId kInvalidOutputEndpoint =
     std::numeric_limits<OutputEndpointId>::max();
-inline constexpr std::size_t kOutputEndpointCapacity = 3U;
+inline constexpr std::size_t kOutputEndpointCapacity = 7U;
 
 enum class BinaryOutputState : std::uint8_t { Off = 0U, On = 1U };
 

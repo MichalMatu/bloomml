@@ -53,7 +53,7 @@ struct Fixture {
         control(lifecycle, executor) {
     const std::array<output::OutputEndpointId, output::kOutputEndpointCapacity> endpoints{
         kFan, kLamp, kHumidifier};
-    assert(store.configure(endpoints, endpoints.size()));
+    assert(store.configure(endpoints, 3U));
     resolver_config = makeResolverConfig();
     // executor was constructed before store.configure; composition validation
     // therefore must be rebuilt in tests through the alternate fixture helper.
@@ -111,7 +111,7 @@ struct Harness {
       : policy(custom) {
     const std::array<output::OutputEndpointId, output::kOutputEndpointCapacity> endpoints{
         kFan, kLamp, kHumidifier};
-    assert(store.configure(endpoints, endpoints.size()));
+    assert(store.configure(endpoints, 3U));
     config.endpoints[0] = {kLamp, nullptr};
     config.endpoints[1] = {kFan, nullptr};
     config.endpoints[2] = {kHumidifier, nullptr};

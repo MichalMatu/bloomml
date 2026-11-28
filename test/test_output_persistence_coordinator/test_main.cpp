@@ -76,7 +76,7 @@ output::OutputPolicyConfig safePolicy() {
 output::OutputStateStore configuredStateStore() {
   output::OutputStateStore state;
   const std::array<output::OutputEndpointId, output::kOutputEndpointCapacity> endpoints{1U, 2U, 3U};
-  assert(state.configure(endpoints, endpoints.size()));
+  assert(state.configure(endpoints, 3U));
   return state;
 }
 

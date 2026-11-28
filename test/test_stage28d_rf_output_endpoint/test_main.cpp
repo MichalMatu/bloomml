@@ -135,7 +135,7 @@ void testDisabledEndpointFailsClosed() {
 
 void testShadowStoreMirrorsCommandTruthWithoutFabricatingPhysicalState() {
   output::OutputStateStore store;
-  assert(store.configure(kOutputEndpoints, kOutputEndpoints.size()));
+  assert(store.configure(kOutputEndpoints, 3U));
   FakeTransport tx;
   Stage28dRfOutputEndpoint endpoint({true, 0.5F}, tx, &store);
   assert(endpoint.initializeSafeState(10U));

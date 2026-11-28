@@ -35,7 +35,7 @@ output::OutputStateStore makeStore() {
   output::OutputStateStore store;
   const std::array<output::OutputEndpointId, output::kOutputEndpointCapacity> endpoints{
       kFan, kLamp, kHumidifier};
-  assert(store.configure(endpoints, endpoints.size()));
+  assert(store.configure(endpoints, 3U));
   return store;
 }
 

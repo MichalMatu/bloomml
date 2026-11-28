@@ -133,7 +133,7 @@ validateOutputPersistenceSnapshot(const OutputPersistenceSnapshot& snapshot) noe
     return OutputPersistenceStatus::InvalidPolicy;
   }
   if (snapshot.command_count != snapshot.policy.count ||
-      snapshot.command_count != kOutputEndpointCapacity) {
+      snapshot.command_count > kOutputEndpointCapacity) {
     return OutputPersistenceStatus::InvalidCommandState;
   }
 
@@ -236,7 +236,8 @@ decodeOutputPersistence(const std::uint8_t* data, std::size_t size,
   if (validateOutputPolicyConfig(safe_defaults) != OutputPolicyConfigStatus::Ok) {
     return fallbackResult(OutputPersistenceStatus::InvalidSafeDefaults, safe_defaults);
   }
-  if (data == nullptr || size != kOutputPersistenceEncodedSize) {
+  if (data == nullptr || (size != kOutputPersistenceEncodedSize &&
+                          size != kLegacyOutputPersistenceEncodedSize)) {
     return fallbackResult(OutputPersistenceStatus::InvalidLength, safe_defaults);
   }
 
@@ -252,10 +253,14 @@ decodeOutputPersistence(const std::uint8_t* data, std::size_t size,
   if (magic != kOutputPersistenceMagic) {
     return fallbackResult(OutputPersistenceStatus::InvalidMagic, safe_defaults);
   }
-  if (schema_version != kOutputPersistenceSchemaVersion) {
+  const bool legacy = schema_version == 1U;
+  if (!legacy && schema_version != kOutputPersistenceSchemaVersion) {
     return fallbackResult(OutputPersistenceStatus::UnsupportedVersion, safe_defaults);
   }
-  if (encoded_size != kOutputPersistenceEncodedSize) {
+  const std::size_t slot_count = legacy ? 3U : kOutputEndpointCapacity;
+  const std::size_t expected_size = legacy ? kLegacyOutputPersistenceEncodedSize
+                                           : kOutputPersistenceEncodedSize;
+  if (size != expected_size || encoded_size != expected_size) {
     return fallbackResult(OutputPersistenceStatus::InvalidLength, safe_defaults);
   }
 
@@ -271,11 +276,17 @@ decodeOutputPersistence(const std::uint8_t* data, std::size_t size,
     return fallbackResult(OutputPersistenceStatus::InvalidLength, safe_defaults);
   }
 
-  for (std::size_t index = 0U; index < kOutputEndpointCapacity; ++index) {
+  if (legacy && decoded.policy.count != 3U) {
+    return fallbackResult(OutputPersistenceStatus::InvalidPolicy, safe_defaults);
+  }
+  for (std::size_t index = 0U; index < slot_count; ++index) {
     auto& endpoint = decoded.policy.endpoints[index];
     std::uint8_t role = 0U;
     if (!reader.getU16(endpoint.endpoint) || !reader.getU8(role)) {
       return fallbackResult(OutputPersistenceStatus::InvalidLength, safe_defaults);
+    }
+    if (legacy && role > 2U) {
+      return fallbackResult(OutputPersistenceStatus::InvalidPolicy, safe_defaults);
     }
     endpoint.role = static_cast<OutputEndpointRole>(role);
     for (auto& action : endpoint.lifecycle) {
@@ -297,7 +308,7 @@ decodeOutputPersistence(const std::uint8_t* data, std::size_t size,
   if (!reader.getU8(decoded.command_count)) {
     return fallbackResult(OutputPersistenceStatus::InvalidLength, safe_defaults);
   }
-  for (std::size_t index = 0U; index < kOutputEndpointCapacity; ++index) {
+  for (std::size_t index = 0U; index < slot_count; ++index) {
     auto& command = decoded.commands[index];
     std::uint8_t has_command = 0U;
     std::uint8_t state = 0U;
@@ -311,7 +322,7 @@ decodeOutputPersistence(const std::uint8_t* data, std::size_t size,
     command.state = static_cast<BinaryOutputState>(state);
   }
 
-  if (reader.offset() != kOutputPersistenceEncodedSize) {
+  if (reader.offset() != expected_size) {
     return fallbackResult(OutputPersistenceStatus::InvalidLength, safe_defaults);
   }
 

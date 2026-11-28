@@ -56,7 +56,7 @@ void assertSafeFallback(const output::OutputPersistenceLoadResult& result,
                         output::OutputPersistenceStoreStatus expected) {
   assert(result.status == expected);
   assert(result.used_safe_defaults);
-  assert(result.snapshot.command_count == output::kOutputEndpointCapacity);
+  assert(result.snapshot.command_count == 3U);
   for (std::size_t index = 0U; index < result.snapshot.command_count; ++index) {
     assert(!result.snapshot.commands[index].has_last_successful_command);
   }

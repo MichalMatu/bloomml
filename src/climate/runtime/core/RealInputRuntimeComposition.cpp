@@ -91,7 +91,7 @@ void RuntimePersistenceOwner::initialize(bool persistent_storage_ready) noexcept
       kShadowOutputEndpoints{stage28d::kExhaustFanEndpoint, stage28d::kScheduledLightEndpoint,
                              stage28d::kHumidifierEndpoint};
   state_store_ready_ =
-      state_store_.configure(kShadowOutputEndpoints, kShadowOutputEndpoints.size());
+      state_store_.configure(kShadowOutputEndpoints, safeOutputPolicy().count);
   init_result_ = state_store_ready_ && persistent_storage_ready
                      ? persistence_.initialize(state_store_)
                      : output::OutputPersistenceCoordinatorInitResult{};

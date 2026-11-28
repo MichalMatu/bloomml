@@ -23,7 +23,7 @@ OutputCommand command(OutputEndpointId endpoint, BinaryOutputState state, std::u
 
 void testBootAndDesiredResolvedTruth() {
   OutputStateStore store;
-  assert(store.configure(kEndpoints, kEndpoints.size()));
+  assert(store.configure(kEndpoints, 3U));
   assert(store.valid());
   assert(store.configuredCount() == 3U);
 
@@ -56,7 +56,7 @@ void testBootAndDesiredResolvedTruth() {
 
 void testFailedAndSuccessfulTransportRemainPhysicalUnknown() {
   OutputStateStore store;
-  assert(store.configure(kEndpoints, kEndpoints.size()));
+  assert(store.configure(kEndpoints, 3U));
 
   const auto first = command(2U, BinaryOutputState::On, 11U);
   assert(store.recordAttempt(first, 500U, {TransportStatus::Failed, TransportError::IoFailure}));
@@ -82,7 +82,7 @@ void testFailedAndSuccessfulTransportRemainPhysicalUnknown() {
 
 void testIndependentFeedbackIsSeparateFromTransport() {
   OutputStateStore store;
-  assert(store.configure(kEndpoints, kEndpoints.size()));
+  assert(store.configure(kEndpoints, 3U));
   assert(store.recordPhysicalObservation(3U, PhysicalOutputState::Off, 1'000U, 21U));
 
   const auto* observed = store.find(3U);
@@ -104,7 +104,7 @@ void testIndependentFeedbackIsSeparateFromTransport() {
 
 void testResetPreservesConfigurationButClearsRuntimeTruth() {
   OutputStateStore store;
-  assert(store.configure(kEndpoints, kEndpoints.size()));
+  assert(store.configure(kEndpoints, 3U));
   assert(store.recordDesired(command(1U, BinaryOutputState::On, 1U)));
   assert(store.recordResolved(command(1U, BinaryOutputState::On, 2U)));
   assert(store.recordAttempt(command(1U, BinaryOutputState::On, 3U), 9U,
@@ -127,11 +127,11 @@ void testResetPreservesConfigurationButClearsRuntimeTruth() {
 void testInvalidConfigurationAndCommandsFailClosed() {
   OutputStateStore store;
   const std::array<OutputEndpointId, kOutputEndpointCapacity> duplicates{1U, 1U, 3U};
-  assert(!store.configure(duplicates, duplicates.size()));
+  assert(!store.configure(duplicates, 3U));
   assert(!store.valid());
   assert(store.find(1U) == nullptr);
 
-  assert(store.configure(kEndpoints, kEndpoints.size()));
+  assert(store.configure(kEndpoints, 3U));
   assert(!store.recordDesired(command(99U, BinaryOutputState::On, 1U)));
 
   auto invalid_state = command(1U, BinaryOutputState::On, 1U);

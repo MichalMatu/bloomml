@@ -38,10 +38,36 @@ void assertSafeFallback(const output::OutputPersistenceDecodeResult& result,
   assert(result.used_safe_defaults);
   assert(output::validateOutputPolicyConfig(result.snapshot.policy) ==
          output::OutputPolicyConfigStatus::Ok);
-  assert(result.snapshot.command_count == output::kOutputEndpointCapacity);
+  assert(result.snapshot.command_count == 3U);
   for (std::size_t index = 0U; index < result.snapshot.command_count; ++index) {
     assert(!result.snapshot.commands[index].has_last_successful_command);
     assert(result.snapshot.commands[index].state == output::BinaryOutputState::Off);
+  }
+}
+
+void testLegacyV1AndVariableCapacity() {
+  const std::uint8_t legacy[] = {71U, 79U, 80U, 49U, 1U, 0U, 134U, 0U, 113U, 125U, 223U, 74U, 1U, 0U, 3U, 1U, 1U, 0U, 0U, 1U, 1U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 1U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 1U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 1U, 0U, 0U, 0U, 0U, 1U, 1U, 2U, 0U, 1U, 1U, 0U, 0U, 0U, 0U, 0U, 1U, 1U, 3U, 0U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 0U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 0U, 0U, 0U, 0U, 0U, 1U, 1U, 3U, 0U, 2U, 1U, 2U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 2U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 2U, 0U, 0U, 0U, 0U, 1U, 1U, 1U, 2U, 0U, 0U, 0U, 0U, 1U, 1U, 3U, 1U, 0U, 1U, 1U, 2U, 0U, 0U, 0U, 3U, 0U, 0U, 0U};
+  auto decoded = output::decodeOutputPersistence(legacy, sizeof(legacy), safePolicy());
+  assert(decoded.status == output::OutputPersistenceStatus::Ok);
+  assert(decoded.snapshot.command_count == 3U);
+  assert(decoded.snapshot.commands[0].has_last_successful_command);
+  assert(decoded.snapshot.commands[0].state == output::BinaryOutputState::On);
+  for (unsigned count = 1; count <= 7; ++count) {
+    output::OutputPolicyConfig policy{};
+    policy.count = static_cast<std::uint8_t>(count);
+    for (unsigned i = 0; i < count; ++i) {
+      auto& ep = policy.endpoints[i];
+      ep.endpoint = static_cast<output::OutputEndpointId>(20U+i);
+      ep.role = static_cast<output::OutputEndpointRole>(i);
+      for (auto& a : ep.lifecycle) a.order = static_cast<std::uint8_t>(i);
+    }
+    output::OutputPersistenceSnapshot snapshot{};
+    assert(output::makeSafeOutputPersistenceSnapshot(policy, snapshot));
+    output::OutputPersistenceBlob blob{};
+    assert(output::encodeOutputPersistence(snapshot, blob) == output::OutputPersistenceStatus::Ok);
+    decoded = output::decodeOutputPersistence(blob.bytes.data(), blob.bytes.size(), policy);
+    assert(decoded.status == output::OutputPersistenceStatus::Ok);
+    assert(decoded.snapshot.command_count == count);
   }
 }
 
@@ -115,7 +141,7 @@ void testInvalidSnapshotCannotEncode() {
 }
 
 void testFormatIsFixedSizeAndCarriesNoPhysicalStateContract() {
-  static_assert(output::kOutputPersistenceEncodedSize == 134U);
+  static_assert(output::kOutputPersistenceEncodedSize == 290U);
   static_assert(sizeof(output::DurableOutputCommandState) <= 8U);
   const auto snapshot = sampleSnapshot();
   (void)snapshot;
@@ -125,6 +151,7 @@ void testFormatIsFixedSizeAndCarriesNoPhysicalStateContract() {
 } // namespace
 
 int main() {
+  testLegacyV1AndVariableCapacity();
   testRoundTrip();
   testCorruptPayloadFallsBack();
   testUnknownVersionFallsBack();

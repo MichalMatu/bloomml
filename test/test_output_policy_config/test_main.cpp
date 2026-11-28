@@ -18,7 +18,7 @@ output::OutputPolicyConfig defaults() {
 void testSafeDefaults() {
   const auto config = defaults();
   assert(config.version == output::kOutputPolicySchemaVersion);
-  assert(config.count == output::kOutputEndpointCapacity);
+  assert(config.count == 3U);
   assert(config.max_transition_failures == 1U);
   assert(output::validateOutputPolicyConfig(config) == output::OutputPolicyConfigStatus::Ok);
 

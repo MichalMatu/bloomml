@@ -20,7 +20,7 @@ static_assert(std::is_trivially_copyable_v<output::OutputSource>);
 static_assert(std::is_trivially_copyable_v<output::SupervisorMode>);
 static_assert(std::is_trivially_copyable_v<output::TransportStatus>);
 static_assert(std::is_trivially_copyable_v<output::TransportError>);
-static_assert(output::kOutputEndpointCapacity == 3U);
+static_assert(output::kOutputEndpointCapacity == 7U);
 
 int main() {
   assert(!output::isValidOutputEndpoint(output::kInvalidOutputEndpoint));

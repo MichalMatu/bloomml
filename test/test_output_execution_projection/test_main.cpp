@@ -15,7 +15,7 @@ OutputStateStore configuredStore() {
   OutputStateStore store{};
   const std::array<OutputEndpointId, kOutputEndpointCapacity> endpoints{kEndpoint, kOtherEndpoint,
                                                                         43U};
-  assert(store.configure(endpoints, endpoints.size()));
+  assert(store.configure(endpoints, 3U));
   return store;
 }
 

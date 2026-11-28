@@ -8,7 +8,8 @@
 
 namespace growbox::app::output {
 
-inline constexpr std::uint16_t kOutputPersistenceSchemaVersion = 1U;
+inline constexpr std::uint16_t kOutputPersistenceSchemaVersion = 2U;
+inline constexpr std::size_t kLegacyOutputPersistenceEncodedSize = 134U;
 inline constexpr std::uint32_t kOutputPersistenceMagic = 0x31504F47U; // "GOP1" little-endian.
 inline constexpr std::size_t kOutputPersistenceHeaderSize = 12U;
 inline constexpr std::size_t kOutputPersistenceLifecycleActionSize = 8U;
@@ -23,7 +24,7 @@ inline constexpr std::size_t kOutputPersistenceEncodedSize = kOutputPersistenceH
                                                              kOutputPersistencePolicySize +
                                                              kOutputPersistenceCommandStateSize;
 
-static_assert(kOutputPersistenceEncodedSize == 134U,
+static_assert(kOutputPersistenceEncodedSize == 290U,
               "Output persistence wire size must remain explicitly bounded");
 
 struct DurableOutputCommandState {
