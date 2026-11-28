@@ -134,11 +134,18 @@ ClimatePolicyRequest ruleRequestImpl(const ClimateControllerInput& input) noexce
     }
   }
 
-  if (input.targets.co2_enabled && input.capabilities.co2_doser &&
-      usable(measurements.co2_ppm, input.sensor_timeout_ms)) {
+  if (input.targets.co2_enabled && std::isfinite(input.targets.co2_ppm) &&
+      input.targets.co2_ppm > 0.0F && usable(measurements.co2_ppm, input.sensor_timeout_ms)) {
     const float co2_error = input.targets.co2_ppm - measurements.co2_ppm.value;
-    if (co2_error > kCo2DeadbandPpm) {
+    if (co2_error > kCo2DeadbandPpm && input.capabilities.co2_doser) {
       request.co2_doser = level(co2_error, kCo2DeadbandPpm, kCo2FullScalePpm);
+    } else if (co2_error < -kCo2DeadbandPpm && input.capabilities.exhaust_fan &&
+               measurements.co2_ppm.value < kMaximumCo2Ppm) {
+      // A ventilation request is a conditional means of dilution, not a
+      // prediction of outdoor CO2 or proof of physical concentration change.
+      // At the emergency threshold the independent safety stage owns the override.
+      request.exhaust_fan = std::max(
+          request.exhaust_fan, level(co2_error, kCo2DeadbandPpm, kCo2FullScalePpm));
     }
   }
   return clippedImpl(request);

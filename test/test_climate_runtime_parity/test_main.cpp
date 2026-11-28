@@ -145,9 +145,54 @@ void runCase(const growbox::climate::parity_fixture::Case& fixture) {
   checkArray(values(decision.effective_after), fixture.expected_effective_after, fixture.name,
              "effective after", 2.0e-4F);
 }
+void testCo2TargetVentilation() {
+  using namespace growbox::climate;
+  ClimateControllerInput input{};
+  auto& m = input.state.measurements;
+  m.air_temperature_c = {24.0F, true, 0U};
+  m.relative_humidity_pct = {60.0F, true, 0U};
+  input.targets.air_temperature_c = 24.0F;
+  input.targets.relative_humidity_pct = 60.0F;
+  input.targets.co2_enabled = true;
+  input.targets.co2_ppm = 900.0F;
+  input.capabilities.exhaust_fan = true;
+  input.capabilities.co2_doser = true;
+  struct Scenario {
+    const char* name;
+    float ppm;
+    bool fresh;
+    bool enabled;
+    bool fan;
+    bool doser;
+    float expected_fan;
+    float expected_doser;
+  };
+  const Scenario scenarios[] = {
+      {"CO2 excess below safety", 1200.0F, true, true, true, true, 0.5F, 0.0F},
+      {"CO2 high without doser", 1200.0F, true, true, true, false, 0.5F, 0.0F},
+      {"CO2 no fan", 1200.0F, true, true, false, true, 0.0F, 0.0F},
+      {"CO2 deadband", 950.0F, true, true, true, true, 0.0F, 0.0F},
+      {"CO2 deficit", 600.0F, true, true, true, true, 0.0F, 0.5F},
+      {"CO2 stale", 1200.0F, false, true, true, true, 0.0F, 0.0F},
+      {"CO2 disabled", 1200.0F, true, false, true, true, 0.0F, 0.0F},
+      {"CO2 safety independent", 1800.0F, true, false, true, true, 1.0F, 0.0F},
+  };
+  for (const auto& s : scenarios) {
+    m.co2_ppm = {s.ppm, true, s.fresh ? 0U : input.sensor_timeout_ms + 1U};
+    input.targets.co2_enabled = s.enabled;
+    input.capabilities.exhaust_fan = s.fan;
+    input.capabilities.co2_doser = s.doser;
+    ClimateRuntimeController runtime{nullptr, {}};
+    ClimateRuntimeDecision decision{};
+    runtime.step(input, 1000U, decision);
+    check(near(decision.rule.safe.exhaust_fan, s.expected_fan), s.name, "ventilation");
+    check(near(decision.rule.safe.co2_doser, s.expected_doser), s.name, "dosing");
+  }
+}
 } // namespace
 
 int main() {
+  testCo2TargetVentilation();
   for (const auto& fixture : growbox::climate::parity_fixture::kCases) {
     runCase(fixture);
   }
