@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { assessCrowPanelProfile, MAX_FIRMWARE_IPO_JSON_BYTES } from "./ipo-board-readiness"
-import { assessIpoProfile, createDefaultIpoProfile, validateIpoProfile } from "./ipo-profile"
+import { assessIpoProfile, createDefaultIpoProfile, createIpoDevice, validateIpoProfile } from "./ipo-profile"
 
 describe("DeviceProfile v2 / physical CrowPanel admission preview", () => {
   it("reports implemented NVS/readback without promising profile activation", () => {
@@ -60,6 +60,21 @@ describe("DeviceProfile v2 / physical CrowPanel admission preview", () => {
     const status = assessCrowPanelProfile(p)
     expect(status.matchesCurrentFirmware).toBe(false)
     expect(status.reasons.join(" ")).toContain("inside.temperature_c")
+  })
+
+  it("supports optional electrical observations as draft inputs only", () => {
+    const p = createDefaultIpoProfile()
+    p.devices.push(createIpoDevice("meter_1", "shelly.meter"))
+    expect(p.devices[p.devices.length - 1].locator).toBe("shelly:meter_1")
+    p.signals.push(
+      { role: "electrical.active_power_w", sources: [{ device_id: "meter_1", channel: "active_power_w" }] },
+      { role: "electrical.energy_wh", sources: [{ device_id: "meter_1", channel: "energy_wh" }] },
+    )
+    expect(validateIpoProfile(p)).toEqual([])
+    expect(assessCrowPanelProfile(p).matchesCurrentFirmware).toBe(false)
+    expect(assessCrowPanelProfile(p).applyEnabled).toBe(false)
+    p.signals[p.signals.length - 1].sources[0].channel = "active_power_w"
+    expect(validateIpoProfile(p).length).toBeGreaterThan(0)
   })
 
   it("requires physical RF dwell budgets even for otherwise valid graphs", () => {

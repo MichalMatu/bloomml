@@ -114,13 +114,14 @@ constexpr NamedEnum<Driver> kDrivers[]{
   {"i2c.bme280", Driver::Bme280}, {"i2c.bh1750", Driver::Bh1750},
   {"adc.soil", Driver::SoilAdc}, {"rf433.binary_socket", Driver::Rf433BinarySocket},
   {"gpio.relay", Driver::GpioRelay}, {"pwm.channel", Driver::PwmChannel},
-  {"modbus.relay", Driver::ModbusRelay},
+  {"modbus.relay", Driver::ModbusRelay}, {"shelly.meter", Driver::ShellyMeter},
 };
 constexpr NamedEnum<Channel> kChannels[]{
   {"temperature_c", Channel::Temperature}, {"humidity_pct", Channel::Humidity},
   {"co2_ppm", Channel::Co2}, {"unix_time", Channel::UnixTime},
   {"illuminance_lux", Channel::Illuminance}, {"moisture_pct", Channel::SoilMoisture},
   {"switch", Channel::Switch}, {"duty", Channel::Duty},
+  {"active_power_w", Channel::ActivePower}, {"energy_wh", Channel::Energy},
 };
 constexpr NamedEnum<SignalRole> kSignals[]{
   {"inside.temperature_c", SignalRole::InsideTemperature},
@@ -131,6 +132,7 @@ constexpr NamedEnum<SignalRole> kSignals[]{
   {"clock.time", SignalRole::ClockTime},
   {"light.illuminance_lux", SignalRole::LightIlluminance},
   {"substrate.moisture_pct", SignalRole::SubstrateMoisture},
+  {"electrical.active_power_w", SignalRole::ActivePower}, {"electrical.energy_wh", SignalRole::Energy},
 };
 constexpr NamedEnum<OutputRole> kOutputs[]{
   {"exhaust_fan", OutputRole::Exhaust}, {"humidifier", OutputRole::Humidifier},

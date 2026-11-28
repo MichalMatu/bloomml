@@ -246,6 +246,28 @@ void testConfiguredClockSource() {
   assert(source.lastSelection().status == ipo::SignalSelectionStatus::MissingRole);
 }
 
+void testOptionalElectricalChannelsRemainDraftOnly() {
+  auto graph = ipo::makeCrowPanelMintReferenceGraph();
+  graph.devices[graph.device_count++] = {42U, ipo::Driver::ShellyMeter, 1U, true};
+  graph.signals[graph.signal_count++] = {
+      ipo::SignalRole::ActivePower, 42U, ipo::Channel::ActivePower, 0U};
+  graph.signals[graph.signal_count++] = {
+      ipo::SignalRole::Energy, 42U, ipo::Channel::Energy, 0U};
+  assert(ipo::validateGraph(graph) == ipo::GraphStatus::Ok);
+  ipo::InputReadingRegistry frame(graph);
+  assert(!frame.select(ipo::SignalRole::ActivePower, 30000U).usable());
+  assert(frame.record({42U, ipo::Channel::ActivePower, 0.0, 1U, true}));
+  assert(frame.record({42U, ipo::Channel::Energy, 150.0, 1U, true}));
+  assert(frame.select(ipo::SignalRole::ActivePower, 30000U).usable());
+  assert(frame.select(ipo::SignalRole::Energy, 30000U).value == 150.0);
+  assert(!frame.select(ipo::SignalRole::Energy, 0U).usable());
+  const auto admission = ipo::assessCrowPanelReference(graph);
+  assert(!admission.matches_compiled_board && !admission.apply_authorized);
+  graph.signals[graph.signal_count - 1U].channel = ipo::Channel::ActivePower;
+  assert(ipo::validateGraph(graph) == ipo::GraphStatus::ChannelMismatch);
+  assert(!ipo::driverProvides(ipo::Driver::ShellyMeter, ipo::Channel::Switch));
+}
+
 void testSymbolicOnlyArbitration() {
   const auto graph = ipo::makeCrowPanelMintReferenceGraph();
   const ipo::Proposal proposals[]{
@@ -368,6 +390,7 @@ int main() {
   testInputRegistryConfigurations();
   testPhysicalLocatorIndependentOfConfiguredId();
   testConfiguredClockSource();
+  testOptionalElectricalChannelsRemainDraftOnly();
   testSymbolicOnlyArbitration();
   testScheduleBoundariesAndOwner();
   testFullTypedWireRoundtripAndCorruption();

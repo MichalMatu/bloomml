@@ -297,7 +297,7 @@ export function assessIpoProfile(profile: IpoProfileV2): string[] {
     }
     if (signal.sources.some((s) => devices.get(s.device_id)?.driver === "i2c.scd41" &&
         (s.channel === "temperature_c" || s.channel === "humidity_pct"))) {
-      warnings.push("SCD41 T/RH: kanał istnieje w sensorze, lecz firmware dziś używa z SCD41 tylko CO₂.")
+      warnings.push("SCD41 T/RH: dostępne w warstwie wejść; alternatywne przypisania pozostają szkicem bez kwalifikacji sprzętowej i aktywacji.")
     }
   }
   for (const proc of profile.processes) {
@@ -426,6 +426,7 @@ export function createIpoDevice(id: string, driver: DriverId): Device {
     "i2c.bme280": "i2c:0x76", "i2c.bh1750": "i2c:0x23",
     "adc.soil": "adc:0", "rf433.binary_socket": "socket:4",
     "gpio.relay": "gpio:4", "pwm.channel": "pwm:0", "modbus.relay": "modbus:1:1",
+    "shelly.meter": "shelly:" + id,
   }
   return { id, label: definitions.label, driver, locator: preset[driver], enabled: true }
 }

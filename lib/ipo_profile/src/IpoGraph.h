@@ -21,14 +21,15 @@ inline constexpr std::size_t kMaxLinks = 48U;
 
 enum class Driver : std::uint8_t {
   Tp357, Xiaomi, Scd41, Ds3231, Bme280, Bh1750, SoilAdc,
-  Rf433BinarySocket, GpioRelay, PwmChannel, ModbusRelay
+  Rf433BinarySocket, GpioRelay, PwmChannel, ModbusRelay, ShellyMeter
 };
 enum class Channel : std::uint8_t {
-  Temperature, Humidity, Co2, UnixTime, Illuminance, SoilMoisture, Switch, Duty
+  Temperature, Humidity, Co2, UnixTime, Illuminance, SoilMoisture, Switch, Duty,
+  ActivePower, Energy
 };
 enum class SignalRole : std::uint8_t {
   InsideTemperature, InsideHumidity, InsideCo2, OutsideTemperature,
-  OutsideHumidity, ClockTime, LightIlluminance, SubstrateMoisture
+  OutsideHumidity, ClockTime, LightIlluminance, SubstrateMoisture, ActivePower, Energy
 };
 enum class OutputRole : std::uint8_t {
   Exhaust, Humidifier, Light, Heater, Cooler, Dehumidifier,
@@ -103,6 +104,7 @@ constexpr bool driverProvides(Driver driver, Channel channel) noexcept {
     case Driver::Rf433BinarySocket: case Driver::GpioRelay:
     case Driver::ModbusRelay: return channel == Channel::Switch;
     case Driver::PwmChannel: return channel == Channel::Duty;
+    case Driver::ShellyMeter: return channel == Channel::ActivePower || channel == Channel::Energy;
   }
   return false;
 }
@@ -116,6 +118,8 @@ constexpr bool accepts(SignalRole role, Channel channel) noexcept {
     case SignalRole::ClockTime: return channel == Channel::UnixTime;
     case SignalRole::LightIlluminance: return channel == Channel::Illuminance;
     case SignalRole::SubstrateMoisture: return channel == Channel::SoilMoisture;
+    case SignalRole::ActivePower: return channel == Channel::ActivePower;
+    case SignalRole::Energy: return channel == Channel::Energy;
   }
   return false;
 }

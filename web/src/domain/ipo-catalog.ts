@@ -9,17 +9,19 @@ export const SIGNAL_ROLES = {
   "clock.time": { label: "Czas", unit: "unix_s" },
   "light.illuminance_lux": { label: "Natężenie oświetlenia (lux, NIE PPFD)", unit: "lux" },
   "substrate.moisture_pct": { label: "Wilgotność podłoża", unit: "percent" },
+  "electrical.active_power_w": { label: "Moc czynna", unit: "W" },
+  "electrical.energy_wh": { label: "Energia", unit: "Wh" },
 } as const
 export type SignalRole = keyof typeof SIGNAL_ROLES
 
 export type DriverId =
   | "ble.tp357" | "ble.xiaomi" | "i2c.scd41" | "i2c.ds3231"
   | "i2c.bme280" | "i2c.bh1750" | "adc.soil"
-  | "rf433.binary_socket" | "gpio.relay" | "pwm.channel" | "modbus.relay"
+  | "rf433.binary_socket" | "gpio.relay" | "pwm.channel" | "modbus.relay" | "shelly.meter"
 export type Channel = { id: string; unit: string; direction: "input" | "output"; control?: "binary" | "continuous" }
 export type DriverDefinition = {
   label: string
-  transport: "ble" | "i2c" | "rf433" | "gpio" | "pwm" | "modbus" | "adc"
+  transport: "ble" | "i2c" | "rf433" | "gpio" | "pwm" | "modbus" | "adc" | "shelly"
   status: "present_in_firmware" | "proposed"
   channels: readonly Channel[]
 }
@@ -41,6 +43,7 @@ export const DRIVER_CATALOG: Record<DriverId, DriverDefinition> = {
   "gpio.relay": { label: "Przekaźnik GPIO", transport: "gpio", status: "proposed", channels: [output("switch", "binary")] },
   "pwm.channel": { label: "Wyjście PWM", transport: "pwm", status: "proposed", channels: [output("duty", "continuous")] },
   "modbus.relay": { label: "Przekaźnik Modbus", transport: "modbus", status: "proposed", channels: [output("switch", "binary")] },
+  "shelly.meter": { label: "Shelly — pomiary", transport: "shelly", status: "proposed", channels: [input("active_power_w", "W"), input("energy_wh", "Wh")] },
 }
 
 export type OutputRole =
@@ -109,6 +112,7 @@ export function validEffect(id: unknown): id is Effect {
 }
 export function locatorMatches(driver: DriverId, locator: string): boolean {
   const type = DRIVER_CATALOG[driver].transport
+  if (type === "shelly") return /^shelly:[a-zA-Z0-9_-]{1,64}$/.test(locator)
   if (type === "ble") return /^(runtime:(tp357|xiaomi)|ble:([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})$/.test(locator)
   if (type === "i2c") return /^i2c:0x[0-7][0-9a-fA-F]$/.test(locator)
   if (type === "rf433") return /^socket:([1-9]|1[0-6])$/.test(locator)
