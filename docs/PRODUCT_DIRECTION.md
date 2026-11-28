@@ -59,7 +59,7 @@ validated operator profile + real measurements + schedules
 
 ## Product sequencing
 
-IPO v2 draft/host and CrowPanel compilation are complete. **H0 passed on 2026-11-27; H1 remains partial and deferred. Resume only after operator preparation and fresh isolation confirmation; supervisor-owned lock and authenticated apply API remain blocked.** See [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) and [NEXT_CHAT.md](NEXT_CHAT.md). Real-data telemetry and ML shadow qualification follow a proven operator path, not vice versa.
+M01–M05 software milestones are closed in scope; M06 is the next software integration milestone (see [NEXT_CHAT.md](NEXT_CHAT.md)). IPO remains draft-only; alternative equipment configurations are not physically qualified. **H0 passed on 2026-11-27; H1 remains partial and deferred. Resume only after operator preparation and fresh isolation confirmation; supervisor-owned lock and authenticated apply API remain blocked.** See [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) and [NEXT_CHAT.md](NEXT_CHAT.md). Real-data telemetry and ML shadow qualification follow a proven operator path, not vice versa.
 
 ## Immediate non-goals
 

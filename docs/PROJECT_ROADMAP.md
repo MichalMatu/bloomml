@@ -1,6 +1,6 @@
 # BloomML — roadmapa rozwoju
 
-**2026-11-27 · aktywny priorytet: IPO v2 — bezpieczne domknięcie konfiguracji na CrowPanel.**
+**2026-11-28 · aktywny priorytet software: M06 — integracja MVP bez aktywacji fizycznej.**
 
 Cel produktu: autonomiczny ESP32-S3 (native ESP-IDF), rzeczywiste czujniki, deterministyczny Rule, RF433 przez OutputSupervisor, wyświetlacz e-ink, telemetria. ML/MPC nadal Shadow/research. Żadnych nowych silników i paneli administracyjnych zamiast istniejącego IPO.
 
@@ -18,15 +18,21 @@ Cel produktu: autonomiczny ESP32-S3 (native ESP-IDF), rzeczywiste czujniki, dete
 | H3: authenticated IPO preview/activate/status/rollback API + UI | **NOT STARTED** | Dopiero po H0/H1/H2, bez automatycznego apply z NVS |
 | H4: long-run telemetry, real-data calibration, shadow forecasting | **LATER** | Po bezpiecznej działającej ścieżce operatora |
 
-**Wykonuj w tej kolejności.** Rozbudowa API nie może omijać braku fizycznej kwalifikacji. Wybieralne dodatkowe drivery/wyjścia oraz badawcze ML/MPC są osobnymi przyszłymi bramkami, nie przeszkodą do obecnego H0.
+**Kolejność bramek sprzętowych H0–H4 pozostaje obowiązująca.** M06 to niezależna integracja software, bez dopuszczenia H2/H3 ani fizycznego apply. Rozbudowa API nie może omijać fizycznej kwalifikacji. Nowe rzeczywiste drivery i ML/MPC to osobne przyszłe etapy.
 
-## Kolejny sprint H1 — odroczony
+## Szkielet software MVP
+
+M01 audyt, M02 separacja IPO, M03 wymienne wejścia, M04 wymienne wyjścia, M05 wieloparametrowy Rule — **CLOSED_SCOPED**. [Dowody M05](checkpoints/2026-11-28-bloomml-m05-multiparameter-rule.md).
+
+M06 — **NOT STARTED**: zintegrować konfigurację, plan wykonawczy i istniejący runtime na host/fake; ujednolicić znaczenie draft, validation, board readiness i status; zachować Mint oraz zamkniętą aktywację. Szczegóły i granice: [NEXT_CHAT.md](NEXT_CHAT.md).
+
+## Kolejny sprint sprzętowy H1 — odroczony
 
 1. H0 zakończone; aktualny autoryzowany port 130, fizyczna izolacja potwierdzona.
 2. Nie powtarzać pozytywnych prób bez regresji. [Aktualne dowody](checkpoints/2026-11-27-bloomml-hardware-progress.md).
 3. Native NVS/recovery pominięty w ChatGPT na decyzję operatora; lokalny follow-up pozostaje OPEN. Bieżący sprint software zamknięty w zweryfikowanym zakresie; dalsze niezależne prace tylko na nowe zlecenie.
 4. Pozostała kwalifikacja H1 odroczona na decyzję operatora: stale/invalid, termika, dłuższa stabilność, potwierdzenie odbiorników i test SD po włożeniu karty (obecnie brak). H1 pozostaje PARTIAL, H2/H3 niedopuszczone.
-5. Bieżący sprint software CLOSED — scoped: regresja bufora telemetrii `a813a25`, 3/3 host suites PASS; nie powtarzać bez regresji.
+5. Historyczna regresja bufora telemetrii `a813a25`, 3/3 host suites PASS; nie powtarzać bez regresji. Najnowsze dowody software w checkpoincie M05.
 
 ## Nienaruszalne warunki akceptacji
 

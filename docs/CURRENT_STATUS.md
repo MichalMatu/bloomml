@@ -1,12 +1,12 @@
 # BloomML — aktualny stan
 
-**2026-11-27 · źródło: `MichalMatu/bloomml` / `main`**
+**2026-11-28 · źródło: `MichalMatu/bloomml` / `main`**
 
 **STATUS: H0 PASS / H1 PARTIAL / IPO ACTIVATION CLOSED.**
 
 CrowPanel: autoryzowany port `/dev/cu.usbserial-130`, fizyczna izolacja odbiorników potwierdzona przez operatora. Firmware `2199a75` fake-locked: sprzętowy PASS w zakresie zasobów, normalnych odczytów i zapisu awaryjnego. Native NVS fault/recovery: **SKIPPED — TOOL BLOCK; operator-owned local follow-up**. Nie jest to PASS. H1 pozostaje otwarty; H2/H3 nie są dopuszczone. [Dowody](checkpoints/2026-11-27-bloomml-hardware-progress.md).
 
-Aktualny sprint software: **CLOSED — scoped**. Regresja współdzielonego bufora telemetrii na `a813a25`: 3/3 host suites PASS. Pozostała kwalifikacja sprzętowa odroczona na decyzję operatora; nie ponawiać zakończonych ani zablokowanych prób.
+Aktualny sprint software M01–M05: **CLOSED_SCOPED**. M06 — integracja software MVP, jeszcze nierozpoczęta. Pozostała kwalifikacja sprzętowa odroczona na decyzję operatora; nie ponawiać zakończonych ani zablokowanych prób. [Punkt wznowienia](NEXT_CHAT.md).
 
 ## Najnowszy sprint software — bez aktywacji IPO
 

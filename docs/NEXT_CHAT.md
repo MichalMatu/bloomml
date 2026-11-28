@@ -1,41 +1,36 @@
-# BloomML — handoff do następnego czatu (2026-11-27)
+# BloomML — handoff do następnego czatu (2026-11-28)
 
-## Aktualny punkt wznowienia
+## Zweryfikowany punkt wznowienia
 
-Handoff 2026-11-27: [dowody i zakres checkpointu](checkpoints/2026-11-27-bloomml-hardware-progress.md). Baseline przed synchronizacją dokumentacji: `ffa15bbd131be0355e6249ffc3645f8c442e844d`; ostatnia zmiana testów `a813a25f7826e37c186b7341a89a7c4ccf031c89`. Wszystkie 33 zadania w zdalnym rejestrze miały odpowiadający plik wyniku, daemon idle; bieżący fizyczny checkout Maca nie był ponownie sprawdzany. Nie rozpoczynać nowych zadań bez decyzji operatora.
-
-H0 PASS, H1 PARTIAL. [Checkpoint](checkpoints/2026-11-27-bloomml-hardware-progress.md). ESP32-S3 na `/dev/cu.usbserial-130`, izolacja potwierdzona, ostatni sprzętowy test `2199a75` fake-locked PASS. Native NVS kwalifikacja pominięta (blokada narzędzia), pozostawiona operatorowi do lokalnego wykonania. Sprint software zamknięty w zakresie wykonanych prac (regresja telemetrii `a813a25`, 3/3 PASS). Operator potwierdził brak karty SD. Test SD i pozostałe otwarte testy sprzętowe są odroczone do osobnego etapu; nie ponawiaj zablokowanego zadania ani zakończonych prób, nie otwieraj H2/H3 ani bramki IPO.
-
-## Software audit / repair — ZAMKNIĘTY
-
-Nie powtarzać bez regresji: commity `cf1c434` / `196c305` / `4aadf5f` zamknęły cztery TypeScript błędy, 96 naruszeń lint oraz obsługę niebezpiecznego/nieświeżego odświeżania diagnostyki. Dowody: web **114/114 Vitest** + typecheck/lint/build PASS, panel **135/135 pytest** PASS, host C++/display PASS, bazowy IPO **3/3** PASS. [Checkpoint naprawczy](checkpoints/2026-11-07-bloomml-general-repository-repair.md). H0 został później zaliczony; aktualne dowody sprzętowe są w nowym checkpoincie.
+- Repozytorium `MichalMatu/bloomml`; jedyna gałąź kodu `main`.
+- Baseline przed synchronizacją handoffu: `199fa0d43909ef41403f8a5b4164130b5662a59a`. Zakwalifikowany kod M05: `2a3555a77308f55831fe85b74b2ae2fc5898d32a`. Różnica dotyczy wyłącznie dokumentów.
+- M01–M05 **CLOSED_SCOPED**, M06 **NOT STARTED**. [M01](checkpoints/2026-11-28-bloomml-m01-mvp-skeleton-audit.md), [M02](checkpoints/2026-11-28-bloomml-m02-ipo-separation.md), [M03](checkpoints/2026-11-28-bloomml-m03-configurable-inputs.md), [M04](checkpoints/2026-11-28-bloomml-m04-configurable-outputs.md), [M05](checkpoints/2026-11-28-bloomml-m05-multiparameter-rule.md).
+- Terminalny wynik `agent-control:.agent/results/la-bloomml-m05-final-qualification-20261128-v1.json`: DONE, exit 0, publikacja potwierdzona. Host 62/62, web 117/117 (typecheck/lint/build), Python 13/13, 2560 przypadków decyzji Rule, trzy bramki architektury, build CrowPanel PASS; 79% wolnej partycji. Wyniki dotyczą zakwalifikowanego kodu, nie sprzętu.
+- Daemon IDLE, brak zadań bez wyniku; czysty izolowany checkout potwierdzony w terminalnym raporcie M05. Bieżący fizyczny checkout zarządzanego agenta nie był ponownie badany — sprawdź przed lokalnym zapisem.
+- Biblioteka procedur `MichalMatu/local-agent`, `main/skills`, SHA użyty przy handoffie `9fd7c7ac439a93926cc0bbb202741bcd8e70e06f`. Polecenia krótkie zgodnie z `skills/CHAT_BOOTSTRAP.md`; zawsze odczytaj aktualny HEAD biblioteki.
+- Audyt zakresu M05: istniejący Process, przenośny Rule, profil wire v2 z odczytem v1, obserwator telemetrii; brak zmian w poddrzewie Output i transakcji aktywacji. Ocena wentylacji jest heurystyką; powtórzone kryteria diagnostyki i decyzji (`ClimatePolicy.cpp`, okolice 105–184 i 325–405) to punkt kontroli spójności w M06, nie dowód fizycznej skuteczności. Brak nowych pomiarów kosztu stosu/czasu cyklu; sprawdzić w osobnej kwalifikacji. Konflikt intentów nie dowodzi fizycznej blokady przy dwell/nieznanym stanie.
 
 ## Preflight nowej sesji
 
-1. Repo **`MichalMatu/bloomml`**: odczytaj **aktualny** HEAD `main` i `agent-control:.agent/status/daemon.json`; nie zakładaj SHA handoff jako bieżącego. Mac Local Agent binding: `815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5`, `work_branch=main`, `resources=[]`.
-2. Przeczytaj `AGENTS.md`, `docs/README.md`, `docs/CURRENT_STATUS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md` i [checkpoint fizyczny](checkpoints/2026-11-07-bloomml-documentation-freeze-handoff.md) i [nowy checkpoint naprawczy](checkpoints/2026-11-07-bloomml-general-repository-repair.md).
-3. Sprawdź **tylko autoryzowany port** `/dev/cu.usbserial-130`. Stary port 120 nie jest bieżącym celem. **Nigdy** `/dev/cu.usbserial-10`; `/dev/cu.usbserial-1120` wymaga odrębnej zgody. Najpierw potwierdź fizyczną izolację wyjść, nie wyciągaj wniosku o izolacji z samego flag/config builda.
+1. Odczytaj aktualny HEAD `main` i `agent-control:.agent/status/daemon.json`, kolejkę zadań i wyniki. Nie zakładaj SHA handoffu jako aktualnego.
+2. Przeczytaj `AGENTS.md`, `docs/README.md`, `docs/CURRENT_STATUS.md`, `docs/CONFIGURATION_FLOW.md`, `docs/PRODUCT_DIRECTION.md`, `docs/ARCHITECTURE.md`, `docs/PROJECT_ROADMAP.md`, niniejszy dokument i checkpointy M01–M05.
+3. Tryb GitHub Connector + Local Agent/Chat Bridge. Mac binding `815cf40f-8d2a-4e1f-b7cc-c0f4e37b6cb5`; `work_branch=main`, `resources=[]`. Zweryfikuj czystość i właściwy host przed zmianami. Nie powtarzaj zaliczonych prac bez regresji.
+4. Nie rozpoczynaj M06 w ramach samego preflight. Po decyzji operatora przejdź do planu poniżej.
 
-## Co jest zakończone — NIE POWTARZAJ
+## Następny etap M06 — integracja MVP (software)
 
-- IPO v2 B5: walidacja board/readiness; Vitest **9/9 PASS**.
-- Jedna transakcja `IpoProfileActivationTransaction`; NVS CRC/two-slot/readback/rollback, diagnostyka stored vs active, produkcyjny `ClosedIpoActivationGate`.
-- `make test-ipo` **3/3 CTest PASS** na `45f3527`; obejmuje adapter NVS z fault injection przy **mock** ESP-IDF API. LampSafety / BLE stale-Rule / output lifecycle **3/3 PASS** na `347bcca`.
-- CrowPanel N8R8 real-input/e-ink **ESP-IDF BUILD PASS** na `1a1b3de8` (bin `0xd1e00`, 80% app partition free). Nie jest to test hardware ani flash.
-- Końcowy poprzedni commit `c4bf62cf70b5197f5b19906cf48175a75719785e`: dokumentacja/closed gate check PASS, repo czyste.
-- Historyczne Bridge 1–4/B5/Clay/ML nie są zadaniami do ponownego otwarcia z samego powodu starszych opisów.
+Cel: użytkownik opisuje wyposażenie i cele klimatu, system przetwarza je przez jeden istniejący przepływ IPO. Weryfikacja software nie nadaje uprawnień fizycznych.
 
-Dowody: [checkpoint kwalifikacji](checkpoints/2026-11-07-bloomml-ipo-v2-hardware-qualification-gate.md) i [checkpoint transakcji](checkpoints/2026-11-07-bloomml-ipo-v2-activation-transaction.md).
+- Prześledź kontrakt: DeviceProfile v2 / JSON / graf / selekcja pomiarów / plan wyposażenia / cele dzień-noc / Process / OutputSupervisor / obserwator. Usuń sprzeczne źródła konfiguracji i potwierdź, że walidator browser oraz firmware rozróżniają poprawny draft, kompatybilność board i gotowość do wykonania.
+- Zbuduj brakujące połączenia wyłącznie w istniejącej architekturze, z host/fake ścieżką end-to-end od profilu do decyzji i symulowanego wykonania. Nie buduj równoległego kontrolera ani drugiej transakcji. Mint pozostaje jedynym profilem startowym produkcji.
+- Sprawdź warianty wyposażenia, priorytety/fallback czujników, CO₂ dzień/noc, brak urządzeń, zero wyjść, konflikty, nieprawidłowe profile, błędy transportu, spójność statusu i zgodność persistence v1/v2. Nie utożsamiaj żądania, wykonania transportowego i fizycznej obserwacji.
+- Ujednolić minimalną ścieżkę konfiguratora, bez sugerowania dostępności fizycznego apply. Większy redesign UX, nowe transporty i ML/MPC poza M06.
+- Etapy małe, odwracalne; pełna regresja host, Python parity, web, trzy guardy architektury i build CrowPanel dla zmian kodu. Zapisz exact SHA, dowody, checkpoint i status CLOSED_SCOPED/BLOCKED. Nie przechodź automatycznie do kwalifikacji sprzętowej.
 
-## Pozostałe bramki — odroczone, bez omijania H1
+## Niezależne, odroczone bramki sprzętowe
 
-Wznowić po przygotowaniu sprzętu i decyzji operatora; test SD po włożeniu karty.
+H0 historycznie PASS, H1 PARTIAL, H2/H3 NOT ADMITTED. [Checkpoint fizyczny](checkpoints/2026-11-27-bloomml-hardware-progress.md). Ostatni test fizyczny `2199a75` fake-locked. Native NVS/recovery SKIPPED — TOOL BLOCK, operator-owned local follow-up; nie ponawiaj zablokowanej próby. Brak/stale/invalid, termika, długotrwała stabilność, ACK odbiorników i SD (po włożeniu karty) niezaliczone. H2 supervisor-owned quiesce/emergency-lock, H3 uwierzytelniony preview/activate/status/rollback dopiero po osobnej kwalifikacji. H4 real-data calibration i shadow później.
 
-1. Po lokalnym rozstrzygnięciu pominiętej kwalifikacji NVS oraz z autoryzacją operatora i izolowanymi wyjściami domknij brakujący `ESP-IDF` hardware gate na exact SHA z `GROWBOX_STAGE28_REAL_OUTPUTS_ENABLED=0`: NVS flash/reboot/slot recovery, TP357/SCD41 brak/stale/invalid, niezależny LampSafety, Rule, heap/PSRAM/stack/watchdog. Nie wykonuj ryzykownych odłączeń zasilania bez świadomej zgody i izolacji.
-2. Po PASS zaprojektuj supervisor-owned `quiesce / emergency-lock`, bez osobnych zapisów RF/GPIO, z zatrzaśniętym quarantine przy niepewnym rollbacku. Zachowaj wyłączną własność OutputSupervisor i niezależne safety.
-3. Dopiero potem dodaj **uwierzytelniony** lokalny preview/activate/status/rollback do istniejącego konfiguratora. `tools/panel` jest historycznym serwisem demo i nie stanowi automatycznie produkcyjnego API. Każdy status musi odróżniać `stored`, `active` i fizyczną obserwację.
-4. Zapisz nowy checkpoint exact-SHA, test matrix, blokery i handoff.
+Bez flashowania, operacji sprzętowych ani otwierania `ClosedIpoActivationGate` w M06. Dla osobno autoryzowanego sprzętowego etapu: wyłącznie port `/dev/cu.usbserial-130`, po świeżym potwierdzeniu izolacji; nie używać portu 10, 1120 wymaga osobnej zgody. RF TX nie jest fizycznym ACK. LampSafety niezależny: trip ≥28°C, recovery ≤26°C przez 10 minut. Rule autorytatywny, OutputSupervisor jedyny normalny właściciel wyjść, brak auto-apply NVS, ML/MPC Shadow.
 
-## Zakazy i stałe kontrakty
-
-`main` tylko dla source/docs, `agent-control` tylko zadania/wyniki Local Agent, `gh-pages` publikacja. **Bez Codex, ChatGPT Work, GitHub Actions, nowych gałęzi i force-push.** Bez automatycznego apply z NVS. Produkcyjny `ClosedIpoActivationGate` pozostaje zamknięty aż do niezależnej kwalifikacji i jawnej autoryzacji. Rule jest autorytetem, ML/MPC Shadow. Lampa: trip ≥28°C; recovery ≤26°C przez 10 minut. RF433 TX nie jest fizycznym ACK.
+**Bez Codex, Work, GitHub Actions, nowych gałęzi i force-push.** `agent-control` tylko zadania/wyniki; `gh-pages` tylko publikacja. Nie usuwaj historycznych dowodów.
