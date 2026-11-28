@@ -15,6 +15,8 @@ struct RuntimeTargetSet {
   float temperature_c{24.5F};
   float relative_humidity_pct{58.0F};
   float air_vpd_kpa{1.2F};
+  bool co2_enabled{false};
+  float co2_ppm{0.0F};
 };
 
 struct RuntimeScheduleProfile {
@@ -39,7 +41,9 @@ inline bool validateRuntimeTargetSet(const RuntimeTargetSet& targets) noexcept {
          targets.temperature_c <= 40.0F && std::isfinite(targets.relative_humidity_pct) &&
          targets.relative_humidity_pct >= 20.0F && targets.relative_humidity_pct <= 90.0F &&
          std::isfinite(targets.air_vpd_kpa) && targets.air_vpd_kpa >= 0.2F &&
-         targets.air_vpd_kpa <= 3.5F;
+         targets.air_vpd_kpa <= 3.5F && std::isfinite(targets.co2_ppm) &&
+         (targets.co2_enabled ? (targets.co2_ppm >= 400.0F && targets.co2_ppm <= 1700.0F)
+                              : targets.co2_ppm == 0.0F);
 }
 
 inline bool validateRuntimeScheduleProfile(const RuntimeScheduleProfile& profile) noexcept {
@@ -118,6 +122,10 @@ inline std::uint32_t runtimeScheduleFingerprint(
   mixFloat(profile.night.temperature_c);
   mixFloat(profile.night.relative_humidity_pct);
   mixFloat(profile.night.air_vpd_kpa);
+  mix(profile.day.co2_enabled ? 1U : 0U);
+  mixFloat(profile.day.co2_ppm);
+  mix(profile.night.co2_enabled ? 1U : 0U);
+  mixFloat(profile.night.co2_ppm);
   mix(profile.exhaust_fan_available ? 1U : 0U);
   mix(profile.humidifier_available ? 1U : 0U);
   return hash;
@@ -142,8 +150,8 @@ inline bool projectRuntimeSchedule(std::uint8_t hour,
   output.targets.air_temperature_c = targets.temperature_c;
   output.targets.relative_humidity_pct = targets.relative_humidity_pct;
   output.targets.air_vpd_kpa = targets.air_vpd_kpa;
-  output.targets.co2_enabled = false; // No physical CO2 doser configured.
-  output.targets.co2_ppm = 0.0F;
+  output.targets.co2_enabled = targets.co2_enabled;
+  output.targets.co2_ppm = targets.co2_ppm;
   output.schedule.light_level = day ? 1.0F : 0.0F;
   return true;
 }

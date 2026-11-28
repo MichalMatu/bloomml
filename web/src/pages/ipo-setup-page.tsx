@@ -211,12 +211,13 @@ export function IpoSetupPage() {
     setProfile((previous) => ({ ...previous, control: { ...previous.control, ...patch } }))
     setMessage(null)
   }
-  function updateTarget(period: "day" | "night", field: keyof Targets, value: number) {
+  function updateTarget(period: "day" | "night", field: keyof Targets, value: number | boolean) {
     setProfile((previous) => ({
       ...previous, control: {
         ...previous.control,
         targets: { ...previous.control.targets, [period]: {
           ...previous.control.targets[period], [field]: value,
+          ...(field === "co2_enabled" ? { co2_ppm: value ? 900 : 0 } : {}),
         } },
       },
     }))
@@ -541,6 +542,17 @@ export function IpoSetupPage() {
                       profile.control.humidity_mode === "RH" ? "relative_humidity_pct" : "air_vpd_kpa",
                       Number(e.target.value))}/>
                 </AppFormField>
+                <Pick id={"ipo_co2_enabled_" + period} label="Regulacja CO₂"
+                  value={profile.control.targets[period].co2_enabled ? "on" : "off"}
+                  options={[option("off", "Wyłączona"), option("on", "Włączona")]}
+                  onChange={(value) => updateTarget(period, "co2_enabled", value === "on")}/>
+                {profile.control.targets[period].co2_enabled && (
+                  <AppFormField label="Cel CO₂ (ppm)" htmlFor={"ipo_co2_" + period}>
+                    <Input id={"ipo_co2_" + period} type="number" min={400} max={1700} step={50}
+                      value={profile.control.targets[period].co2_ppm ?? 900}
+                      onChange={(e) => updateTarget(period, "co2_ppm", Number(e.target.value))}/>
+                  </AppFormField>
+                )}
               </AppStyled>
             ))}
           </AppStyled>

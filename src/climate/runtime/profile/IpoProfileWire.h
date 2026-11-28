@@ -17,7 +17,7 @@ namespace growbox::app::climate_io::runtime::profile {
 // This codec is for the fully validated graph + day/night schedule, not v4/v5/v6
 // inference tensors. Firmware admission is required before any persisted apply.
 constexpr std::uint32_t kProfileMagic = 0x324F5049U; // IPO2 little endian
-constexpr std::uint16_t kProfileWireVersion = 1U;
+constexpr std::uint16_t kProfileWireVersion = 2U;
 constexpr std::size_t kMaximumProfileWireBytes = 1536U;
 static_assert(sizeof(float) == 4U, "IpoProfileWire requires IEEE-754 32-bit float");
 
@@ -161,6 +161,10 @@ inline IpoProfileCodecStatus encodeIpoProfile(
     w.f32(t.relative_humidity_pct);
     w.f32(t.air_vpd_kpa);
   }
+  for (const auto& t : {p.day, p.night}) {
+    w.u8(t.co2_enabled ? 1U : 0U);
+    w.f32(t.co2_ppm);
+  }
   w.u8(static_cast<std::uint8_t>(p.exhaust_fan_available ? 1U : 0U));
   w.u8(static_cast<std::uint8_t>(p.humidifier_available ? 1U : 0U));
   for (std::size_t i = 0; i < g.device_count; ++i) {
@@ -222,7 +226,9 @@ inline IpoProfileCodecStatus decodeIpoProfile(
 
   ProfileReader r(data, size - 4U);
   if (r.u32() != kProfileMagic) return IpoProfileCodecStatus::InvalidMagic;
-  if (r.u16() != kProfileWireVersion) return IpoProfileCodecStatus::UnsupportedVersion;
+  const auto wire_version = r.u16();
+  if (wire_version != 1U && wire_version != kProfileWireVersion)
+    return IpoProfileCodecStatus::UnsupportedVersion;
   DurableIpoProfile incoming{};
   incoming.generation = r.u32();
   auto& g = incoming.graph;
@@ -248,6 +254,14 @@ inline IpoProfileCodecStatus decodeIpoProfile(
   p.night.temperature_c = r.f32();
   p.night.relative_humidity_pct = r.f32();
   p.night.air_vpd_kpa = r.f32();
+  if (wire_version == kProfileWireVersion) {
+    for (auto* t : {&p.day, &p.night}) {
+      const auto enabled = r.u8();
+      if (enabled > 1U) return IpoProfileCodecStatus::InvalidSchedule;
+      t->co2_enabled = enabled == 1U;
+      t->co2_ppm = r.f32();
+    }
+  }
   const auto exhaust_available = r.u8();
   const auto humidifier_available = r.u8();
   if (exhaust_available > 1U || humidifier_available > 1U)

@@ -21,6 +21,22 @@ describe("DeviceProfile v2 / physical CrowPanel admission preview", () => {
     expect(status.jsonBytes).toBeLessThanOrEqual(MAX_FIRMWARE_IPO_JSON_BYTES)
   })
 
+  it("accepts independent day/night CO2 targets and keeps old profiles disabled", () => {
+    const p = createDefaultIpoProfile()
+    expect(validateIpoProfile(p)).toEqual([])
+    p.control.targets.day.co2_enabled = true
+    p.control.targets.day.co2_ppm = 900
+    p.control.targets.night.co2_enabled = false
+    p.control.targets.night.co2_ppm = 0
+    expect(validateIpoProfile(p)).toEqual([])
+    expect(assessCrowPanelProfile(p).applyEnabled).toBe(false)
+    p.control.targets.day.co2_ppm = 1800
+    expect(validateIpoProfile(p).length).toBeGreaterThan(0)
+    p.control.targets.day.co2_ppm = 900
+    delete p.control.targets.day.co2_enabled
+    expect(validateIpoProfile(p).length).toBeGreaterThan(0)
+  })
+
   it("a valid generic IPO graph without a CO2 sensor is NOT board ready", () => {
     const p = createDefaultIpoProfile()
     p.signals = p.signals.filter((s) => s.role !== "inside.co2_ppm")

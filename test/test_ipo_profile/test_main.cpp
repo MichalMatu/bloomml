@@ -350,6 +350,54 @@ void testScheduleBoundariesAndOwner() {
   assert(owner.generation() == 0U);
 }
 
+void testCo2ScheduleAndLegacyWire() {
+  auto schedule = runtime::makeMintRuntimeScheduleProfile();
+  const auto original_hash = runtime::runtimeScheduleFingerprint(schedule);
+  schedule.day.co2_enabled = true;
+  schedule.day.co2_ppm = 900.0F;
+  schedule.night.co2_enabled = true;
+  schedule.night.co2_ppm = 600.0F;
+  assert(runtime::validateRuntimeScheduleProfile(schedule));
+  assert(runtime::runtimeScheduleFingerprint(schedule) != original_hash);
+  growbox::app::climate_io::ClimateScheduleConfigSnapshot selected{};
+  assert(runtime::projectRuntimeSchedule(6U, schedule, selected));
+  assert(selected.targets.co2_enabled && selected.targets.co2_ppm == 900.0F);
+  assert(!selected.capabilities.co2_doser);
+  assert(runtime::projectRuntimeSchedule(22U, schedule, selected));
+  assert(selected.targets.co2_enabled && selected.targets.co2_ppm == 600.0F);
+  profile::DurableIpoProfile source{};
+  source.graph = ipo::makeCrowPanelMintReferenceGraph();
+  source.schedule = schedule;
+  profile::EncodedIpoProfile blob{};
+  assert(profile::encodeIpoProfile(source, blob) == profile::IpoProfileCodecStatus::Ok);
+  profile::DurableIpoProfile decoded{};
+  assert(profile::decodeIpoProfile(blob.bytes.data(), blob.size, decoded) ==
+         profile::IpoProfileCodecStatus::Ok);
+  assert(decoded.schedule.day.co2_enabled && decoded.schedule.day.co2_ppm == 900.0F);
+  assert(decoded.schedule.night.co2_enabled && decoded.schedule.night.co2_ppm == 600.0F);
+  // Construct the previous layout by removing exactly the added 10 bytes
+  // and restoring the original version and CRC, independently of the decoder.
+  constexpr std::size_t co2_offset = 4+2+4+5+2+1+1+1+8+24;
+  assert(blob.bytes[co2_offset] == 1U);
+  auto legacy = blob;
+  for (std::size_t i = co2_offset; i + 10 < blob.size; ++i)
+    legacy.bytes[i] = blob.bytes[i+10];
+  legacy.size -= 10;
+  legacy.bytes[4] = 1U;
+  const auto crc = profile::profileCrc32(legacy.bytes.data(), legacy.size-4U);
+  for (unsigned i = 0; i < 4; ++i)
+    legacy.bytes[legacy.size-4U+i] = static_cast<std::uint8_t>(crc >> (8U*i));
+  assert(profile::decodeIpoProfile(legacy.bytes.data(), legacy.size, decoded) ==
+         profile::IpoProfileCodecStatus::Ok);
+  assert(!decoded.schedule.day.co2_enabled && decoded.schedule.day.co2_ppm == 0.0F);
+  assert(!decoded.schedule.night.co2_enabled && decoded.schedule.night.co2_ppm == 0.0F);
+  source.schedule.day.co2_ppm = 1800.0F;
+  assert(profile::encodeIpoProfile(source, blob) == profile::IpoProfileCodecStatus::InvalidSchedule);
+  source.schedule.day.co2_enabled = false;
+  source.schedule.day.co2_ppm = 900.0F;
+  assert(!runtime::validateRuntimeScheduleProfile(source.schedule));
+}
+
 void testFullTypedWireRoundtripAndCorruption() {
   profile::DurableIpoProfile p{};
   p.graph = ipo::makeCrowPanelMintReferenceGraph();
@@ -424,6 +472,7 @@ void testStoredProfileIsNotActiveProfileEvidence() {
 
 int main() {
   testMvpOutputPlans();
+  testCo2ScheduleAndLegacyWire();
   testReferenceHardwareAdmission();
   testCo2BindingCannotBeDeleted();
   testRequiredRoutingCannotBeDeleted();

@@ -16,7 +16,10 @@ export type Actuator = {
 }
 export type Process = { id: string; kind: ProcessKind; enabled: boolean }
 export type ProcessLink = { process_id: string; actuator_id: string; effect: Effect }
-export type Targets = { air_temperature_c: number; relative_humidity_pct: number; air_vpd_kpa: number }
+export type Targets = {
+  air_temperature_c: number; relative_humidity_pct: number; air_vpd_kpa: number
+  co2_enabled?: boolean; co2_ppm?: number
+}
 export interface IpoProfileV2 {
   kind: "bloomml.device-profile"
   schema_version: 2
@@ -267,12 +270,20 @@ export function validateIpoProfile(value: unknown): string[] {
     const targets = keys(control.targets, "control.targets", ["day", "night"], errors)
     if (targets) {
       for (const period of ["day", "night"]) {
-        const t = keys(targets[period], "targets." + period,
-          ["air_temperature_c", "relative_humidity_pct", "air_vpd_kpa"], errors)
+        const candidate = targets[period]
+        const hasCo2 = record(candidate) && ("co2_enabled" in candidate || "co2_ppm" in candidate)
+        const t = keys(candidate, "targets." + period,
+          ["air_temperature_c", "relative_humidity_pct", "air_vpd_kpa",
+            ...(hasCo2 ? ["co2_enabled", "co2_ppm"] : [])], errors)
         if (t) {
           numberRange(t.air_temperature_c, period + ".temperature", 10, 40, errors)
           numberRange(t.relative_humidity_pct, period + ".humidity", 20, 90, errors)
           numberRange(t.air_vpd_kpa, period + ".vpd", 0.2, 3.5, errors)
+          if (hasCo2) {
+            if (typeof t.co2_enabled !== "boolean") errors.push(period + ".co2_enabled: boolean")
+            if (t.co2_enabled === true) numberRange(t.co2_ppm, period + ".co2_ppm", 400, 1700, errors)
+            else if (t.co2_ppm !== 0) errors.push(period + ".co2_ppm: 0 when disabled")
+          }
         }
       }
     }

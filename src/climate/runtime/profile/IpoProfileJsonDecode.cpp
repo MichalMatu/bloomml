@@ -318,11 +318,18 @@ bool parseLinks(const cJSON* root, Graph& graph, const DecodeTables& names) noex
 }
 
 bool parseTargets(const cJSON* node, RuntimeTargetSet& target) noexcept {
-  constexpr const char* fields[]{"air_temperature_c", "relative_humidity_pct", "air_vpd_kpa"};
-  return exactObject(node, fields) &&
-         floatItem(node, "air_temperature_c", target.temperature_c) &&
+  constexpr const char* legacy[]{"air_temperature_c", "relative_humidity_pct", "air_vpd_kpa"};
+  constexpr const char* fields[]{"air_temperature_c", "relative_humidity_pct", "air_vpd_kpa",
+                                "co2_enabled", "co2_ppm"};
+  const bool old = exactObject(node, legacy);
+  if (!old && !exactObject(node, fields)) return false;
+  target.co2_enabled = false;
+  target.co2_ppm = 0.0F;
+  return floatItem(node, "air_temperature_c", target.temperature_c) &&
          floatItem(node, "relative_humidity_pct", target.relative_humidity_pct) &&
-         floatItem(node, "air_vpd_kpa", target.air_vpd_kpa);
+         floatItem(node, "air_vpd_kpa", target.air_vpd_kpa) &&
+         (old || (booleanItem(node, "co2_enabled", target.co2_enabled) &&
+                  floatItem(node, "co2_ppm", target.co2_ppm)));
 }
 bool parseControl(const cJSON* root, RuntimeScheduleProfile& config) noexcept {
   const cJSON* control = item(root, "control");

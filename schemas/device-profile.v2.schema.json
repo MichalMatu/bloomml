@@ -340,6 +340,45 @@
                   "type": "number",
                   "minimum": 0.2,
                   "maximum": 3.5
+                },
+                "co2_enabled": {
+                  "type": "boolean"
+                },
+                "co2_ppm": {
+                  "type": "number"
+                }
+              },
+              "dependentRequired": {
+                "co2_enabled": [
+                  "co2_ppm"
+                ],
+                "co2_ppm": [
+                  "co2_enabled"
+                ]
+              },
+              "if": {
+                "required": [
+                  "co2_enabled"
+                ],
+                "properties": {
+                  "co2_enabled": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "co2_ppm": {
+                    "minimum": 400,
+                    "maximum": 1700
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "co2_ppm": {
+                    "const": 0
+                  }
                 }
               }
             },
@@ -366,6 +405,45 @@
                   "type": "number",
                   "minimum": 0.2,
                   "maximum": 3.5
+                },
+                "co2_enabled": {
+                  "type": "boolean"
+                },
+                "co2_ppm": {
+                  "type": "number"
+                }
+              },
+              "dependentRequired": {
+                "co2_enabled": [
+                  "co2_ppm"
+                ],
+                "co2_ppm": [
+                  "co2_enabled"
+                ]
+              },
+              "if": {
+                "required": [
+                  "co2_enabled"
+                ],
+                "properties": {
+                  "co2_enabled": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "co2_ppm": {
+                    "minimum": 400,
+                    "maximum": 1700
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "co2_ppm": {
+                    "const": 0
+                  }
                 }
               }
             }
