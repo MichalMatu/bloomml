@@ -21,7 +21,8 @@ Konfigurator / (DeviceProfile v2, offline JSON)
 
 Current real-input firmware on boot:
   Mint RAM schedule -> Rule + lamp schedule
-  TP357 / SCD41 CO2 / Xiaomi -> fixed-board freshness selector
+  TP357 / SCD41 / Xiaomi -> bounded observation registry -> graph freshness selector
+  DS3231 -> configured clock -> Rule + lamp schedule
   Rule + LampSafety -> OutputSupervisor -> RF433 transport
   NVS gb_ipoprof -> read-only diagnostic stored state
   Console/e-ink -> observer (not output authority)
@@ -33,7 +34,7 @@ Current real-input firmware on boot:
 
 - Schemat: `schemas/device-profile.v2.schema.json`; przykład `profiles/crowpanel-ipo.v2.json`; status eksportu `draft_not_applied`.
 - `DeviceRegistry`: ID, driver, locator/adres, enabled oraz katalog możliwości, w tym role **przyszłe**, które nie są automatycznie sprzętowo obsługiwane.
-- `SignalRegistry`: semantyczna rola, kanał, źródło podstawowe/zapasowe, priorytet i jednostki; odczyt invalid/stale/nonfinite jest nieużywalny. Dynamiczny hardware fallback nie jest obecnie dopuszczony na CrowPanel.
+- `SignalRegistry`: semantyczna rola, kanał, źródło podstawowe/zapasowe, priorytet i jednostki; odczyt invalid/stale/nonfinite jest nieużywalny. Fallback i zamiana źródeł są testowane programowo; alternatywne grafy nie są dopuszczone do fizycznej aktywacji na CrowPanel. Opcjonalne W/Wh (shelly.meter) to wyłącznie kontrakt wejściowy draft.
 - `ProcessRegistry`: temperatura, RH/VPD, harmonogram lampy, ochrona CO₂; fizyczne safety nie zależy od edytowalności grafu.
 - `OutputRegistry`: rola, unikatowy fizyczny endpoint, stan safe-OFF, minimalny czas ON/OFF. `ProcessBindings` ogranicza do dozwolonych efektów.
 - Symboliczny `OutputArbiter` może podglądać zgodne propozycje, lecz **nie wysyła komend**.
@@ -45,7 +46,7 @@ Current real-input firmware on boot:
 | Funkcja | Źródło / transport | Uwaga |
 | --- | --- | --- |
 | Temperatura i RH wewnątrz | TP357 BLE, urządzenie 1 | Rule i niezależny LampSafety; timeout pomiaru typowo 30 s |
-| CO₂ | SCD41 I²C `0x62`, urządzenie 2 | T/RH z SCD41 nie są zakwalifikowanym fallbackiem |
+| CO₂ | SCD41 I²C `0x62`, urządzenie 2 | T/RH dostępne w rejestrze wejść, ale nie są sprzętowo zakwalifikowanym fallbackiem |
 | Otoczenie T/RH | Xiaomi BLE, urządzenie 3 | Informacja pomocnicza |
 | Zegar | DS3231 I²C `0x68` | Dzień / noc Mint |
 | Wyciąg | RF433 socket 1 | Rule + safety, min ON/OFF 120/120 s |
@@ -61,7 +62,8 @@ Mint w RAM: dzień 06:00–22:00 **24.5°C / 58% RH / 1.2 kPa**, noc **21.5°C /
 | --- | --- |
 | `web/src/domain/ipo-*.ts` + `/` | Offline draft, walidacja, board readiness; bez live apply |
 | `lib/ipo_profile/src/IpoGraph.h` / `IpoBoardAdmission.h` | Bounded model i stała referencyjna mapa CrowPanel; nie pozwolenie na RF |
-| `IpoSignalSelector.h` + `RuntimeInsideSource`/`RuntimeNearbySource` | Wybór użytecznego pomiaru spośród referencyjnych źródeł |
+| `IpoInputReadingRegistry.h` / `RuntimeInputRegistry.h` / `IpoSignalSelector.h` | Rejestr odczytów według drivera i locatora; wybór semantycznej roli według grafu i priorytetu |
+| `ConfiguredClockSource.h` | Wybór zegara i współdzielony odczyt dla harmonogramu i Rule |
 | `IpoProfileJsonDecode.cpp` | Ścisły JSON → typowany graf i schedule; odrzucanie unsupported |
 | `IpoProfileWire.h` / `IpoProfileNvsJournal.cpp` | CRC, wersje, dwa sloty w izolowanym `gb_ipoprof`; zapis nie oznacza zastosowania |
 | `RuntimeScheduleProfileOwner` | Jeden bieżący profil RAM czytany przez Rule i harmonogram lampy |

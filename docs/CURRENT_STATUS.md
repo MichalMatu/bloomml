@@ -10,6 +10,8 @@ Aktualny sprint software: **CLOSED — scoped**. Regresja współdzielonego bufo
 
 ## Najnowszy sprint software — bez aktywacji IPO
 
+M03: konfigurowalne wejścia IPO — software CLOSED_SCOPED; [checkpoint M03](checkpoints/2026-11-28-bloomml-m03-configurable-inputs.md). Host, web i CrowPanel build PASS na kodzie 4fc585d; alternatywne profile pozostają nieaktywne sprzętowo.
+
 M02: separacja portów I/P/O — software CLOSED_SCOPED; szczegóły i dowody w [checkpoint M02](checkpoints/2026-11-28-bloomml-m02-ipo-separation.md). Mint pozostaje konfiguracją referencyjną, fizyczna aktywacja IPO nadal zamknięta.
 
 Naprawy `cf1c434` (web typecheck, HTTP diagnostics POST), `196c305` (96 naruszeń lint przeniesionych do wspólnego `app-chrome`) i `4aadf5f` (świeżość odczytu, timeout 504) zakończone. Web na `196c305`: **114/114 Vitest PASS**, typecheck/lint/build PASS; panel na `4aadf5f`: **135/135 pytest PASS**; host C++/display na `cf1c434`: **PASS**; bazowy IPO CTest na `54c486d`: **3/3 PASS**. Są to wyniki software na Macu, nie fizyczne testy CrowPanel. [Pełny checkpoint](checkpoints/2026-11-07-bloomml-general-repository-repair.md).
@@ -22,7 +24,7 @@ Naprawy `cf1c434` (web typecheck, HTTP diagnostics POST), `196c305` (96 narusze�
 | Wyjścia | Jedyny normalny właściciel: **OutputSupervisor**; RF433 1 wyciąg, 2 lampa, 3 nawilżacz |
 | Bezpieczeństwo | Niezależny TP357 LampSafety: trip ≥28°C; recovery ≤26°C nieprzerwanie przez 10 minut |
 | Operator | `/` to offline szkic DeviceProfile v2; walidacja grafu, board readiness, import/eksport; **brak apply do sprzętu** |
-| Wejścia | CrowPanel reference selector: TP357 T/RH, SCD41 CO₂, Xiaomi ambient T/RH; filtr valid/finite/age; brak dynamicznej rejestracji driverów |
+| Wejścia | Wspólny rejestr odczytów BLE T/RH i SCD41 T/RH/CO₂, role i priorytety z grafu; DS3231 przez konfigurowalny zegar. Mint na starcie bez zmian; brak dynamicznej rejestracji driverów i aktywacji innych grafów |
 | Harmonogram | Jeden `RuntimeScheduleProfileOwner` w RAM dla Rule i lampy; na starcie **wbudowany Mint** |
 | NVS IPO | Dwa sloty `gb_ipoprof`, CRC, generation, rollback; boot tylko **odczytuje stan** do diagnostyki |
 | Transakcja | `IpoProfileActivationTransaction`: preview → validate → NVS commit → RAM apply → readback/rollback. Produkcyjny `ClosedIpoActivationGate` **zawsze odmawia**; brak wywołania z UI/UART |
