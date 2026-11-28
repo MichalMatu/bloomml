@@ -1,4 +1,5 @@
 #include "climate/output/supervisor/ClimateOutputSupervisorSink.h"
+#include "climate/output/ConfiguredOutputEquipment.h"
 #include "climate/application/ClimateInputContracts.h"
 
 #include <array>
@@ -117,6 +118,62 @@ void assertPhysicalUnknown(const output::OutputStateStore& store,
   assert(state != nullptr);
   assert(state->physical.state == output::PhysicalOutputState::Unknown);
   assert(!state->physical.has_independent_feedback);
+}
+
+void testConfiguredEquipmentAndTransportSubstitution() {
+  namespace ipo = growbox::ipo;
+  for (unsigned mask = 0; mask < 128U; ++mask) {
+    ipo::Graph graph{};
+    graph.processes[graph.process_count++] = {1U, ipo::ProcessKind::Co2Safety, true};
+    FakeTransport first, second;
+    output::ConfiguredOutputEquipment::Bindings bindings{};
+    for (unsigned role = 0; role < 7U; ++role) {
+      if (!(mask & (1U << role))) continue;
+      const auto device = static_cast<std::uint16_t>(role + 1U);
+      graph.devices[graph.device_count++] = {device, ipo::Driver::GpioRelay, device, true};
+      graph.actuators[graph.actuator_count++] = {
+          static_cast<std::uint16_t>(100U+device), device, ipo::Channel::Switch,
+          static_cast<ipo::OutputRole>(role), true, 1000U, 2000U};
+      bindings[graph.actuator_count-1U] = {ipo::Driver::GpioRelay, device,
+          static_cast<output::OutputEndpointId>(10U+device), device, &first};
+    }
+    output::ConfiguredOutputEquipment equipment(graph, bindings, graph.actuator_count);
+    if (!mask) {
+      assert(!equipment.valid() && equipment.status() == output::EquipmentStatus::Empty);
+      continue;
+    }
+    assert(equipment.valid() && equipment.policy().count == graph.actuator_count);
+    const auto caps = equipment.capabilities();
+    assert(caps.exhaust_fan == bool(mask & 1U));
+    assert(caps.humidifier == bool(mask & 2U));
+    assert(caps.heater == bool(mask & 8U));
+    assert(caps.cooler == bool(mask & 16U));
+    assert(caps.dehumidifier == bool(mask & 32U));
+    assert(caps.co2_doser == bool(mask & 64U));
+    output::ConfiguredOutputTransport transport(equipment);
+    output::OutputCommand command{};
+    command.endpoint = bindings[0].endpoint;
+    command.state = output::BinaryOutputState::On;
+    assert(transport.send(command).status == output::TransportStatus::Completed);
+    assert(first.sent_count == 1U && first.sent[0].endpoint == bindings[0].adapter_endpoint);
+    bindings[0].adapter = &second;
+    output::ConfiguredOutputEquipment replacement(graph, bindings, graph.actuator_count);
+    output::ConfiguredOutputTransport other(replacement);
+    assert(other.send(command).status == output::TransportStatus::Completed);
+    assert(second.sent_count == 1U && first.sent_count == 1U);
+    bindings[0].adapter = nullptr;
+    output::ConfiguredOutputEquipment unavailable(graph, bindings, graph.actuator_count);
+    assert(!unavailable.valid() && unavailable.status() == output::EquipmentStatus::MissingAdapter);
+    output::ConfiguredOutputTransport blocked(unavailable);
+    assert(blocked.send(command).status == output::TransportStatus::NotAttempted);
+    assert(!unavailable.capabilities().exhaust_fan && !unavailable.capabilities().heater);
+    if (graph.actuator_count > 1U) {
+      bindings[0].adapter = &first;
+      bindings[1].endpoint = bindings[0].endpoint;
+      output::ConfiguredOutputEquipment conflict(graph, bindings, graph.actuator_count);
+      assert(conflict.status() == output::EquipmentStatus::DuplicateAdapter);
+    }
+  }
 }
 
 void testDualDeviceInputIsIndependentOfSupervisorOutput() {
@@ -436,6 +493,7 @@ void testHardSafetyOverridesSupervisorFailSafeOff() {
 } // namespace
 
 int main() {
+  testConfiguredEquipmentAndTransportSubstitution();
   testDualDeviceInputIsIndependentOfSupervisorOutput();
   testCompleteClimateRequestUsesOneSupervisorCycleAndProjectsCommandTruth();
   testExecutionFeedbackIsCompleteCommandTruthAndNotPhysicalAck();

@@ -271,6 +271,10 @@ target_include_directories(
     "${PROJECT_ROOT}/src"
     "${PROJECT_ROOT}/lib/environment_control/src"
 )
+target_sources(climate_output_supervisor_sink_tests PRIVATE
+  "${PROJECT_ROOT}/src/climate/output/policy/OutputPolicyConfig.cpp")
+target_include_directories(climate_output_supervisor_sink_tests PRIVATE
+  "${PROJECT_ROOT}/lib/ipo_profile/src")
 target_compile_features(climate_output_supervisor_sink_tests PRIVATE cxx_std_17)
 target_compile_options(climate_output_supervisor_sink_tests PRIVATE -Wall -Wextra -Wpedantic)
 
