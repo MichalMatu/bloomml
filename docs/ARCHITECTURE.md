@@ -38,9 +38,8 @@ OutputSupervisor remains the sole configured-output executor. The existing
 OutputTransport port is protocol-independent. One object may implement both
 DeviceElectricalSource (device ID, W, Wh, validity/age) and OutputTransport,
 without either port requiring the other. Electrical input is an extension seam
-exercised by the proposed host tests; qualification remains pending until
-the tests pass. It is not wired to Rule and does not constitute physical
-acknowledgement.
+exercised by passing host tests. It is not wired to Rule and does not
+constitute physical acknowledgement.
 No new sensor/actuator driver, wire format or model is admitted here.
 
 Mint remains the compiled reference composition; fixed-board admission, actual
