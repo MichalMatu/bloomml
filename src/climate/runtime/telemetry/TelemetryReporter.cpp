@@ -150,6 +150,17 @@ void TelemetryReporter::record(
   snapshot.applied_dehumidifier = decision.applied.dehumidifier;
   snapshot.applied_co2_doser = decision.applied.co2_doser;
 
+  // Separate versioned observer record; existing soak/storage schema unchanged.
+  const auto& goals = decision.rule_goals;
+  if (loop_result.input_sampled) {
+    ESP_LOGI(kTag,
+             "climate_goals_v=1 unmet=%u sensor_unusable=%u target_invalid=%u "
+             "no_equipment=%u no_usable_route=%u constrained=%u conditional_ventilation=%u",
+             static_cast<unsigned>(goals.unmet), static_cast<unsigned>(goals.measurement_unusable),
+             static_cast<unsigned>(goals.target_invalid), static_cast<unsigned>(goals.no_equipment),
+             static_cast<unsigned>(goals.no_usable_route), static_cast<unsigned>(goals.constrained),
+             static_cast<unsigned>(goals.conditional_ventilation));
+  }
   snapshot.output = output_execution;
 
   const auto storage_status = storage_logger_.status();

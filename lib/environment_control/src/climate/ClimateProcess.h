@@ -21,6 +21,7 @@ struct ClimateRuntimeDecision {
   bool authoritative_ml = false;
   bool ml_evaluated = false;
   ClimatePolicyEvaluation rule{};
+  ClimateGoalDiagnostics rule_goals{};
   ClimatePolicyEvaluation ml{};
   ClimateFeatureVector ml_features{};
   ClimateEncoderReport encoder_report{};

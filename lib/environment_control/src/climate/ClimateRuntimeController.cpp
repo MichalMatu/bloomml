@@ -23,6 +23,7 @@ ClimateRuntimeStatus ClimateRuntimeController::step(const ClimateControllerInput
   runtime_input.estimated_effective = decision.effective_before;
 
   policy::evaluate(policy::ruleRequest(runtime_input), runtime_input, decision.rule);
+  decision.rule_goals = policy::diagnoseGoals(runtime_input, decision.rule);
   decision.applied = decision.rule.safe;
 
   if (config_.mode == ClimatePolicyMode::MlActive && !config_.allow_unqualified_ml_active) {

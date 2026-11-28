@@ -278,9 +278,66 @@ void testLampTrendAndConflicts() {
   }
 }
 
+void testGoalDiagnostics() {
+  using namespace growbox::climate;
+  ClimateControllerInput in{};
+  in.targets.air_temperature_c = 24.0F;
+  in.targets.relative_humidity_pct = 60.0F;
+  in.targets.co2_enabled = true;
+  in.targets.co2_ppm = 900.0F;
+  auto& m = in.state.measurements;
+  m.air_temperature_c = {28.0F, true, 0U};
+  m.relative_humidity_pct = {80.0F, true, 0U};
+  m.co2_ppm = {600.0F, true, 0U};
+  const auto all = GoalTemperature | GoalHumidity | GoalCo2;
+  auto evaluate = [&] {
+    ClimateRuntimeController runtime{nullptr, {}};
+    ClimateRuntimeDecision decision{};
+    runtime.step(in, 1000U, decision);
+    return decision.rule_goals;
+  };
+  auto d = evaluate();
+  check(d.unmet == all && d.no_equipment == all && d.no_usable_route == all,
+        "goals", "missing equipment for all three unmet targets");
+  in.capabilities.exhaust_fan = true;
+  in.capabilities.co2_doser = true;
+  d = evaluate();
+  check(d.no_equipment == 0U && d.no_usable_route == (GoalTemperature | GoalHumidity),
+        "goals", "unknown intake is not a proven route");
+  m.outside_temperature_c = {20.0F, true, 0U};
+  m.outside_humidity_pct = {50.0F, true, 0U};
+  d = evaluate();
+  check(d.conditional_ventilation == (GoalTemperature | GoalHumidity) &&
+        d.constrained == GoalCo2 && d.no_usable_route == GoalCo2,
+        "goals", "conditional ventilation and enrichment conflict");
+  m.co2_ppm.value = 1200.0F;
+  d = evaluate();
+  check(d.conditional_ventilation == all && d.no_usable_route == 0U,
+        "goals", "CO2 dilution is conditional, not achieved");
+  m.co2_ppm.age_ms = in.sensor_timeout_ms + 1U;
+  d = evaluate();
+  check(d.measurement_unusable == GoalCo2 && !(d.unmet & GoalCo2),
+        "goals", "stale CO2 does not establish error");
+  m.air_temperature_c.valid = false;
+  in.humidity_control_mode = HumidityControlMode::Vpd;
+  d = evaluate();
+  check(d.measurement_unusable == all && d.unmet == 0U,
+        "goals", "VPD needs temperature and humidity");
+  in.targets.co2_enabled = false;
+  d = evaluate();
+  check(d.measurement_unusable == (GoalTemperature | GoalHumidity),
+        "goals", "disabled goal is not diagnosed");
+  in.humidity_control_mode = HumidityControlMode::Rh;
+  m.air_temperature_c = {24.0F, true, 0U};
+  m.relative_humidity_pct = {60.0F, true, 0U};
+  d = evaluate();
+  check(d.unmet == 0U && d.no_usable_route == 0U, "goals", "inside deadband");
+}
+
 } // namespace
 
 int main() {
+  testGoalDiagnostics();
   testLampTrendAndConflicts();
   testDirectionalVentilation();
   testCo2TargetVentilation();

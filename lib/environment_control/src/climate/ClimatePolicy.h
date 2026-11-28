@@ -10,6 +10,8 @@ namespace policy {
 [[nodiscard]] ClimatePolicyRequest ruleRequest(const ClimateControllerInput& input) noexcept;
 void evaluate(const ClimatePolicyRequest& raw, const ClimateControllerInput& input,
               ClimatePolicyEvaluation& evaluation) noexcept;
+[[nodiscard]] ClimateGoalDiagnostics diagnoseGoals(
+    const ClimateControllerInput& input, const ClimatePolicyEvaluation& rule) noexcept;
 [[nodiscard]] bool finiteRequest(const ClimatePolicyRequest& request) noexcept;
 [[nodiscard]] ClimatePolicyRequest applyDeadzone(const ClimatePolicyRequest& raw,
                                                  float threshold) noexcept;

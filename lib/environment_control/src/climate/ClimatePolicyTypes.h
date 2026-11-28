@@ -24,6 +24,22 @@ enum ClimateIntervention : std::uint32_t {
   HighCo2 = 1U << 13U,
 };
 
+// Per-goal decision evidence, not a prediction or physical achievement claim.
+enum ClimateGoal : std::uint8_t {
+  GoalTemperature = 1U << 0U,
+  GoalHumidity = 1U << 1U, // active RH or VPD target
+  GoalCo2 = 1U << 2U,
+};
+struct ClimateGoalDiagnostics {
+  std::uint8_t unmet{0U};
+  std::uint8_t measurement_unusable{0U};
+  std::uint8_t target_invalid{0U};
+  std::uint8_t no_equipment{0U};
+  std::uint8_t no_usable_route{0U};
+  std::uint8_t constrained{0U};
+  std::uint8_t conditional_ventilation{0U};
+};
+
 struct ClimatePolicyEvaluation {
   ClimatePolicyRequest raw{};
   ClimatePolicyRequest arbitrated{};

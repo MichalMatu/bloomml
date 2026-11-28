@@ -322,6 +322,88 @@ void evaluate(const ClimatePolicyRequest& raw, const ClimateControllerInput& inp
               ClimatePolicyEvaluation& evaluation) noexcept {
   evaluateImpl(raw, input, evaluation);
 }
+ClimateGoalDiagnostics diagnoseGoals(const ClimateControllerInput& input,
+                                      const ClimatePolicyEvaluation& rule) noexcept {
+  ClimateGoalDiagnostics d{};
+  const auto& m = input.state.measurements;
+  const auto& c = input.capabilities;
+  const auto& t = input.targets;
+  const bool temp_ok = usable(m.air_temperature_c, input.sensor_timeout_ms);
+  const bool humidity_ok = usable(m.relative_humidity_pct, input.sensor_timeout_ms);
+  const bool outside_t = usable(m.outside_temperature_c, input.sensor_timeout_ms);
+  const bool outside_h = usable(m.outside_humidity_pct, input.sensor_timeout_ms);
+  const bool co2_ok = usable(m.co2_ppm, input.sensor_timeout_ms);
+  // Report an unmet goal even if another goal prevents action.
+  const auto assess = [&](std::uint8_t goal, bool equipment, bool direct_raw,
+                          bool direct_safe, bool ventilation_route) {
+    d.unmet |= goal;
+    if (!equipment) d.no_equipment |= goal;
+    const bool fan_raw = ventilation_route && rule.raw.exhaust_fan > 0.0F;
+    const bool fan_safe = ventilation_route && rule.safe.exhaust_fan > 0.0F;
+    if (fan_safe) d.conditional_ventilation |= goal;
+    if (!direct_safe && !fan_safe) {
+      d.no_usable_route |= goal;
+      if (equipment && (direct_raw || fan_raw || !temp_ok || !humidity_ok))
+        d.constrained |= goal;
+    }
+  };
+  const float temperature = m.air_temperature_c.value;
+  const float humidity = m.relative_humidity_pct.value;
+  const float temperature_error = temperature - t.air_temperature_c;
+  const float thermal_direction = m.outside_temperature_c.value - temperature;
+  const bool thermal_conflict =
+      (temperature_error > kTemperatureDeadbandC && thermal_direction > 0.0F) ||
+      (temperature_error < -kTemperatureDeadbandC && thermal_direction < 0.0F);
+  if (!std::isfinite(t.air_temperature_c)) d.target_invalid |= GoalTemperature;
+  else if (!temp_ok) d.measurement_unusable |= GoalTemperature;
+  else if (std::abs(temperature_error) > kTemperatureDeadbandC) {
+    const bool cold = temperature_error < 0.0F;
+    const bool vent = c.exhaust_fan && outside_t &&
+                      (cold ? thermal_direction > kTemperatureDeadbandC
+                            : thermal_direction < -kTemperatureDeadbandC);
+    assess(GoalTemperature, (cold ? c.heater : c.cooler) || c.exhaust_fan,
+           (cold ? rule.raw.heater : rule.raw.cooler) > 0.0F,
+           (cold ? rule.safe.heater : rule.safe.cooler) > 0.0F, vent);
+  }
+  const bool vpd = input.humidity_control_mode == HumidityControlMode::Vpd;
+  const float humidity_target = vpd ? t.air_vpd_kpa : t.relative_humidity_pct;
+  if (!std::isfinite(humidity_target)) d.target_invalid |= GoalHumidity;
+  else if (!humidity_ok || (vpd && !temp_ok)) d.measurement_unusable |= GoalHumidity;
+  else {
+    const float error = vpd ? airVpdKpa(temperature, humidity) - humidity_target
+                            : humidity - humidity_target;
+    const float deadband = vpd ? kVpdDeadbandKpa : kHumidityDeadbandPct;
+    if (std::abs(error) > deadband) {
+      const bool dry = vpd ? error > 0.0F : error < 0.0F;
+      bool vent = false;
+      if (c.exhaust_fan && temp_ok && outside_t && outside_h && !thermal_conflict) {
+        const float gap = absoluteHumidityGm3(m.outside_temperature_c.value,
+                                               m.outside_humidity_pct.value) -
+                          absoluteHumidityGm3(temperature, humidity);
+        vent = (dry ? gap : -gap) > kAbsoluteHumidityBenefitDeadbandGm3;
+      }
+      assess(GoalHumidity, (dry ? c.humidifier : c.dehumidifier) || c.exhaust_fan,
+             (dry ? rule.raw.humidifier : rule.raw.dehumidifier) > 0.0F,
+             (dry ? rule.safe.humidifier : rule.safe.dehumidifier) > 0.0F, vent);
+    }
+  }
+  if (t.co2_enabled) {
+    if (!std::isfinite(t.co2_ppm) || t.co2_ppm <= 0.0F) d.target_invalid |= GoalCo2;
+    else if (!co2_ok) d.measurement_unusable |= GoalCo2;
+    else {
+      const float error = t.co2_ppm - m.co2_ppm.value;
+      if (error > kCo2DeadbandPpm) {
+        assess(GoalCo2, c.co2_doser, rule.raw.co2_doser > 0.0F,
+               rule.safe.co2_doser > 0.0F, false);
+        if (c.co2_doser && rule.raw.exhaust_fan > 0.0F) d.constrained |= GoalCo2;
+      } else if (error < -kCo2DeadbandPpm) {
+        // No measured outside CO2, so dilution is only conditional.
+        assess(GoalCo2, c.exhaust_fan, false, false, c.exhaust_fan);
+      }
+    }
+  }
+  return d;
+}
 bool finiteRequest(const ClimatePolicyRequest& request) noexcept {
   return finiteRequestImpl(request);
 }
