@@ -3,6 +3,7 @@
 #include "climate/application/ClimateSemanticOutput.h"
 #include "climate/ClimateRuntimeController.h"
 #include "climate/output/LampSafety.h"
+#include "climate/output/ConfiguredOutputPolicies.h"
 #include "climate/output/OutputStateStore.h"
 #include "climate/output/control/OutputAutomationControl.h"
 #include "climate/output/control/OutputMaintenanceControl.h"
@@ -93,11 +94,12 @@ private:
   rf433::Rf433OutputTransport rf_output_transport_;
 };
 
-const output::OutputPolicyConfig& safeOutputPolicy() noexcept;
+output::ConfiguredOutputEquipment::Bindings makeMintOutputAdapters(
+    output::OutputTransport& transport) noexcept;
 
 class RuntimePersistenceOwner final {
 public:
-  RuntimePersistenceOwner() noexcept;
+  explicit RuntimePersistenceOwner(const output::ConfiguredOutputEquipment& equipment) noexcept;
 
   RuntimePersistenceOwner(const RuntimePersistenceOwner&) = delete;
   RuntimePersistenceOwner& operator=(const RuntimePersistenceOwner&) = delete;
@@ -127,6 +129,7 @@ public:
   }
 
 private:
+  const output::ConfiguredOutputEquipment& equipment_;
   output::OutputStateStore state_store_{};
   output::OutputNvsBackend nvs_backend_{};
   output::OutputPersistenceStore persistence_store_;
@@ -137,7 +140,7 @@ private:
 
 class RuntimeOutputOwner final {
 public:
-  RuntimeOutputOwner(output::OutputTransport& real_transport,
+  RuntimeOutputOwner(const output::ConfiguredOutputEquipment& equipment,
                      RuntimeExecutionStatus& execution_status, RfDiagnostics& diagnostics,
                      const output::OutputPolicyConfig& policy,
                      output::OutputStateStore& state_store) noexcept;
@@ -188,8 +191,8 @@ public:
 private:
   output::OutputPolicyConfig policy_{};
   ClimateSemanticOutputConfig semantic_output_config_{};
-  output::BinaryActuatorPolicy exhaust_policy_;
-  output::BinaryActuatorPolicy humidifier_policy_;
+  output::ConfiguredOutputPolicies binary_policies_;
+  output::ConfiguredOutputTransport configured_transport_;
   output::OutputSupervisorResolverConfig supervisor_config_{};
   RuntimeOutputTransport supervisor_transport_;
   output::OutputSupervisorLifecycle output_lifecycle_;

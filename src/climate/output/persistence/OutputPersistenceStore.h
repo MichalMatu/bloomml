@@ -49,6 +49,7 @@ public:
   bool valid() const noexcept {
     return valid_;
   }
+  const OutputPolicyConfig& safeDefaults() const noexcept { return safe_defaults_; }
   OutputPersistenceLoadResult load() noexcept;
   OutputPersistenceStoreStatus save(const OutputPersistenceSnapshot& snapshot) noexcept;
 

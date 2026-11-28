@@ -30,16 +30,6 @@ RfDiagnosticsConfig makeRfDiagnosticsConfig() noexcept {
   return config;
 }
 
-output::OutputSupervisorResolverConfig
-makeRuntimeSupervisorConfig(output::BinaryActuatorPolicy& exhaust_policy,
-                            output::BinaryActuatorPolicy& humidifier_policy) noexcept {
-  output::OutputSupervisorResolverConfig config{};
-  config.endpoints[0] = {stage28d::kScheduledLightEndpoint, nullptr};
-  config.endpoints[1] = {stage28d::kExhaustFanEndpoint, &exhaust_policy};
-  config.endpoints[2] = {stage28d::kHumidifierEndpoint, &humidifier_policy};
-  config.count = 3U;
-  return config;
-}
 
 } // namespace
 
@@ -78,39 +68,45 @@ bool RuntimeIoOwner::beginRf() noexcept {
   return rf_diagnostics_.begin(radio_ready);
 }
 
-const output::OutputPolicyConfig& safeOutputPolicy() noexcept {
-  static const output::OutputPolicyConfig policy = stage28d::makeOutputPolicyConfig();
-  return policy;
+output::ConfiguredOutputEquipment::Bindings makeMintOutputAdapters(
+    output::OutputTransport& transport) noexcept {
+  using ::growbox::ipo::Driver;
+  return {{{Driver::Rf433BinarySocket, 1U, rf433::kRemoteSocket1ClimateEndpoint,
+            rf433::kRemoteSocket1ClimateEndpoint, &transport},
+           {Driver::Rf433BinarySocket, 2U, rf433::kRemoteSocket2ClimateEndpoint,
+            rf433::kRemoteSocket2ClimateEndpoint, &transport},
+           {Driver::Rf433BinarySocket, 3U, rf433::kRemoteSocket3ClimateEndpoint,
+            rf433::kRemoteSocket3ClimateEndpoint, &transport}}};
 }
 
-RuntimePersistenceOwner::RuntimePersistenceOwner() noexcept
-    : persistence_store_(nvs_backend_, safeOutputPolicy()), persistence_(persistence_store_) {}
+RuntimePersistenceOwner::RuntimePersistenceOwner(
+    const output::ConfiguredOutputEquipment& equipment) noexcept
+    : equipment_(equipment), persistence_store_(nvs_backend_, equipment.policy()),
+      persistence_(persistence_store_) {}
 
 void RuntimePersistenceOwner::initialize(bool persistent_storage_ready) noexcept {
-  static constexpr std::array<output::OutputEndpointId, output::kOutputEndpointCapacity>
-      kShadowOutputEndpoints{stage28d::kExhaustFanEndpoint, stage28d::kScheduledLightEndpoint,
-                             stage28d::kHumidifierEndpoint};
-  state_store_ready_ =
-      state_store_.configure(kShadowOutputEndpoints, safeOutputPolicy().count);
+  std::array<output::OutputEndpointId, output::kOutputEndpointCapacity> endpoints{};
+  const auto& policy = equipment_.policy();
+  for (std::size_t i = 0; i < policy.count; ++i) endpoints[i] = policy.endpoints[i].endpoint;
+  state_store_ready_ = equipment_.valid() && state_store_.configure(endpoints, policy.count);
   init_result_ = state_store_ready_ && persistent_storage_ready
                      ? persistence_.initialize(state_store_)
                      : output::OutputPersistenceCoordinatorInitResult{};
 }
 
 const output::OutputPolicyConfig& RuntimePersistenceOwner::policy() const noexcept {
-  return persistence_.valid() ? persistence_.policy() : safeOutputPolicy();
+  return persistence_.valid() ? persistence_.policy() : equipment_.policy();
 }
 
-RuntimeOutputOwner::RuntimeOutputOwner(output::OutputTransport& real_transport,
+RuntimeOutputOwner::RuntimeOutputOwner(const output::ConfiguredOutputEquipment& equipment,
                                        RuntimeExecutionStatus& execution_status,
                                        RfDiagnostics& diagnostics,
                                        const output::OutputPolicyConfig& policy,
                                        output::OutputStateStore& state_store) noexcept
-    : policy_(policy), semantic_output_config_(stage28d::makeClimateSemanticOutputConfig(policy_)),
-      exhaust_policy_(stage28d::kExhaustFanBinaryPolicy),
-      humidifier_policy_(stage28d::kHumidifierBinaryPolicy),
-      supervisor_config_(makeRuntimeSupervisorConfig(exhaust_policy_, humidifier_policy_)),
-      supervisor_transport_(real_transport, execution_status), output_lifecycle_(policy_),
+    : policy_(policy), semantic_output_config_(equipment.semantic()),
+      binary_policies_(equipment), configured_transport_(equipment),
+      supervisor_config_(binary_policies_.config()),
+      supervisor_transport_(configured_transport_, execution_status), output_lifecycle_(policy_),
       lifecycle_executor_(policy_, output_lifecycle_, supervisor_transport_, state_store,
                           supervisor_config_),
       runtime_lifecycle_(output_lifecycle_, lifecycle_executor_),
@@ -122,8 +118,14 @@ RuntimeOutputOwner::RuntimeOutputOwner(output::OutputTransport& real_transport,
       supervisor_executor_(supervisor_transport_, state_store, supervisor_config_),
       supervisor_sink_(semantic_output_config_, supervisor_resolver_, supervisor_executor_,
                        state_store) {
-  bindings_valid_ = stage28d::validateOutputBindings(semantic_output_config_, policy_) ==
-                    stage28d::OutputBindingStatus::Ok;
+  bindings_valid_ = equipment.valid() &&
+      output::validateOutputPolicyConfig(policy_) == output::OutputPolicyConfigStatus::Ok &&
+      policy_.count == equipment.policy().count;
+  for (std::size_t i = 0; bindings_valid_ && i < policy_.count; ++i) {
+    const auto& ep = policy_.endpoints[i];
+    const auto* expected = output::findOutputPolicyRole(equipment.policy(), ep.role);
+    bindings_valid_ = expected && expected->endpoint == ep.endpoint;
+  }
   valid_ = bindings_valid_ && output_lifecycle_.valid() && lifecycle_executor_.valid() &&
            runtime_lifecycle_.valid() && automation_control_.valid() && manual_control_.valid() &&
            maintenance_control_.valid() && supervisor_sink_.valid();

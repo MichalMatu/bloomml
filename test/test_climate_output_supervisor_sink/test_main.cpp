@@ -1,5 +1,6 @@
 #include "climate/output/supervisor/ClimateOutputSupervisorSink.h"
 #include "climate/output/ConfiguredOutputEquipment.h"
+#include "climate/output/ConfiguredOutputPolicies.h"
 #include "climate/application/ClimateInputContracts.h"
 
 #include <array>
@@ -118,6 +119,48 @@ void assertPhysicalUnknown(const output::OutputStateStore& store,
   assert(state != nullptr);
   assert(state->physical.state == output::PhysicalOutputState::Unknown);
   assert(!state->physical.has_independent_feedback);
+}
+
+void testConfiguredSupervisorAllRoles() {
+  namespace ipo = growbox::ipo;
+  ipo::Graph graph{};
+  graph.processes[graph.process_count++] = {1U, ipo::ProcessKind::Co2Safety, true};
+  FakeTransport adapter;
+  output::ConfiguredOutputEquipment::Bindings bindings{};
+  std::array<output::OutputEndpointId, output::kOutputEndpointCapacity> endpoints{};
+  for (unsigned role = 0; role < 7U; ++role) {
+    const auto id = static_cast<std::uint16_t>(role+1U);
+    graph.devices[graph.device_count++] = {id, ipo::Driver::GpioRelay, id, true};
+    graph.actuators[graph.actuator_count++] = {
+        static_cast<std::uint16_t>(100U+id), id, ipo::Channel::Switch,
+        static_cast<ipo::OutputRole>(role), true, 1000U, 2000U};
+    endpoints[role] = static_cast<output::OutputEndpointId>(10U+id);
+    bindings[role] = {ipo::Driver::GpioRelay, id, endpoints[role], id, &adapter};
+  }
+  output::ConfiguredOutputEquipment equipment(graph, bindings, 7U);
+  assert(equipment.valid());
+  output::ConfiguredOutputPolicies policies(equipment);
+  assert(policies.config().count == 7U);
+  output::OutputStateStore store;
+  assert(store.configure(endpoints, 7U));
+  output::ConfiguredOutputTransport transport(equipment);
+  output::OutputSupervisorResolver resolver(policies.config());
+  output::OutputSupervisorExecutor executor(transport, store, policies.config());
+  climate_io::ClimateOutputSupervisorSink sink(equipment.semantic(), resolver, executor, store);
+  climate_io::ClimateOutputSupervisorCycleContext context{};
+  assert(output::setEndpointIntent(context.schedule.endpoints[0], endpoints[2], 1.0F));
+  sink.setCycleContext(context);
+  climate::ClimatePolicyRequest demand{};
+  demand.heater = demand.cooler = demand.exhaust_fan = demand.humidifier =
+      demand.dehumidifier = demand.co2_doser = 1.0F;
+  // This is the Output contract only, not the Rule arbitration policy.
+  climate::ClimateExecutionProjection execution{};
+  assert(sink.applyAndReportExecution(demand, 1000U, execution));
+  assert(adapter.sent_count == 7U);
+  for (auto ep : endpoints) assertPhysicalUnknown(store, ep);
+  assert(execution.known_mask == climate::ClimateExecutionKnownAll);
+  assert(sink.applyAndReportExecution({}, 1500U, execution));
+  assert(adapter.sent_count == 7U); // dwell prevents early OFF.
 }
 
 void testConfiguredEquipmentAndTransportSubstitution() {
@@ -493,6 +536,7 @@ void testHardSafetyOverridesSupervisorFailSafeOff() {
 } // namespace
 
 int main() {
+  testConfiguredSupervisorAllRoles();
   testConfiguredEquipmentAndTransportSubstitution();
   testDualDeviceInputIsIndependentOfSupervisorOutput();
   testCompleteClimateRequestUsesOneSupervisorCycleAndProjectsCommandTruth();

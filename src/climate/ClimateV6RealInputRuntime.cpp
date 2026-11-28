@@ -74,7 +74,12 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
   auto& rf_diagnostics = io_owner.rfDiagnostics();
   const bool rf_ready = io_owner.beginRf();
 
-  static runtime::RuntimePersistenceOwner persistence_owner;
+  // Only the compiled Mint graph is admitted; no external apply or new driver.
+  static const ::growbox::ipo::Graph ipo_reference =
+      ::growbox::ipo::makeCrowPanelMintReferenceGraph();
+  static const output::ConfiguredOutputEquipment equipment(
+      ipo_reference, runtime::makeMintOutputAdapters(io_owner.rfOutputTransport()), 3U);
+  static runtime::RuntimePersistenceOwner persistence_owner(equipment);
   persistence_owner.initialize(nvs_ready);
   if (!persistence_owner.stateStoreReady()) {
     ESP_LOGE(kTag, "Output state-store shadow configuration failed");
@@ -98,11 +103,12 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
     execution_status.transport_available = false;
   }
 
-  static runtime::RuntimeOutputOwner output_owner(io_owner.rfOutputTransport(), execution_status,
+  static runtime::RuntimeOutputOwner output_owner(equipment, execution_status,
                                                   rf_diagnostics, persistence_owner.policy(),
                                                   persistence_owner.stateStore());
   const bool output_bindings_valid = output_owner.bindingsValid();
-  if (!output_bindings_valid) {
+  if (!output_bindings_valid ||
+      persistence_owner.initResult().status == output::OutputPersistenceCoordinatorStatus::InvalidPolicy) {
     execution_status.transport_available = false;
   }
   if (runtime_config::kRealOutputsEnabled && !execution_status.transport_available) {
@@ -114,10 +120,8 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
 
   // Shared, typed and validated profile owner. Only the built-in Mint profile is active:
   // no external v2 apply/NVS writes are enabled by this integration milestone.
-  // v2 topology is visible to runtime for capability diagnostics only.
-  // It cannot actuate or replace the fixed OutputSupervisor bindings.
-  static const ::growbox::ipo::Graph ipo_reference =
-      ::growbox::ipo::makeCrowPanelMintReferenceGraph();
+  // The compiled graph supplies the configured equipment; the closed
+  // activation gate still prohibits replacing it from NVS or the UI.
   const auto ipo_admission = ::growbox::ipo::assessCrowPanelReference(ipo_reference);
   ESP_LOGI(kTag, "ipo_graph board_reference=%d admission=%u can_apply=%d devices=%u inputs=%u outputs=%u links=%u",
            ipo_admission.matches_compiled_board, static_cast<unsigned>(ipo_admission.status),
@@ -153,7 +157,7 @@ constexpr std::uint64_t kTickIntervalMs = 1'000U;
   runtime::RuntimeInsideSource inside(input_registry, profile_owner);
   runtime::RuntimeNearbySource outside(input_registry, profile_owner);
   const bool schedule_profile_valid = profile_owner.valid();
-  runtime::ConfiguredScheduleConfigSource schedule_config(profile_owner);
+  runtime::ConfiguredScheduleConfigSource schedule_config(profile_owner, equipment.capabilities());
   runtime::ConfiguredClockSource configured_clock(ipo_reference, clock);
   CompositeClimateSnapshotProvider composite(inside, outside, configured_clock, schedule_config);
   if (!schedule_profile_valid || !ipo_admission.matches_compiled_board) {

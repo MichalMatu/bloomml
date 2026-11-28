@@ -15,6 +15,15 @@ const DurableOutputCommandState* findDurableCommand(const OutputPersistenceSnaps
   return nullptr;
 }
 
+bool sameEquipment(const OutputPolicyConfig& a, const OutputPolicyConfig& b) noexcept {
+  if (a.count != b.count) return false;
+  for (std::size_t i = 0; i < a.count; ++i) {
+    const auto* endpoint = findOutputPolicyRole(b, a.endpoints[i].role);
+    if (!endpoint || endpoint->endpoint != a.endpoints[i].endpoint) return false;
+  }
+  return true;
+}
+
 } // namespace
 
 bool OutputPersistenceCoordinator::encodeSnapshot(const OutputPersistenceSnapshot& snapshot,
@@ -48,12 +57,23 @@ OutputPersistenceCoordinator::initialize(OutputStateStore& state_store) noexcept
     return result;
   }
 
+  if (!sameEquipment(result.load.snapshot.policy, store_.safeDefaults())) {
+    result.status = OutputPersistenceCoordinatorStatus::InvalidPolicy;
+    return result;
+  }
+  if (state_store.configuredCount() != result.load.snapshot.command_count) {
+    result.status = OutputPersistenceCoordinatorStatus::InvalidStateStore;
+    return result;
+  }
+  // Verify every endpoint before restoring any command truth.
   for (std::size_t index = 0U; index < result.load.snapshot.command_count; ++index) {
-    const auto& durable = result.load.snapshot.commands[index];
-    if (state_store.find(durable.endpoint) == nullptr) {
+    if (!state_store.find(result.load.snapshot.commands[index].endpoint)) {
       result.status = OutputPersistenceCoordinatorStatus::InvalidStateStore;
       return result;
     }
+  }
+  for (std::size_t index = 0U; index < result.load.snapshot.command_count; ++index) {
+    const auto& durable = result.load.snapshot.commands[index];
     if (durable.has_last_successful_command) {
       if (!state_store.restoreLastSuccessfulCommand(durable.endpoint, durable.state)) {
         result.status = OutputPersistenceCoordinatorStatus::InvalidStateStore;
@@ -94,6 +114,8 @@ bool OutputPersistenceCoordinator::buildSnapshot(
     return false;
   }
 
+  if (!sameEquipment(policy, store_.safeDefaults()) ||
+      state_store.configuredCount() != policy.count) return false;
   candidate.policy = policy;
   candidate.command_count = policy.count;
   for (std::size_t index = 0U; index < policy.count; ++index) {

@@ -62,14 +62,16 @@ private:
 // The real runtime reads the same admitted profile as the lamp scheduler.
 class ConfiguredScheduleConfigSource final : public ClimateScheduleConfigSource {
 public:
-  explicit ConfiguredScheduleConfigSource(const RuntimeScheduleProfileOwner& owner) noexcept
-      : owner_(owner) {}
+  ConfiguredScheduleConfigSource(const RuntimeScheduleProfileOwner& owner,
+                                 ::growbox::climate::ClimateCapabilities capabilities) noexcept
+      : owner_(owner), capabilities_(capabilities) {}
 
   bool resolve(std::uint64_t monotonic_ms, const ClimateWallClockSnapshot& clock,
                ClimateScheduleConfigSnapshot& output) noexcept override;
 
 private:
   const RuntimeScheduleProfileOwner& owner_;
+  const ::growbox::climate::ClimateCapabilities capabilities_;
 };
 
 // Legacy Mint source is preserved for previous host fixture callers.
